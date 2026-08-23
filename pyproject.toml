@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sodif-poc"
-version = "0.1.0"
+version = "0.2.0"
 description = "SODIF Signed Intent Execution — demonstrator TRL 4"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -13,6 +13,8 @@ authors = [
   { name = "SODIF Project Team" },
 ]
 dependencies = [
+  "pydantic>=2.10,<3",
+  "rfc8785>=0.1,<1",
   "streamlit>=1.40,<2",
 ]
 
@@ -47,6 +49,7 @@ skip_covered = false
 exclude_also = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+  "class .*\\bProtocol\\):",
 ]
 
 [tool.ruff]

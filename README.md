@@ -32,12 +32,13 @@ acoperire de 85%.
 ## Structură
 
 - `src/sodif/` — codul aplicației;
+- `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Logica funcțională SODIF nu este inclusă în Pasul 1; va fi introdusă modular, în pașii
-validați ulterior.
-
+Pasul 2 introduce exclusiv nucleul pur de domeniu. Procesarea documentelor, consensul,
+permisele criptografice și execuția scenariilor sunt implementate numai în pașii validați
+ulterior.

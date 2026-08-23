@@ -50,7 +50,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
 
     columns = st.columns(3)
     cards = (
-        ("Livrare", "Pasul 1 · Fundație"),
+        ("Livrare", "Pasul 2 · Domain Core"),
         ("Calitate", "Porți automate active"),
         ("Mediu", settings.environment.capitalize()),
     )
@@ -63,8 +63,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
             )
 
     st.info(
-        "Fundația tehnică este activă. Fluxurile Signed Intent vor fi adăugate numai după "
-        "acceptarea acestui pas."
+        "Nucleul de domeniu este validat. Integrarea documentelor începe numai după "
+        "acceptarea Pasului 2."
     )
     st.caption(f"Release {settings.release} · Python OSS · local-first")
-

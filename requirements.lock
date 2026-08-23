@@ -2,6 +2,7 @@
 # python -m pip install -e . --no-deps
 # python -m pip install -r requirements.lock
 altair==6.2.2
+annotated-types==0.8.0
 anyio==4.14.2
 attrs==26.1.0
 blinker==1.9.0
@@ -31,6 +32,8 @@ pillow==12.3.0
 pluggy==1.6.0
 protobuf==7.36.0
 pyarrow==25.0.1
+pydantic==2.13.4
+pydantic_core==2.46.4
 pydeck==0.9.3
 Pygments==2.21.0
 pytest==8.4.2
@@ -39,12 +42,14 @@ python-dateutil==2.9.0.post0
 python-multipart==0.0.32
 referencing==0.37.0
 requests==2.34.2
+rfc8785==0.1.4
 rpds-py==2026.6.3
 ruff==0.16.4
 six==1.17.0
 starlette==1.6.0
 streamlit==1.62.0
 toml==0.10.2
+typing-inspection==0.4.4
 typing_extensions==4.16.0
 tzdata==2026.3
 urllib3==2.7.0
