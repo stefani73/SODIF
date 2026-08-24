@@ -28,6 +28,13 @@ from sodif.domain.models import (
     SemanticView,
     SignatureEvidence,
 )
+from sodif.domain.permits import (
+    ExecutionAuthorization,
+    ExecutionPermit,
+    ExecutionPermitClaims,
+    PermitConsumption,
+    TrustedPermitKey,
+)
 from sodif.domain.revisions import (
     RevisionAcceptance,
     RevisionRecord,
@@ -49,6 +56,9 @@ __all__ = [
     "ConsensusStatus",
     "DocumentEnvelope",
     "DocumentFormat",
+    "ExecutionAuthorization",
+    "ExecutionPermit",
+    "ExecutionPermitClaims",
     "ExecutionPlan",
     "FieldProvenance",
     "HttpMethod",
@@ -57,6 +67,7 @@ __all__ = [
     "IntentSchema",
     "IntentValue",
     "ParameterLocation",
+    "PermitConsumption",
     "PolicyReference",
     "ProcessingStage",
     "RevisionAcceptance",
@@ -69,6 +80,7 @@ __all__ = [
     "SignatureStatus",
     "SignedRevision",
     "SignedRevisionMetadata",
+    "TrustedPermitKey",
     "TrustedSignerKey",
     "VerificationAttempt",
     "VerificationLevel",

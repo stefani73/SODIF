@@ -50,7 +50,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
 
     columns = st.columns(3)
     cards = (
-        ("Livrare", "Pasul 4 · Adaptive Consensus"),
+        ("Livrare", "Pasul 5 · Execution Permit"),
         ("Calitate", "Porți automate active"),
         ("Mediu", settings.environment.capitalize()),
     )
@@ -63,7 +63,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
             )
 
     st.info(
-        "Verificarea semantică folosește două căi independente și activează a treia cale "
-        "numai când riscul sau dovezile o cer."
+        "Consensul acceptat este transformat într-un permis criptografic scurt, legat de "
+        "acțiunea API exactă și consumabil o singură dată."
     )
     st.caption(f"Release {settings.release} · Python OSS · local-first")

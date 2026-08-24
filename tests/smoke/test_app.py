@@ -31,4 +31,4 @@ def test_streamlit_application_boots_without_exceptions() -> None:
 
     assert not app.exception
     assert app.title[0].value == "SODIF"
-    assert app.info[0].value.startswith("Verificarea semantică folosește două căi")
+    assert app.info[0].value.startswith("Consensul acceptat este transformat")

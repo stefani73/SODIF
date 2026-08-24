@@ -1,6 +1,6 @@
 """Runtime-checkable ports implemented by adapters in later steps."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Protocol, runtime_checkable
 
 from sodif.domain.enums import ViewKind
@@ -15,9 +15,11 @@ from sodif.domain.models import (
     RiskAssessment,
     SemanticView,
 )
+from sodif.domain.permits import ExecutionAuthorization, ExecutionPermit
 from sodif.domain.revisions import RevisionAcceptance, SignedRevision
 from sodif.domain.schemas import IntentSchema
 from sodif.domain.types import Identifier
+from sodif.domain.verification import AdaptiveVerificationOutcome
 
 
 @runtime_checkable
@@ -81,6 +83,27 @@ class IntentAssembler(Protocol):
 @runtime_checkable
 class ActionCompiler(Protocol):
     def compile(self, manifest: IntentManifest, target: ActionContext) -> ExecutionPlan: ...
+
+
+@runtime_checkable
+class PermitIssuer(Protocol):
+    def issue(
+        self,
+        verification: AdaptiveVerificationOutcome,
+        manifest: IntentManifest,
+        plan: ExecutionPlan,
+        ttl: timedelta | None = None,
+    ) -> ExecutionPermit: ...
+
+
+@runtime_checkable
+class PermitAuthorizer(Protocol):
+    def authorize(
+        self,
+        permit: ExecutionPermit,
+        plan: ExecutionPlan,
+        expected_audience: Identifier,
+    ) -> ExecutionAuthorization: ...
 
 
 @runtime_checkable

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — Pasul 5
+
+- permis Ed25519 cu identificator unic și fereastră temporală scurtă;
+- legare de verificare, consens, manifest, politică și planul API exact;
+- registru separat de chei de emitere, cu activare și revocare;
+- verificarea audienței și a digestului acțiunii înainte de autorizare;
+- consum atomic și protecție concurentă împotriva reutilizării permisului;
+- coduri de respingere stabile pentru emitere și autorizare.
+
 ## 0.4.0 — Pasul 4
 
 - politică explicabilă de risc și niveluri adaptive V0–V3;

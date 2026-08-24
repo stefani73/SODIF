@@ -35,12 +35,13 @@ acoperire de 85%.
 - `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `src/sodif/verification/` — risc explicabil, normalizare, consens și rutare adaptivă;
+- `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Pasul 4 compară reprezentări semantice independente și extinde verificarea numai când
-riscul, lipsa dovezilor sau un conflict o justifică. Permisele criptografice și execuția sunt
-implementate în pașii ulteriori.
+Pasul 5 transformă numai consensul automat acceptat într-un permis Ed25519 cu durată
+scurtă, legat de manifest, parametrii acțiunii și audiența API. Execuția efectivă și scenariile
+complete sunt implementate în pașii ulteriori.

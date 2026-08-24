@@ -55,7 +55,8 @@ class AdaptiveVerificationOutcome(DomainModel):
             raise ValueError("verification cost exceeds the available route")
         if self.total_cost_units != sum(item.incremental_cost_units for item in self.attempts):
             raise ValueError("verification cost must equal attempt costs")
-        if len({view.view_id for view in self.views}) != len(self.views):
+        view_ids = {view.view_id for view in self.views}
+        if len(view_ids) != len(self.views):
             raise ValueError("outcome view identifiers must be unique")
         if self.status is VerificationOutcomeStatus.BLOCKED:
             if self.initial_level is not VerificationLevel.V0_BLOCK:
@@ -63,8 +64,12 @@ class AdaptiveVerificationOutcome(DomainModel):
             if self.views or self.attempts or self.final_consensus is not None:
                 raise ValueError("blocked outcome cannot contain semantic execution")
         else:
-            if not self.attempts or self.final_consensus is None:
+            if not self.views or not self.attempts or self.final_consensus is None:
                 raise ValueError("non-blocked outcome requires semantic attempts and consensus")
+            if any(not set(item.view_ids_evaluated) <= view_ids for item in self.attempts):
+                raise ValueError("attempts reference views absent from the outcome")
+            if self.attempts[-1].consensus != self.final_consensus:
+                raise ValueError("final consensus must equal the last attempt result")
             if self.final_consensus.document_id != self.document_id:
                 raise ValueError("final consensus document_id differs from outcome")
             if self.final_consensus.revision_digest != self.revision_digest:

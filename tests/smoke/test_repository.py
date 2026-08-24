@@ -20,11 +20,13 @@ def test_required_project_contracts_exist() -> None:
         "docs/STEP_02_DOMAIN_CORE.md",
         "docs/STEP_03_SIGNED_REVISIONS.md",
         "docs/STEP_04_ADAPTIVE_CONSENSUS.md",
+        "docs/STEP_05_EXECUTION_PERMIT.md",
         "scripts/quality.ps1",
         "src/sodif/app.py",
         "src/sodif/domain/models.py",
         "src/sodif/documents/service.py",
         "src/sodif/verification/service.py",
+        "src/sodif/permits/crypto.py",
     )
 
     missing = [path for path in required if not (project_root / path).exists()]
