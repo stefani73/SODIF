@@ -18,7 +18,8 @@ from sodif.domain.types import Identifier
 
 _RECORD_COLUMNS = """
 archive_id, document_id, revision_number, format, content_digest, signature_digest,
-signer_id, key_id, signed_at, accepted_at, archived_at, original_name, media_type, size_bytes
+previous_revision_digest, signer_id, key_id, signed_at, accepted_at, archived_at,
+original_name, media_type, size_bytes
 """
 _SEARCH_TOKEN = re.compile(r"[\w.:-]+", flags=re.UNICODE)
 
@@ -152,9 +153,9 @@ class SqliteArchiveRepository:
                 """
                 INSERT INTO archive_records (
                     archive_id, document_id, revision_number, format, content_digest,
-                    signature_digest, signer_id, key_id, signed_at, accepted_at, archived_at,
-                    original_name, media_type, size_bytes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    signature_digest, previous_revision_digest, signer_id, key_id, signed_at,
+                    accepted_at, archived_at, original_name, media_type, size_bytes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 _record_values(record),
             )
@@ -240,6 +241,7 @@ class SqliteArchiveRepository:
                     format TEXT NOT NULL,
                     content_digest TEXT NOT NULL,
                     signature_digest TEXT NOT NULL,
+                    previous_revision_digest TEXT,
                     signer_id TEXT NOT NULL,
                     key_id TEXT NOT NULL,
                     signed_at TEXT NOT NULL,
@@ -261,6 +263,14 @@ class SqliteArchiveRepository:
                 );
                 """
             )
+            columns = {
+                str(row["name"])
+                for row in connection.execute("PRAGMA table_info(archive_records)").fetchall()
+            }
+            if "previous_revision_digest" not in columns:
+                connection.execute(
+                    "ALTER TABLE archive_records ADD COLUMN previous_revision_digest TEXT"
+                )
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self._database_path, timeout=10)
@@ -327,6 +337,7 @@ def _record_values(record: ArchiveRecord) -> tuple[object, ...]:
         record.format.value,
         record.content_digest,
         record.signature_digest,
+        record.previous_revision_digest,
         record.signer_id,
         record.key_id,
         record.signed_at.isoformat(),
@@ -346,6 +357,7 @@ def _row_to_record(row: sqlite3.Row) -> ArchiveRecord:
         format=DocumentFormat(row["format"]),
         content_digest=row["content_digest"],
         signature_digest=row["signature_digest"],
+        previous_revision_digest=row["previous_revision_digest"],
         signer_id=row["signer_id"],
         key_id=row["key_id"],
         signed_at=datetime.fromisoformat(row["signed_at"]),
@@ -373,6 +385,7 @@ def _require_compatible(existing: ArchiveRecord, candidate: ArchiveRecord) -> No
         existing.format,
         existing.content_digest,
         existing.signature_digest,
+        existing.previous_revision_digest,
         existing.signer_id,
         existing.key_id,
         existing.signed_at,
@@ -385,6 +398,7 @@ def _require_compatible(existing: ArchiveRecord, candidate: ArchiveRecord) -> No
         candidate.format,
         candidate.content_digest,
         candidate.signature_digest,
+        candidate.previous_revision_digest,
         candidate.signer_id,
         candidate.key_id,
         candidate.signed_at,

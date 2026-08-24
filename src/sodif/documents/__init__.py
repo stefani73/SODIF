@@ -7,11 +7,18 @@ from sodif.documents.crypto import (
     encode_public_key,
     verify_revision_signature,
 )
+from sodif.documents.demo import (
+    DEMO_DOCUMENT_ID,
+    demo_revision_signer,
+    demo_trusted_signer,
+    sign_demo_revision,
+)
 from sodif.documents.errors import DocumentRejected, DocumentRejectionCode
 from sodif.documents.repository import InMemoryRevisionRepository, RevisionRepository
 from sodif.documents.service import SignedRevisionService
 
 __all__ = [
+    "DEMO_DOCUMENT_ID",
     "DocumentContentPolicy",
     "DocumentRejected",
     "DocumentRejectionCode",
@@ -20,7 +27,10 @@ __all__ = [
     "InMemoryTrustStore",
     "RevisionRepository",
     "SignedRevisionService",
+    "demo_revision_signer",
+    "demo_trusted_signer",
     "encode_public_key",
+    "sign_demo_revision",
     "validate_document_content",
     "verify_revision_signature",
 ]

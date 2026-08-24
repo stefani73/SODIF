@@ -9,6 +9,10 @@ separă prezentarea produsului, explicația funcțională, centrul de control ș
 rapoarte și dovezi. Reviziile semnate validate sunt păstrate într-o arhivă locală
 verificabilă, deduplicată și indexată.
 
+Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură JSON înainte de
+arhivare. Un pachet demonstrativ semnat poate fi verificat direct sau descărcat pentru
+reîncărcare manuală.
+
 ## Pornire locală
 
 ```powershell

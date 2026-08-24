@@ -322,6 +322,41 @@ div[data-testid="stDownloadButton"] button[kind="primary"] {
     background:white; border:1px solid var(--line); border-radius:16px;
 }
 .sodif-empty-panel h2 { color:var(--navy); font-size:1.25rem; margin:0 0 .35rem; }
+.sodif-ingestion-sample {
+    display:flex; align-items:center; justify-content:space-between; margin:2.4rem 0 1rem;
+    padding:1.55rem 1.7rem; background:linear-gradient(135deg,#0e2944,#123d59);
+    border-radius:16px; box-shadow:0 16px 35px rgba(11,29,53,.13);
+}
+.sodif-ingestion-sample h2 { color:white; font-size:1.25rem; margin:.35rem 0 .35rem; }
+.sodif-ingestion-sample p { color:#b9c9d9; margin:0; line-height:1.55; }
+.sodif-ingestion-receipt {
+    display:flex; align-items:center; gap:1.3rem; margin:2.2rem 0 1rem; padding:1.55rem;
+    background:#eaf7f3; border:1px solid #bfe4d8; border-radius:15px;
+}
+.sodif-ingestion-receipt h2 { color:#126b58; font-size:1.25rem; margin:.25rem 0 .3rem; }
+.sodif-ingestion-receipt p { color:#4c6f67; margin:0; }
+.sodif-ingestion-metadata {
+    display:grid; grid-template-columns:1.1fr .55fr 1fr 1.35fr 1.4fr; gap:1px;
+    overflow:hidden; background:var(--line); border:1px solid var(--line); border-radius:13px;
+}
+.sodif-ingestion-metadata > div { display:grid; gap:.4rem; padding:1rem; background:#fff; }
+.sodif-ingestion-metadata small {
+    color:#7a8899; font-size:.63rem; font-weight:750; letter-spacing:.09em;
+    text-transform:uppercase;
+}
+.sodif-ingestion-metadata strong, .sodif-ingestion-metadata code {
+    color:var(--navy); font-size:.76rem; overflow-wrap:anywhere;
+}
+section[data-testid="stFileUploaderDropzone"] button div[data-testid="stMarkdownContainer"] p {
+    display:none !important;
+}
+section[data-testid="stFileUploaderDropzone"] button div[data-testid="stMarkdownContainer"]::after {
+    content:"Selectează"; color:var(--navy); font-size:.8rem !important;
+}
+div[data-testid="stFileUploaderDropzoneInstructions"] span { font-size:0; }
+div[data-testid="stFileUploaderDropzoneInstructions"] span::after {
+    content:"Până la 200 MB"; font-size:.74rem;
+}
 .sodif-empty-panel p { color:var(--muted); line-height:1.55; margin:0; }
 div[data-testid="stVerticalBlockBorderWrapper"] {
     height:100%; background:rgba(255,255,255,.88); border-color:var(--line); border-radius:14px;
@@ -379,6 +414,7 @@ div[data-testid="stSelectbox"] > div > div {
     .sodif-bundle-digest { min-width:0; text-align:left; }
     .sodif-report-identity { grid-template-columns:1fr; }
     .sodif-boundary-panel { grid-template-columns:1fr; gap:1.2rem; }
+    .sodif-ingestion-metadata { grid-template-columns:1fr; }
     .sodif-scenario-head { display:grid; }
     .sodif-verdict { text-align:left; }
 }

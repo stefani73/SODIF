@@ -42,6 +42,7 @@ class DocumentArchiveService:
             format=record.format,
             content_digest=record.revision_digest,
             signature_digest=record.signature_digest,
+            previous_revision_digest=record.previous_revision_digest,
             signer_id=record.signer_id,
             key_id=record.key_id,
             signed_at=record.signed_at,

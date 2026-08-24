@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0 — DMS D2: preluarea documentelor semnate
+
+- pagină de produs dedicată preluării documentului PDF și dovezii de semnătură;
+- serviciu unic pentru verificarea semnăturii, a istoricului și arhivarea reviziei;
+- recunoașterea idempotentă a unei revizii deja arhivate;
+- suport persistent pentru lanțul complet de revizii;
+- mesaje fail-closed clare, fără expunerea detaliilor interne;
+- pachet semnat demonstrativ, reproductibil și descărcabil.
+
 ## 0.10.0 — DMS D1: arhivă și index verificabil
 
 - depozit local de obiecte adresate prin SHA-256 și indexate în SQLite;

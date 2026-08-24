@@ -47,6 +47,12 @@ def render_product_shell(
         icon=":material/account_tree:",
         url_path="product",
     )
+    ingestion_page = st.Page(
+        "pages/ingestion.py",
+        title="Preluare documente",
+        icon=":material/upload_file:",
+        url_path="ingestion",
+    )
     control_page = st.Page(
         "pages/control.py",
         title="Centru de control",
@@ -62,6 +68,7 @@ def render_product_shell(
     navigation = st.navigation(
         {
             "Produs": (overview_page, product_page),
+            "Documente": (ingestion_page,),
             "Demonstrație": (control_page, reports_page),
         },
         position="sidebar",

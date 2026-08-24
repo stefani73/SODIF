@@ -130,6 +130,27 @@ def test_changed_bytes_are_rejected_before_acceptance() -> None:
     assert repository.history("doc-001") == ()
 
 
+def test_exact_signed_revision_retry_is_idempotent() -> None:
+    clock = MutableClock(START)
+    service, repository, document_signer = build_service(clock)
+    revision = signed_revision(
+        document_signer,
+        PDF_V1,
+        1,
+        None,
+        START - timedelta(minutes=1),
+    )
+
+    first = service.validate(PDF_V1, revision, policy())
+    clock.current = START + timedelta(minutes=1)
+    duplicate = service.validate(PDF_V1, revision, policy())
+
+    assert first.duplicate is False
+    assert duplicate.duplicate is True
+    assert duplicate.record == first.record
+    assert repository.history("doc-001") == (first.record,)
+
+
 @pytest.mark.parametrize(("number", "content"), [(3, PDF_V2), (2, PDF_V1)])
 def test_invalid_sequence_and_content_reuse_are_rejected(
     number: int,

@@ -100,7 +100,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
     report = FlightReport.model_validate_json(output)
 
     assert report.passed is True
-    assert report.release == "0.10.0-dms1"
+    assert report.release == "0.11.0-dms2"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

@@ -3,6 +3,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
+from _pytest.monkeypatch import MonkeyPatch
 from streamlit.testing.v1 import AppTest
 
 from sodif.app import main
@@ -48,6 +49,29 @@ def test_product_explainer_is_a_distinct_page() -> None:
     assert "Cum funcționează SODIF" in copy
     assert "Decizia privește tranzacția" in copy
     assert "Înaintea sistemului care produce efectul" in copy
+
+
+def test_document_ingestion_page_archives_the_signed_sample(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SODIF_ARCHIVE_ROOT", str(tmp_path / "archive"))
+    app = _application().run(timeout=15).switch_page("pages/ingestion.py").run(timeout=15)
+
+    assert not app.exception
+    copy = _copy(app)
+    assert "Preluare documente" in copy
+    assert "Exemplu verificabil" in copy
+    sample_button = next(
+        button for button in app.button if button.label == "Arhivează exemplul semnat"
+    )
+    sample_button.click().run(timeout=15)
+
+    assert not app.exception
+    result_copy = _copy(app)
+    assert "Document verificat și arhivat" in result_copy
+    assert "Identificator arhivă" in result_copy
+    assert (tmp_path / "archive" / "index.sqlite3").is_file()
 
 
 def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> None:

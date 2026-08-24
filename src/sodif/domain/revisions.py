@@ -82,6 +82,7 @@ class RevisionRecord(DomainModel):
 class RevisionAcceptance(DomainModel):
     envelope: DocumentEnvelope
     record: RevisionRecord
+    duplicate: bool = False
 
     @model_validator(mode="after")
     def envelope_matches_record(self) -> Self:

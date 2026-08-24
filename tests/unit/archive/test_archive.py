@@ -1,5 +1,6 @@
 """Contract tests for the signed-document archive and SQLite index."""
 
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -130,3 +131,37 @@ def test_sqlite_archive_detects_object_tampering(tmp_path: Path) -> None:
 
     with pytest.raises(ArchiveIntegrityError, match="size differs"):
         repository.get(stored.archive_id)
+
+
+def test_sqlite_archive_migrates_the_d1_index_without_data_loss(tmp_path: Path) -> None:
+    root = tmp_path / "document-archive"
+    root.mkdir()
+    database = root / "index.sqlite3"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE archive_records (
+                archive_id TEXT PRIMARY KEY,
+                document_id TEXT NOT NULL,
+                revision_number INTEGER NOT NULL,
+                format TEXT NOT NULL,
+                content_digest TEXT NOT NULL,
+                signature_digest TEXT NOT NULL,
+                signer_id TEXT NOT NULL,
+                key_id TEXT NOT NULL,
+                signed_at TEXT NOT NULL,
+                accepted_at TEXT NOT NULL,
+                archived_at TEXT NOT NULL,
+                original_name TEXT NOT NULL,
+                media_type TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                UNIQUE (document_id, revision_number)
+            )
+            """
+        )
+
+    SqliteArchiveRepository(root)
+
+    with sqlite3.connect(database) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(archive_records)")}
+    assert "previous_revision_digest" in columns

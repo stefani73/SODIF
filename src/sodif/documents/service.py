@@ -68,8 +68,42 @@ class SignedRevisionService:
         try:
             self._repository.append(record)
         except InvalidRevisionChain as exc:
+            existing = next(
+                (
+                    item
+                    for item in self._repository.history(metadata.document_id)
+                    if _same_signed_revision(item, record)
+                ),
+                None,
+            )
+            if existing is not None:
+                return RevisionAcceptance(envelope=envelope, record=existing, duplicate=True)
             raise DocumentRejected(
                 DocumentRejectionCode.REVISION_CHAIN_INVALID,
                 str(exc),
             ) from exc
         return RevisionAcceptance(envelope=envelope, record=record)
+
+
+def _same_signed_revision(existing: RevisionRecord, candidate: RevisionRecord) -> bool:
+    return (
+        existing.document_id,
+        existing.revision_number,
+        existing.format,
+        existing.revision_digest,
+        existing.previous_revision_digest,
+        existing.signature_digest,
+        existing.signer_id,
+        existing.key_id,
+        existing.signed_at,
+    ) == (
+        candidate.document_id,
+        candidate.revision_number,
+        candidate.format,
+        candidate.revision_digest,
+        candidate.previous_revision_digest,
+        candidate.signature_digest,
+        candidate.signer_id,
+        candidate.key_id,
+        candidate.signed_at,
+    )

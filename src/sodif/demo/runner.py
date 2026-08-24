@@ -35,7 +35,8 @@ from sodif.documents import (
     InMemoryRevisionRepository,
     InMemoryTrustStore,
     SignedRevisionService,
-    encode_public_key,
+    demo_revision_signer,
+    demo_trusted_signer,
 )
 from sodif.domain.canonical import sha256_bytes, sha256_digest
 from sodif.domain.enums import (
@@ -48,11 +49,7 @@ from sodif.domain.enums import (
 from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.models import DocumentEnvelope, ExecutionPlan, PolicyReference
 from sodif.domain.permits import ExecutionPermit, TrustedPermitKey
-from sodif.domain.revisions import (
-    SignedRevision,
-    SignedRevisionMetadata,
-    TrustedSignerKey,
-)
+from sodif.domain.revisions import SignedRevision, SignedRevisionMetadata
 from sodif.domain.schemas import IntentSchema
 from sodif.domain.state import WorkflowState, transition
 from sodif.domain.verification import AdaptiveVerificationOutcome
@@ -142,7 +139,7 @@ class FlightRunner:
         report_digest = sha256_digest(results)
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
-            release="0.10.0-dms1",
+            release="0.11.0-dms2",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -442,19 +439,8 @@ class FlightRunner:
     def _context(self, scenario_id: FlightScenario) -> _ScenarioContext:
         clock = ScenarioClock(FLIGHT_START)
         policy = flight_policy()
-        document_private_key = Ed25519PrivateKey.from_private_bytes(bytes(range(1, 33)))
-        document_signer = Ed25519RevisionSigner(
-            "flight-signer",
-            "flight-document-key",
-            document_private_key,
-        )
-        document_trust = TrustedSignerKey(
-            key_id=document_signer.key_id,
-            signer_id=document_signer.signer_id,
-            algorithm=SignatureAlgorithm.ED25519,
-            public_key=encode_public_key(document_signer.public_key()),
-            active_from=FLIGHT_START - timedelta(days=1),
-        )
+        document_signer = demo_revision_signer()
+        document_trust = demo_trusted_signer()
         document_service = SignedRevisionService(
             InMemoryTrustStore((document_trust,)),
             InMemoryRevisionRepository(),

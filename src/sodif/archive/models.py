@@ -19,6 +19,7 @@ class ArchiveRecord(DomainModel):
     format: DocumentFormat
     content_digest: Digest
     signature_digest: Digest
+    previous_revision_digest: Digest | None = None
     signer_id: Identifier
     key_id: Identifier
     signed_at: AwareDatetime

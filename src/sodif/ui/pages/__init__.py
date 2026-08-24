@@ -2,11 +2,13 @@
 
 from sodif.ui.pages.control import render_control_center
 from sodif.ui.pages.evidence import render_evidence_hub
+from sodif.ui.pages.ingestion import render_document_ingestion
 from sodif.ui.pages.overview import render_overview
 from sodif.ui.pages.product import render_product_explainer
 
 __all__ = [
     "render_control_center",
+    "render_document_ingestion",
     "render_evidence_hub",
     "render_overview",
     "render_product_explainer",
