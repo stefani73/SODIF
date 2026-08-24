@@ -100,4 +100,3 @@ def validate_manifest(
                 )
             )
     return ManifestValidationResult(valid=not violations, violations=tuple(violations))
-

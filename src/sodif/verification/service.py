@@ -65,9 +65,7 @@ class AdaptiveVerificationService:
         action: ActionContext,
     ) -> AdaptiveVerificationOutcome:
         risk = self._risk_policy.assess(document, action)
-        available_cost = sum(
-            self._adapters[kind].cost_units for kind in self._route.extended_kinds
-        )
+        available_cost = sum(self._adapters[kind].cost_units for kind in self._route.extended_kinds)
         if risk.verification_level is VerificationLevel.V0_BLOCK:
             return AdaptiveVerificationOutcome(
                 document_id=document.document_id,

@@ -20,4 +20,3 @@ FieldName: TypeAlias = Annotated[
 Confidence: TypeAlias = Annotated[Decimal, Field(ge=Decimal("0"), le=Decimal("1"))]
 RiskScore: TypeAlias = Annotated[Decimal, Field(ge=Decimal("0"), le=Decimal("100"))]
 JsonScalar: TypeAlias = str | int | bool | Decimal | None
-

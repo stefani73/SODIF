@@ -158,9 +158,7 @@ class FakeAdapter:
         )
 
 
-def values(amount: JsonScalar = Decimal("100")) -> dict[
-    str, tuple[SemanticDataType, JsonScalar]
-]:
+def values(amount: JsonScalar = Decimal("100")) -> dict[str, tuple[SemanticDataType, JsonScalar]]:
     return {
         "supplier_id": (SemanticDataType.IDENTIFIER, "SUP-01"),
         "total_amount": (SemanticDataType.DECIMAL, amount),

@@ -159,4 +159,3 @@ def test_schema_and_validation_result_invariants_are_enforced() -> None:
         ManifestValidationResult(valid=True, violations=(violation,))
     with pytest.raises(ValidationError, match="valid must"):
         ManifestValidationResult(valid=False)
-

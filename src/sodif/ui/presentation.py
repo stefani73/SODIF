@@ -72,7 +72,7 @@ _SCENARIO_COPY = {
         "Dovadă suplimentară necesară",
         "O valoare critică lipsește inițial, iar verificarea se extinde controlat.",
         "Autorizată",
-        "Sursa suplimentară completează dovada fără a relaxa politica de siguranță.",
+        "Dovada suplimentară completează informația fără a reduce nivelul de siguranță.",
         "Cerere acceptată",
         "Execuția este permisă numai după confirmarea valorii lipsă.",
         "Resursele suplimentare sunt activate doar când traseul normal nu este concludent.",
@@ -115,15 +115,15 @@ _SCENARIO_COPY = {
         "Registrul de consum confirmă că permisul și-a produs deja efectul autorizat.",
         "Repetare respinsă",
         "API-ul este protejat împotriva unei a doua execuții a aceleiași aprobări.",
-        "Controlul atomic păstrează unicitatea execuției chiar și la cereri concurente.",
+        "Controlul atomic păstrează caracterul unic al execuției, inclusiv la cereri concurente.",
     ),
 }
 
 _TIMELINE_COPY = {
     "revision-validated": "Autenticitatea documentului și revizia semnată au fost confirmate.",
-    "risk-triaged": "Politica a ales nivelul adecvat de verificare pentru tranzacție.",
+    "risk-triaged": "Nivelul de verificare a fost adaptat profilului tranzacției.",
     "semantic-views": "Reprezentările independente ale documentului au fost confruntate.",
-    "consensus-accepted": "Valorile critice au obținut consens verificabil.",
+    "consensus-accepted": "Valorile critice au fost confirmate prin consens verificabil.",
     "action-compiled": "Intenția aprobată a fost legată de acțiunea API exactă.",
     "permit-issued": "A fost emisă o autorizare criptografică de unică folosință.",
     "api-executed": "Sistemul operațional a acceptat acțiunea autorizată.",
@@ -138,10 +138,11 @@ _TIMELINE_COPY = {
 def present_flight(report: FlightReport) -> FlightView:
     """Translate technical evidence into concise, user-facing decisions."""
     return FlightView(
-        title="Toate controalele au răspuns conform politicii",
+        title="Toate controalele au confirmat comportamentul așteptat",
         detail=(
-            "Acțiunile conforme au fost autorizate, iar modificările, ambiguitățile și "
-            "reutilizările au fost oprite înainte de sistemul operațional."
+            "Acțiunile conforme au fost autorizate, iar tentativele de modificare, "
+            "ambiguitățile și reutilizările au fost oprite înainte de a ajunge la "
+            "sistemul operațional."
         ),
         tone="success" if report.passed else "danger",
         scenarios=tuple(present_scenario(result) for result in report.results),
@@ -181,8 +182,8 @@ def _controls_for(result: ScenarioResult) -> tuple[ControlView, ControlView, Con
         "success",
     )
     consensus = ControlView(
-        "Sens aprobat",
-        "Confirmat",
+        "Intenție aprobată",
+        "Confirmată",
         "Valorile critice sunt consistente.",
         "success",
     )
@@ -196,14 +197,22 @@ def _controls_for(result: ScenarioResult) -> tuple[ControlView, ControlView, Con
         return (
             ControlView("Document", "Neconform", "Conținut diferit de revizia semnată.", "danger"),
             ControlView(
-                "Sens aprobat", "Neprocesat", "Verificarea s-a oprit la integritate.", "neutral"
+                "Intenție aprobată",
+                "Neverificată",
+                "Procesarea s-a oprit la controlul de integritate.",
+                "neutral",
             ),
             ControlView("Execuție", "Blocată", "Nu a fost emisă nicio autorizare.", "danger"),
         )
     if result.scenario_id is FlightScenario.SEMANTIC_CONFLICT:
         return (
             verified,
-            ControlView("Sens aprobat", "Neconcludent", "Valoare critică în conflict.", "warning"),
+            ControlView(
+                "Intenție aprobată",
+                "Neconcludentă",
+                "O valoare critică este în conflict.",
+                "warning",
+            ),
             ControlView("Execuție", "Suspendată", "Clarificarea este obligatorie.", "warning"),
         )
     if result.scenario_id is FlightScenario.ACTION_TAMPERING:
@@ -220,8 +229,8 @@ def _controls_for(result: ScenarioResult) -> tuple[ControlView, ControlView, Con
         )
     if result.scenario_id is FlightScenario.ADAPTIVE_RECOVERY:
         consensus = ControlView(
-            "Sens aprobat",
-            "Confirmat extins",
+            "Intenție aprobată",
+            "Confirmată suplimentar",
             "Dovada lipsă a fost completată.",
             "success",
         )
@@ -230,9 +239,7 @@ def _controls_for(result: ScenarioResult) -> tuple[ControlView, ControlView, Con
 
 def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
     digests = tuple(
-        item.subject_digest
-        for item in result.observations
-        if item.subject_digest is not None
+        item.subject_digest for item in result.observations if item.subject_digest is not None
     )
     evidence: list[EvidenceView] = []
     if result.verification is not None:
@@ -252,7 +259,7 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
             )
         )
     elif digests:
-        evidence.append(EvidenceView("Dovadă decizie", _compact_digest(digests[-1])))
+        evidence.append(EvidenceView("Dovada deciziei", _compact_digest(digests[-1])))
     return tuple(evidence)
 
 

@@ -46,4 +46,3 @@ def test_dates_decimals_enums_and_models_have_stable_forms() -> None:
 def test_unsupported_or_ambiguous_values_are_rejected(value: object, message: str) -> None:
     with pytest.raises(CanonicalizationError, match=message):
         canonical_bytes(value)
-

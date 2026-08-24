@@ -216,9 +216,9 @@ def trusted_key(**updates: object) -> TrustedPermitKey:
     return TrustedPermitKey.model_validate({**base, **updates})
 
 
-def issued_permit(clock: MutableClock, ttl: timedelta | None = None) -> tuple[
-    ExecutionPermit, ExecutionPlan
-]:
+def issued_permit(
+    clock: MutableClock, ttl: timedelta | None = None
+) -> tuple[ExecutionPermit, ExecutionPlan]:
     source_manifest = manifest()
     execution_plan = plan(source_manifest)
     permit = issuer(clock).issue(

@@ -102,4 +102,3 @@ def transition(
         stage=to_stage,
         history=(*state.history, item),
     )
-

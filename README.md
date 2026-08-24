@@ -4,9 +4,9 @@
 
 Promisiunea produsului: **Exact ceea ce s-a semnat. O singură dată.**
 
-Acest repository conține demonstratorul TRL 4 realizat incremental. Interfața include o
-prezentare orientată spre produs și un Assurance Flight interactiv pentru verificarea
-deciziilor de autorizare, blocare și escaladare.
+Acest repository conține demonstratorul TRL 4 realizat incremental. Interfața multipagină
+separă prezentarea produsului, explicația funcțională, centrul de control și zona de
+rapoarte și dovezi.
 
 ## Pornire locală
 
@@ -21,19 +21,20 @@ Alternativ:
 .\scripts\run.ps1
 ```
 
-## Flight demonstrativ
+## Demonstrație tehnică
 
 ```powershell
 .\scripts\flight.ps1
 ```
 
-Comanda rulează catalogul reproductibil de șase scenarii și afișează dovada structurată
+Comanda rulează catalogul reproductibil de șase situații și afișează dovada structurată
 JSON, fără efecte asupra unui sistem extern.
 
 ## Pachet de dovezi
 
-După rularea Assurance Flight, interfața permite descărcarea raportului Word, a dovezilor
-JSON, a jurnalului auditabil și a pachetului complet cu manifest de integritate.
+După rularea demonstrației din centrul de control, pagina „Rapoarte și dovezi” permite
+descărcarea raportului Word, a datelor JSON, a jurnalului de audit și a pachetului complet
+cu manifest de integritate.
 
 Export local:
 
@@ -62,11 +63,12 @@ acoperire de 85%.
 - `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
 - `src/sodif/demo/` — catalogul și motorul flight-ului reproductibil;
 - `src/sodif/reporting/` — raport Word, serializări și pachet de dovezi;
+- `src/sodif/ui/pages/` — pagini de produs și operațiuni independente;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Interfața rulează direct motorul flight, prezintă deciziile și oferă exporturi verificabile
-pentru evaluare umană, audit automat și arhivare.
+Interfața rulează direct motorul demonstrativ, prezintă deciziile și oferă exporturi
+verificabile pentru evaluare umană, audit automat și arhivare.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 — Multipage product experience
+
+- navigație laterală retractabilă, organizată în zone de produs și demonstrație;
+- patru pagini distincte pentru prezentare, funcționare, control și dovezi;
+- limbaj românesc revizuit și orientat spre utilizator;
+- iconografie Material pentru navigație, acțiuni și descărcări;
+- separarea rulării scenariilor de zona de rapoarte și exporturi;
+- stare de sesiune comună și extensibilă pentru paginile produsului.
+
 ## 0.8.0 — Reporting and evidence exports
 
 - raport Word profesional generat din rezultatul Assurance Flight;

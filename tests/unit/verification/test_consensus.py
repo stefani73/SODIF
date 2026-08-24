@@ -78,9 +78,9 @@ def view(
     )
 
 
-def complete_values(amount: JsonScalar, currency: str = "EUR") -> dict[
-    str, tuple[SemanticDataType, JsonScalar, Decimal]
-]:
+def complete_values(
+    amount: JsonScalar, currency: str = "EUR"
+) -> dict[str, tuple[SemanticDataType, JsonScalar, Decimal]]:
     return {
         "supplier_id": (SemanticDataType.IDENTIFIER, "SUP-01", Decimal("0.98")),
         "total_amount": (SemanticDataType.DECIMAL, amount, Decimal("0.97")),

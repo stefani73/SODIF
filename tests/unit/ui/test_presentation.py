@@ -10,7 +10,10 @@ def test_flight_presentation_exposes_decisions_without_engine_vocabulary() -> No
     rendered = repr(view)
 
     assert view.tone == "success"
-    assert "Toate controalele au răspuns conform politicii" in view.title
+    assert "Toate controalele au confirmat comportamentul așteptat" in view.title
+    assert all(
+        control.name != "Sens aprobat" for item in view.scenarios for control in item.controls
+    )
     assert "cost_units" not in rendered
     assert "v1_targeted" not in rendered
     assert "step" not in rendered.casefold()

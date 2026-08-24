@@ -22,12 +22,13 @@ def test_text_identifier_and_currency_normalization_are_explicit() -> None:
 
 def test_numeric_date_and_boolean_values_receive_canonical_forms() -> None:
     assert normalize_semantic_value(SemanticDataType.INTEGER, "+0042").canonical_value == 42
-    assert normalize_semantic_value(
-        SemanticDataType.DECIMAL, "1250,00"
-    ).canonical_value == Decimal("1.25E+3")
-    assert normalize_semantic_value(
-        SemanticDataType.DATE, "2026-08-24"
-    ).canonical_value == "2026-08-24"
+    assert normalize_semantic_value(SemanticDataType.DECIMAL, "1250,00").canonical_value == Decimal(
+        "1.25E+3"
+    )
+    assert (
+        normalize_semantic_value(SemanticDataType.DATE, "2026-08-24").canonical_value
+        == "2026-08-24"
+    )
     assert normalize_semantic_value(SemanticDataType.BOOLEAN, "da").canonical_value is True
     assert normalize_semantic_value(SemanticDataType.BOOLEAN, False).canonical_value is False
 

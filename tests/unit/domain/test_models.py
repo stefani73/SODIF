@@ -280,9 +280,7 @@ def test_manifest_and_execution_plan_reject_ambiguous_components() -> None:
 
     assert manifest.fields[0].name == "supplier_id"
     with pytest.raises(ValidationError, match="intent field names"):
-        IntentManifest.model_validate(
-            {**base_manifest, "fields": (intent_value(), intent_value())}
-        )
+        IntentManifest.model_validate({**base_manifest, "fields": (intent_value(), intent_value())})
 
     parameter = ActionParameter(
         name="supplier_id",

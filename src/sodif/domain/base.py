@@ -12,4 +12,3 @@ class DomainModel(BaseModel):
         strict=True,
         str_strip_whitespace=True,
     )
-
