@@ -4,8 +4,9 @@
 
 Promisiunea produsului: **Exact ceea ce s-a semnat. O singură dată.**
 
-Acest repository conține demonstratorul TRL 4 realizat incremental. Fiecare pas este
-acceptat numai după trecerea integrală a testelor automate și a verificărilor de calitate.
+Acest repository conține demonstratorul TRL 4 realizat incremental. Interfața include o
+prezentare orientată spre produs și un Assurance Flight interactiv pentru verificarea
+deciziilor de autorizare, blocare și escaladare.
 
 ## Pornire locală
 
@@ -53,6 +54,6 @@ acoperire de 85%.
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Pasul 6 integrează validarea documentului, consensul adaptiv, permisul și execuția controlată
-în șase scenarii reproductibile. Interfața completă și exporturile de raport sunt implementate
-în pașii următori.
+Interfața rulează direct motorul flight și prezintă verdictul, controalele, efectul asupra
+API-ului, traseul deciziei și dovezile verificabile. Exporturile de raport sunt livrate
+separat în etapa următoare.

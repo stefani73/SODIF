@@ -1,0 +1,43 @@
+"""Product-view tests for flight evidence."""
+
+from sodif.demo.models import FlightScenario
+from sodif.demo.runner import run_default_flight
+from sodif.ui.presentation import present_flight
+
+
+def test_flight_presentation_exposes_decisions_without_engine_vocabulary() -> None:
+    view = present_flight(run_default_flight())
+    rendered = repr(view)
+
+    assert view.tone == "success"
+    assert "Toate controalele au răspuns conform politicii" in view.title
+    assert "cost_units" not in rendered
+    assert "v1_targeted" not in rendered
+    assert "step" not in rendered.casefold()
+
+
+def test_executed_scenario_presents_exact_api_evidence() -> None:
+    scenario = next(
+        item
+        for item in present_flight(run_default_flight()).scenarios
+        if item.scenario_id is FlightScenario.HAPPY_PATH
+    )
+
+    evidence = {item.label: item.value for item in scenario.evidence}
+    assert scenario.verdict == "Autorizată"
+    assert scenario.tone == "success"
+    assert evidence["Acțiune"] == "POST /purchase-orders"
+    assert evidence["Destinație"] == "erp-purchase-api"
+    assert evidence["Confirmare API"] == "202"
+
+
+def test_each_protection_case_has_a_distinct_fail_closed_decision() -> None:
+    scenarios = {item.scenario_id: item for item in present_flight(run_default_flight()).scenarios}
+
+    assert scenarios[FlightScenario.TAMPERED_DOCUMENT].verdict == "Blocată"
+    assert scenarios[FlightScenario.SEMANTIC_CONFLICT].verdict == "Revizuire necesară"
+    assert scenarios[FlightScenario.ACTION_TAMPERING].api_effect == "Cerere respinsă"
+    assert scenarios[FlightScenario.REPLAY_ATTACK].api_effect == "Repetare respinsă"
+    for scenario in scenarios.values():
+        assert scenario.timeline
+        assert scenario.evidence

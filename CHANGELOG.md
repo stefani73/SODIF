@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 — Product UI
+
+- landing page cu poziționare clară Document-to-API;
+- navigare minimală între prezentarea produsului și Assurance Flight;
+- rulare interactivă a motorului flight din interfață;
+- verdicte, controale și efect API formulate pentru utilizator;
+- trasee de decizie și dovezi tehnice compacte;
+- strat de prezentare separat și sistem vizual responsive, fără resurse externe.
+
 ## 0.6.0 — Pasul 6
 
 - asamblare deterministă a manifestului din consens acceptat;
