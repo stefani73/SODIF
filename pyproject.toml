@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sodif-poc"
-version = "0.5.0"
+version = "0.6.0"
 description = "SODIF Signed Intent Execution — demonstrator TRL 4"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -29,6 +29,7 @@ dev = [
 
 [project.scripts]
 sodif-app = "sodif.app:main"
+sodif-flight = "sodif.demo.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

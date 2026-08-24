@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 — Pasul 6
+
+- asamblare deterministă a manifestului din consens acceptat;
+- compilare exactă a manifestului într-un plan API;
+- adaptor API local fără efecte externe și chitanță de execuție;
+- motor flight cu șase scenarii de succes, optimizare și atac;
+- cronologie, digesturi și rezultate serializabile pentru fiecare scenariu;
+- comandă CLI reproductibilă pentru rularea întregului flight.
+
 ## 0.5.0 — Pasul 5
 
 - permis Ed25519 cu identificator unic și fereastră temporală scurtă;

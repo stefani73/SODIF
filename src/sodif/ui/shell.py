@@ -50,7 +50,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
 
     columns = st.columns(3)
     cards = (
-        ("Livrare", "Pasul 5 · Execution Permit"),
+        ("Livrare", "Pasul 6 · Flight Engine"),
         ("Calitate", "Porți automate active"),
         ("Mediu", settings.environment.capitalize()),
     )
@@ -63,7 +63,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
             )
 
     st.info(
-        "Consensul acceptat este transformat într-un permis criptografic scurt, legat de "
-        "acțiunea API exactă și consumabil o singură dată."
+        "Flight-ul reproductibil verifică fluxul valid, optimizarea adaptivă și patru "
+        "controale fail-closed înaintea interfeței complete."
     )
     st.caption(f"Release {settings.release} · Python OSS · local-first")

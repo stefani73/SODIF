@@ -84,3 +84,7 @@ class ProcessingStage(StrEnum):
     EXECUTED = "executed"
     ESCALATED = "escalated"
     BLOCKED = "blocked"
+
+
+class ApiExecutionStatus(StrEnum):
+    SUCCEEDED = "succeeded"

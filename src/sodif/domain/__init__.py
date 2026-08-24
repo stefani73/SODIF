@@ -2,6 +2,7 @@
 
 from sodif.domain.canonical import canonical_bytes, sha256_bytes, sha256_digest
 from sodif.domain.enums import (
+    ApiExecutionStatus,
     ConsensusStatus,
     DocumentFormat,
     HttpMethod,
@@ -13,6 +14,7 @@ from sodif.domain.enums import (
     VerificationLevel,
     VerificationOutcomeStatus,
 )
+from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.models import (
     ActionContext,
     ActionParameter,
@@ -51,6 +53,7 @@ __all__ = [
     "ActionContext",
     "ActionParameter",
     "AdaptiveVerificationOutcome",
+    "ApiExecutionStatus",
     "ConsensusField",
     "ConsensusResult",
     "ConsensusStatus",
@@ -60,6 +63,7 @@ __all__ = [
     "ExecutionPermit",
     "ExecutionPermitClaims",
     "ExecutionPlan",
+    "ExecutionReceipt",
     "FieldProvenance",
     "HttpMethod",
     "IntentFieldDefinition",

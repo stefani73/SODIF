@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Protocol, runtime_checkable
 
 from sodif.domain.enums import ViewKind
+from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.models import (
     ActionContext,
     ConsensusResult,
@@ -104,6 +105,15 @@ class PermitAuthorizer(Protocol):
         plan: ExecutionPlan,
         expected_audience: Identifier,
     ) -> ExecutionAuthorization: ...
+
+
+@runtime_checkable
+class ApiExecutor(Protocol):
+    def execute(
+        self,
+        authorization: ExecutionAuthorization,
+        plan: ExecutionPlan,
+    ) -> ExecutionReceipt: ...
 
 
 @runtime_checkable

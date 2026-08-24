@@ -20,6 +20,15 @@ Alternativ:
 .\scripts\run.ps1
 ```
 
+## Flight demonstrativ
+
+```powershell
+.\scripts\flight.ps1
+```
+
+Comanda rulează catalogul reproductibil de șase scenarii și afișează dovada structurată
+JSON, fără efecte asupra unui sistem extern.
+
 ## Verificare integrală
 
 ```powershell
@@ -36,12 +45,14 @@ acoperire de 85%.
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `src/sodif/verification/` — risc explicabil, normalizare, consens și rutare adaptivă;
 - `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
+- `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
+- `src/sodif/demo/` — catalogul și motorul flight-ului reproductibil;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Pasul 5 transformă numai consensul automat acceptat într-un permis Ed25519 cu durată
-scurtă, legat de manifest, parametrii acțiunii și audiența API. Execuția efectivă și scenariile
-complete sunt implementate în pașii ulteriori.
+Pasul 6 integrează validarea documentului, consensul adaptiv, permisul și execuția controlată
+în șase scenarii reproductibile. Interfața completă și exporturile de raport sunt implementate
+în pașii următori.
