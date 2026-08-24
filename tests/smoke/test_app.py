@@ -57,5 +57,7 @@ def test_assurance_flight_runs_and_exposes_product_decisions() -> None:
     copy = "\n".join(element.value for element in app.markdown)
     assert "Toate controalele au răspuns conform politicii" in copy
     assert "Comandă autentică și neambiguă" in copy
+    assert "Dovezile sunt pregătite pentru preluare" in copy
+    assert len(app.get("download_button")) == 4
     assert "cost" not in copy.casefold()
     assert "v1_targeted" not in copy

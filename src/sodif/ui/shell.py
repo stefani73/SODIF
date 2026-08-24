@@ -7,6 +7,7 @@ import streamlit as st
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_default_flight
+from sodif.reporting import FlightExports, build_flight_exports
 from sodif.settings import AppSettings
 from sodif.ui.presentation import FlightView, ScenarioView, present_flight
 from sodif.ui.styles import PRODUCT_STYLES
@@ -162,7 +163,9 @@ def _render_landing(settings: AppSettings) -> None:
 
 
 def _run_flight(flight_runner: Callable[[], FlightReport]) -> None:
-    st.session_state["sodif_flight_report"] = flight_runner()
+    report = flight_runner()
+    st.session_state["sodif_flight_report"] = report
+    st.session_state["sodif_flight_exports"] = build_flight_exports(report)
 
 
 def _render_assurance_flight(flight_runner: Callable[[], FlightReport]) -> None:
@@ -193,6 +196,11 @@ def _render_assurance_flight(flight_runner: Callable[[], FlightReport]) -> None:
 
     view = present_flight(report)
     _render_flight_summary(view)
+    exports = st.session_state.get("sodif_flight_exports")
+    if not isinstance(exports, FlightExports):
+        exports = build_flight_exports(report)
+        st.session_state["sodif_flight_exports"] = exports
+    _render_export_panel(exports)
     _render_scenario_explorer(view)
 
 
@@ -233,6 +241,57 @@ def _render_flight_summary(view: FlightView) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def _render_export_panel(exports: FlightExports) -> None:
+    digest = f"{exports.bundle.digest[:25]}…{exports.bundle.digest[-10:]}"
+    st.markdown(
+        f"""
+        <section class="sodif-export-panel">
+            <div><div class="sodif-card-caption">Evidence package</div>
+            <h2>Dovezile sunt pregătite pentru preluare</h2>
+            <p>Raport pentru analiză umană, reprezentare structurată, jurnal auditabil și
+            manifest de integritate, reunite într-un singur pachet.</p></div>
+            <div class="sodif-bundle-digest"><small>Amprentă pachet</small>
+            <code>{escape(digest)}</code></div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    bundle, document, structured, audit = st.columns(4)
+    with bundle:
+        st.download_button(
+            "Pachet complet",
+            data=exports.bundle.data,
+            file_name=exports.bundle.filename,
+            mime=exports.bundle.media_type,
+            type="primary",
+            use_container_width=True,
+        )
+    with document:
+        st.download_button(
+            "Raport Word",
+            data=exports.document.data,
+            file_name=exports.document.filename,
+            mime=exports.document.media_type,
+            use_container_width=True,
+        )
+    with structured:
+        st.download_button(
+            "Dovezi JSON",
+            data=exports.report.data,
+            file_name=exports.report.filename,
+            mime=exports.report.media_type,
+            use_container_width=True,
+        )
+    with audit:
+        st.download_button(
+            "Jurnal audit",
+            data=exports.audit_log.data,
+            file_name=exports.audit_log.filename,
+            mime=exports.audit_log.media_type,
+            use_container_width=True,
+        )
 
 
 def _render_scenario_explorer(view: FlightView) -> None:

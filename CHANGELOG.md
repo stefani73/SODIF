@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — Reporting and evidence exports
+
+- raport Word profesional generat din rezultatul Assurance Flight;
+- raport JSON complet și jurnal auditabil NDJSON;
+- manifest cu amprente SHA-256 și rădăcină de integritate;
+- pachet ZIP reproductibil cu metadate normalizate;
+- descărcări directe pentru pachet, raport și dovezi;
+- comandă separată pentru export local atomic.
+
 ## 0.7.0 — Product UI
 
 - landing page cu poziționare clară Document-to-API;

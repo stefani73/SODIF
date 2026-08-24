@@ -23,6 +23,7 @@ def test_required_project_contracts_exist() -> None:
         "docs/STEP_05_EXECUTION_PERMIT.md",
         "docs/STEP_06_FLIGHT_ENGINE.md",
         "docs/STEP_07_PRODUCT_UI.md",
+        "docs/STEP_08_REPORTING_EXPORTS.md",
         "scripts/quality.ps1",
         "src/sodif/app.py",
         "src/sodif/domain/models.py",
@@ -32,7 +33,9 @@ def test_required_project_contracts_exist() -> None:
         "src/sodif/demo/runner.py",
         "src/sodif/ui/presentation.py",
         "src/sodif/ui/styles.py",
+        "src/sodif/reporting/service.py",
         "scripts/flight.ps1",
+        "scripts/export-flight.ps1",
     )
 
     missing = [path for path in required if not (project_root / path).exists()]

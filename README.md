@@ -30,6 +30,19 @@ Alternativ:
 Comanda rulează catalogul reproductibil de șase scenarii și afișează dovada structurată
 JSON, fără efecte asupra unui sistem extern.
 
+## Pachet de dovezi
+
+După rularea Assurance Flight, interfața permite descărcarea raportului Word, a dovezilor
+JSON, a jurnalului auditabil și a pachetului complet cu manifest de integritate.
+
+Export local:
+
+```powershell
+.\scripts\export-flight.ps1
+```
+
+Fișierele sunt generate în `var\exports`.
+
 ## Verificare integrală
 
 ```powershell
@@ -48,12 +61,12 @@ acoperire de 85%.
 - `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
 - `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
 - `src/sodif/demo/` — catalogul și motorul flight-ului reproductibil;
+- `src/sodif/reporting/` — raport Word, serializări și pachet de dovezi;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Interfața rulează direct motorul flight și prezintă verdictul, controalele, efectul asupra
-API-ului, traseul deciziei și dovezile verificabile. Exporturile de raport sunt livrate
-separat în etapa următoare.
+Interfața rulează direct motorul flight, prezintă deciziile și oferă exporturi verificabile
+pentru evaluare umană, audit automat și arhivare.
