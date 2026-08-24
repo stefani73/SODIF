@@ -50,7 +50,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
 
     columns = st.columns(3)
     cards = (
-        ("Livrare", "Pasul 3 · Signed Revisions"),
+        ("Livrare", "Pasul 4 · Adaptive Consensus"),
         ("Calitate", "Porți automate active"),
         ("Mediu", settings.environment.capitalize()),
     )
@@ -63,7 +63,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
             )
 
     st.info(
-        "Documentele PDF sunt amprentate, verificate criptografic și acceptate numai într-un "
-        "lanț de revizii fără ramificații."
+        "Verificarea semantică folosește două căi independente și activează a treia cale "
+        "numai când riscul sau dovezile o cer."
     )
     st.caption(f"Release {settings.release} · Python OSS · local-first")

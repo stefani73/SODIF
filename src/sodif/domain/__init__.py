@@ -11,6 +11,7 @@ from sodif.domain.enums import (
     SignatureAlgorithm,
     SignatureStatus,
     VerificationLevel,
+    VerificationOutcomeStatus,
 )
 from sodif.domain.models import (
     ActionContext,
@@ -37,10 +38,12 @@ from sodif.domain.revisions import (
 )
 from sodif.domain.schemas import IntentFieldDefinition, IntentSchema, validate_manifest
 from sodif.domain.state import WorkflowState, transition
+from sodif.domain.verification import AdaptiveVerificationOutcome, VerificationAttempt
 
 __all__ = [
     "ActionContext",
     "ActionParameter",
+    "AdaptiveVerificationOutcome",
     "ConsensusField",
     "ConsensusResult",
     "ConsensusStatus",
@@ -67,7 +70,9 @@ __all__ = [
     "SignedRevision",
     "SignedRevisionMetadata",
     "TrustedSignerKey",
+    "VerificationAttempt",
     "VerificationLevel",
+    "VerificationOutcomeStatus",
     "WorkflowState",
     "canonical_bytes",
     "sha256_bytes",

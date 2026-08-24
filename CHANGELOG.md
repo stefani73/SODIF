@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — Pasul 4
+
+- politică explicabilă de risc și niveluri adaptive V0–V3;
+- normalizare semantică deterministă pentru șapte tipuri de date;
+- consens cu proveniență între reprezentări independente;
+- două căi în fluxul normal și activarea condiționată a celei de-a treia;
+- escaladare fail-closed pentru lipsă, conflict sau risc de revizuire;
+- contabilizarea costului de verificare și a resurselor economisite.
+
 ## 0.3.0 — Pasul 3
 
 - validare minimală și limitare de dimensiune pentru artefacte PDF;

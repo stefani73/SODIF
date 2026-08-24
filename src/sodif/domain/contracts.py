@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
+from sodif.domain.enums import ViewKind
 from sodif.domain.models import (
     ActionContext,
     ConsensusResult,
@@ -33,6 +34,12 @@ class SignedRevisionValidator(Protocol):
 class SemanticAdapter(Protocol):
     @property
     def adapter_id(self) -> Identifier: ...
+
+    @property
+    def view_kind(self) -> ViewKind: ...
+
+    @property
+    def cost_units(self) -> int: ...
 
     def extract(
         self,

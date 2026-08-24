@@ -81,6 +81,7 @@ class SemanticView(DomainModel):
     view_id: Identifier
     document_id: Identifier
     revision_digest: Digest
+    kind: ViewKind = ViewKind.STRUCTURAL
     adapter_id: Identifier
     adapter_version: Identifier
     fields: tuple[SemanticField, ...] = Field(min_length=1)
@@ -90,6 +91,12 @@ class SemanticView(DomainModel):
         names = [field.name for field in self.fields]
         if len(names) != len(set(names)):
             raise ValueError("semantic field names must be unique inside a view")
+        if any(field.provenance.view_kind is not self.kind for field in self.fields):
+            raise ValueError("field provenance view_kind must match its semantic view")
+        if any(field.provenance.adapter_id != self.adapter_id for field in self.fields):
+            raise ValueError("field provenance adapter_id must match its semantic view")
+        if any(field.provenance.adapter_version != self.adapter_version for field in self.fields):
+            raise ValueError("field provenance adapter_version must match its semantic view")
         return self
 
 
@@ -244,4 +251,3 @@ class EvidenceEvent(DomainModel):
 def percentage(value: str) -> Decimal:
     """Create an exact decimal for tests, policies and fixtures."""
     return Decimal(value)
-

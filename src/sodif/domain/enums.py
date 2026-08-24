@@ -24,6 +24,12 @@ class VerificationLevel(StrEnum):
     V3_REVIEW = "v3_review"
 
 
+class VerificationOutcomeStatus(StrEnum):
+    ACCEPTED = "accepted"
+    ESCALATED = "escalated"
+    BLOCKED = "blocked"
+
+
 class ViewKind(StrEnum):
     STRUCTURAL = "structural"
     VISUAL = "visual"
