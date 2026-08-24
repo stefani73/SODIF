@@ -45,6 +45,7 @@ class ScenarioResult(DomainModel):
     workflow: WorkflowState
     observations: tuple[ScenarioObservation, ...] = Field(min_length=1)
     verification: AdaptiveVerificationOutcome | None = None
+    archive_id: Identifier | None = None
     permit_id: Identifier | None = None
     receipt: ExecutionReceipt | None = None
     rejection_code: Identifier | None = None

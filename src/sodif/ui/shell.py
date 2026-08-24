@@ -1,12 +1,13 @@
 """Multipage product shell for the SODIF Streamlit experience."""
 
 from collections.abc import Callable
+from functools import partial
 from html import escape
 
 import streamlit as st
 
 from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_default_flight
+from sodif.demo.runner import run_archived_flight
 from sodif.settings import AppSettings
 from sodif.ui.state import register_flight_runner
 from sodif.ui.styles import PRODUCT_STYLES
@@ -25,11 +26,12 @@ def configure_page(settings: AppSettings) -> None:
 
 def render_product_shell(
     settings: AppSettings,
-    flight_runner: Callable[[], FlightReport] = run_default_flight,
+    flight_runner: Callable[[], FlightReport] | None = None,
 ) -> None:
     """Render the product navigation and execute the selected page."""
     st.markdown(PRODUCT_STYLES, unsafe_allow_html=True)
-    register_flight_runner(flight_runner)
+    runner = flight_runner or partial(run_archived_flight, settings.archive_root)
+    register_flight_runner(runner)
     _render_sidebar_brand(settings)
 
     overview_page = st.Page(

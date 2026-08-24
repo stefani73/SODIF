@@ -51,6 +51,7 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
     assert {event["scenario"] for event in decisions} == {
         result.scenario_id.value for result in report.results
     }
+    assert sum("archive_id" in event for event in decisions) == 5
 
 
 def test_word_report_contains_the_decision_register_and_scenario_evidence() -> None:
@@ -60,8 +61,9 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
 
     assert "RAPORT ASSURANCE FLIGHT" in text
     assert "Registrul deciziilor" in text
-    assert "0.9.0-step9" not in text
+    assert "0.10.0-dms1" not in text
     assert "Comandă autentică și neambiguă" in text
+    assert "Arhivă: arc-" in text
     assert "Document modificat după semnare" in text
     assert "Permis prezentat din nou" in text
     assert document.tables[0].rows[0].cells[0].text == "Situație"

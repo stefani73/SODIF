@@ -6,7 +6,8 @@ Promisiunea produsului: **Exact ceea ce s-a semnat. O singură dată.**
 
 Acest repository conține demonstratorul TRL 4 realizat incremental. Interfața multipagină
 separă prezentarea produsului, explicația funcțională, centrul de control și zona de
-rapoarte și dovezi.
+rapoarte și dovezi. Reviziile semnate validate sunt păstrate într-o arhivă locală
+verificabilă, deduplicată și indexată.
 
 ## Pornire locală
 
@@ -29,6 +30,9 @@ Alternativ:
 
 Comanda rulează catalogul reproductibil de șase situații și afișează dovada structurată
 JSON, fără efecte asupra unui sistem extern.
+
+Flight-ul pornit din aplicație arhivează revizia validă în `var\archive`, include
+identificatorul de arhivă în traseul deciziei și nu arhivează documentele respinse.
 
 ## Pachet de dovezi
 
@@ -58,6 +62,7 @@ acoperire de 85%.
 - `src/sodif/` — codul aplicației;
 - `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
+- `src/sodif/archive/` — depozit documentar, index SQLite și verificarea integrității;
 - `src/sodif/verification/` — risc explicabil, normalizare, consens și rutare adaptivă;
 - `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
 - `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
@@ -68,6 +73,7 @@ acoperire de 85%.
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
+- `var/archive/` — indexul și obiectele documentare generate local;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
 Interfața rulează direct motorul demonstrativ, prezintă deciziile și oferă exporturi

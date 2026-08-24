@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 — DMS D1: arhivă și index verificabil
+
+- depozit local de obiecte adresate prin SHA-256 și indexate în SQLite;
+- arhivare exclusivă a reviziilor validate criptografic;
+- preluare idempotentă, deduplicare și blocarea conflictelor de revizie;
+- căutare full-text și filtre stabile pentru document și semnatar;
+- reverificarea integrității la recuperarea documentului;
+- dovada arhivării integrată în flight și în exporturile auditabile.
+
 ## 0.9.0 — Multipage product experience
 
 - navigație laterală retractabilă, organizată în zone de produs și demonstrație;

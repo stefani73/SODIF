@@ -11,8 +11,10 @@ htmlcov/
 .streamlit/secrets.toml
 var/logs/*
 var/exports/*
+var/archive/*
 !var/logs/.gitkeep
 !var/exports/.gitkeep
+!var/archive/.gitkeep
 *.zip
 *.log
 .DS_Store

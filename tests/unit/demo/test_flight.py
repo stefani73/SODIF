@@ -1,12 +1,15 @@
 """Acceptance tests for the complete deterministic scenario flight."""
 
+from pathlib import Path
+
 from _pytest.capture import CaptureFixture
 
+from sodif.archive import ArchiveQuery, SqliteArchiveRepository
 from sodif.demo.adapters import ScenarioSemanticAdapter
 from sodif.demo.cli import main
 from sodif.demo.fixtures import accepted_values, purchase_order_schema
 from sodif.demo.models import FlightReport, FlightScenario, ScenarioOutcome, ScenarioResult
-from sodif.demo.runner import FlightRunner, run_default_flight
+from sodif.demo.runner import FlightRunner, run_archived_flight, run_default_flight
 from sodif.domain.enums import ProcessingStage, VerificationLevel, ViewKind
 from sodif.domain.models import DocumentEnvelope
 
@@ -28,6 +31,16 @@ def test_default_flight_covers_the_minimal_security_catalog() -> None:
     assert scenarios[FlightScenario.SEMANTIC_CONFLICT].rejection_code == "semantic-conflict"
     assert scenarios[FlightScenario.ACTION_TAMPERING].rejection_code == "action_mismatch"
     assert scenarios[FlightScenario.REPLAY_ATTACK].rejection_code == "permit_replayed"
+    archived = [
+        result
+        for result in report.results
+        if result.scenario_id is not FlightScenario.TAMPERED_DOCUMENT
+    ]
+    assert all(result.archive_id is not None for result in archived)
+    assert scenarios[FlightScenario.TAMPERED_DOCUMENT].archive_id is None
+    assert all(
+        "document-archived" in {item.stage for item in result.observations} for result in archived
+    )
 
 
 def test_flight_proves_optimization_and_bounded_escalation() -> None:
@@ -67,13 +80,27 @@ def test_flight_is_reproducible_and_serializable() -> None:
     assert restored.model_dump_json(exclude_computed_fields=True) == serialized
 
 
+def test_product_flight_persists_one_deduplicated_archive_record(tmp_path: Path) -> None:
+    archive_root = tmp_path / "archive"
+
+    report = run_archived_flight(archive_root)
+    page = SqliteArchiveRepository(archive_root).search(ArchiveQuery())
+
+    assert report.passed is True
+    assert page.total == 1
+    assert page.records[0].document_id == "doc-flight-001"
+    assert {result.archive_id for result in report.results if result.archive_id is not None} == {
+        page.records[0].archive_id
+    }
+
+
 def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
     main()
     output = capsys.readouterr().out
     report = FlightReport.model_validate_json(output)
 
     assert report.passed is True
-    assert report.release == "0.9.0-step9"
+    assert report.release == "0.10.0-dms1"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

@@ -3,9 +3,16 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from sodif.archive import (
+    ArchiveRepository,
+    DocumentArchiveService,
+    InMemoryArchiveRepository,
+    SqliteArchiveRepository,
+)
 from sodif.demo.adapters import ScenarioSemanticAdapter, ScenarioValue
 from sodif.demo.fixtures import (
     BASE_PDF,
@@ -96,9 +103,11 @@ class _ScenarioContext:
     schema: IntentSchema
     document_signer: Ed25519RevisionSigner
     document_service: SignedRevisionService
+    archive_service: DocumentArchiveService
     permit_issuer: Ed25519PermitIssuer
     permit_authorizer: ExecutionPermitAuthorizer
     api_executor: InMemoryApiExecutor
+    archive_id: str | None = None
 
     def observe(self, stage: str, detail: str, subject_digest: str | None = None) -> None:
         self.observations.append(
@@ -118,6 +127,9 @@ class _ScenarioContext:
 class FlightRunner:
     """Run the fixed minimal scenario catalog and return report-ready evidence."""
 
+    def __init__(self, archive_repository: ArchiveRepository | None = None) -> None:
+        self._archive_repository = archive_repository or InMemoryArchiveRepository()
+
     def run(self) -> FlightReport:
         results = (
             self._happy_path(),
@@ -130,7 +142,7 @@ class FlightRunner:
         report_digest = sha256_digest(results)
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
-            release="0.9.0-step9",
+            release="0.10.0-dms1",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -299,6 +311,17 @@ class FlightRunner:
             "Semnătura și digestul reviziei sunt valide.",
             acceptance.record.revision_digest,
         )
+        archived = context.archive_service.archive(
+            BASE_PDF,
+            acceptance,
+            "comanda-achizitie-demo.pdf",
+        )
+        context.archive_id = archived.archive_id
+        context.observe(
+            "document-archived",
+            "Revizia validată a fost înregistrată în arhiva documentară verificabilă.",
+            sha256_digest(archived),
+        )
         adapters = (
             ScenarioSemanticAdapter(ViewKind.STRUCTURAL, 1, accepted_values()),
             ScenarioSemanticAdapter(ViewKind.VISUAL, 3, visual_values),
@@ -410,13 +433,13 @@ class FlightRunner:
             workflow=context.workflow,
             observations=tuple(context.observations),
             verification=verification,
+            archive_id=context.archive_id,
             permit_id=permit.claims.permit_id if permit is not None else None,
             receipt=receipt,
             rejection_code=rejection_code,
         )
 
-    @staticmethod
-    def _context(scenario_id: FlightScenario) -> _ScenarioContext:
+    def _context(self, scenario_id: FlightScenario) -> _ScenarioContext:
         clock = ScenarioClock(FLIGHT_START)
         policy = flight_policy()
         document_private_key = Ed25519PrivateKey.from_private_bytes(bytes(range(1, 33)))
@@ -466,6 +489,7 @@ class FlightRunner:
             schema=purchase_order_schema(),
             document_signer=document_signer,
             document_service=document_service,
+            archive_service=DocumentArchiveService(self._archive_repository, clock),
             permit_issuer=permit_issuer,
             permit_authorizer=permit_authorizer,
             api_executor=InMemoryApiExecutor(clock),
@@ -474,3 +498,8 @@ class FlightRunner:
 
 def run_default_flight() -> FlightReport:
     return FlightRunner().run()
+
+
+def run_archived_flight(archive_root: Path) -> FlightReport:
+    """Run the product flight against the persistent local document archive."""
+    return FlightRunner(SqliteArchiveRepository(archive_root)).run()

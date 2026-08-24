@@ -16,6 +16,7 @@ Mecanismul **Signed Intent Execution** leagă verificabil:
 5. metoda, ruta și corpul cererii API;
 6. un permis criptografic cu durată scurtă și consum unic;
 7. dovada execuției sau a blocării.
+8. înregistrarea verificabilă a reviziei acceptate în arhiva documentară locală.
 
 Verificarea este adaptivă. Câmpurile critice sunt reverificate independent, iar procesarea
 extinsă este activată numai când riscul, incertitudinea sau impactul o justifică. AI poate
@@ -48,4 +49,3 @@ Scenariile obligatorii sunt:
 POC-ul nu implementează un API Gateway complet, Kubernetes, multi-cloud, arhivă juridică,
 HSM de producție, integrare EUDI sau execuții financiare reale. Interfețele vor permite
 adăugarea ulterioară a acestor capabilități fără schimbarea nucleului.
-

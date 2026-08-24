@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from os import getenv
+from pathlib import Path
 
 
 @dataclass(frozen=True, slots=True)
@@ -12,6 +13,7 @@ class AppSettings:
     tagline: str
     environment: str
     release: str
+    archive_root: Path = Path("var/archive")
 
 
 def load_settings() -> AppSettings:
@@ -20,5 +22,6 @@ def load_settings() -> AppSettings:
         app_name=getenv("SODIF_APP_NAME", "SODIF"),
         tagline=getenv("SODIF_TAGLINE", "Exact ceea ce s-a semnat. O singură dată."),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.9.0-step9"),
+        release=getenv("SODIF_RELEASE", "0.10.0-dms1"),
+        archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
     )

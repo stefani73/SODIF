@@ -121,6 +121,7 @@ _SCENARIO_COPY = {
 
 _TIMELINE_COPY = {
     "revision-validated": "Autenticitatea documentului și revizia semnată au fost confirmate.",
+    "document-archived": "Revizia validată a fost înregistrată în arhiva documentară.",
     "risk-triaged": "Nivelul de verificare a fost adaptat profilului tranzacției.",
     "semantic-views": "Reprezentările independente ale documentului au fost confruntate.",
     "consensus-accepted": "Valorile critice au fost confirmate prin consens verificabil.",
@@ -250,6 +251,8 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
         evidence.append(EvidenceView("Document observat", _compact_digest(digests[0])))
     if result.permit_id is not None:
         evidence.append(EvidenceView("Permis", result.permit_id))
+    if result.archive_id is not None:
+        evidence.append(EvidenceView("Arhivă", result.archive_id))
     if result.receipt is not None:
         evidence.extend(
             (

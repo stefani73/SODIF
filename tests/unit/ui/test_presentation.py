@@ -30,8 +30,10 @@ def test_executed_scenario_presents_exact_api_evidence() -> None:
     assert scenario.verdict == "Autorizată"
     assert scenario.tone == "success"
     assert evidence["Acțiune"] == "POST /purchase-orders"
+    assert evidence["Arhivă"].startswith("arc-")
     assert evidence["Destinație"] == "erp-purchase-api"
     assert evidence["Confirmare API"] == "202"
+    assert "Revizia validată a fost înregistrată în arhiva documentară." in scenario.timeline
 
 
 def test_each_protection_case_has_a_distinct_fail_closed_decision() -> None:
