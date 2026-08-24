@@ -1,6 +1,6 @@
 """Pure domain core for Signed Intent Execution."""
 
-from sodif.domain.canonical import canonical_bytes, sha256_digest
+from sodif.domain.canonical import canonical_bytes, sha256_bytes, sha256_digest
 from sodif.domain.enums import (
     ConsensusStatus,
     DocumentFormat,
@@ -8,6 +8,7 @@ from sodif.domain.enums import (
     ParameterLocation,
     ProcessingStage,
     SemanticDataType,
+    SignatureAlgorithm,
     SignatureStatus,
     VerificationLevel,
 )
@@ -25,6 +26,14 @@ from sodif.domain.models import (
     SemanticField,
     SemanticView,
     SignatureEvidence,
+)
+from sodif.domain.revisions import (
+    RevisionAcceptance,
+    RevisionRecord,
+    SignedRevision,
+    SignedRevisionMetadata,
+    TrustedSignerKey,
+    validate_revision_append,
 )
 from sodif.domain.schemas import IntentFieldDefinition, IntentSchema, validate_manifest
 from sodif.domain.state import WorkflowState, transition
@@ -47,16 +56,23 @@ __all__ = [
     "ParameterLocation",
     "PolicyReference",
     "ProcessingStage",
+    "RevisionAcceptance",
+    "RevisionRecord",
     "SemanticDataType",
     "SemanticField",
     "SemanticView",
+    "SignatureAlgorithm",
     "SignatureEvidence",
     "SignatureStatus",
+    "SignedRevision",
+    "SignedRevisionMetadata",
+    "TrustedSignerKey",
     "VerificationLevel",
     "WorkflowState",
     "canonical_bytes",
+    "sha256_bytes",
     "sha256_digest",
     "transition",
     "validate_manifest",
+    "validate_revision_append",
 ]
-

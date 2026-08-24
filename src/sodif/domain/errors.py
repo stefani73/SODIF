@@ -12,3 +12,6 @@ class CanonicalizationError(DomainError):
 class InvalidTransition(DomainError):
     """Raised when a workflow attempts a forbidden state transition."""
 
+
+class InvalidRevisionChain(DomainError):
+    """Raised when a revision cannot extend the accepted document history."""

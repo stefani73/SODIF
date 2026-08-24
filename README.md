@@ -33,12 +33,13 @@ acoperire de 85%.
 
 - `src/sodif/` — codul aplicației;
 - `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
+- `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;
 - `var/logs/` — loguri locale generate la rulare;
 - `var/exports/` — rapoarte și pachete exportate;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Pasul 2 introduce exclusiv nucleul pur de domeniu. Procesarea documentelor, consensul,
-permisele criptografice și execuția scenariilor sunt implementate numai în pașii validați
-ulterior.
+Pasul 3 acceptă o revizie PDF numai dacă octeții corespund amprentei declarate, semnătura
+Ed25519 provine de la o cheie de încredere și revizia continuă exact istoricul acceptat.
+Consensul semantic, permisele criptografice și execuția sunt implementate în pașii ulteriori.

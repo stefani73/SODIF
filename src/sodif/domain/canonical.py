@@ -55,3 +55,8 @@ def canonical_bytes(value: Any) -> bytes:
 def sha256_digest(value: Any) -> Digest:
     """Digest the canonical representation using an explicit algorithm prefix."""
     return f"sha256:{sha256(canonical_bytes(value)).hexdigest()}"
+
+
+def sha256_bytes(value: bytes) -> Digest:
+    """Digest an immutable binary artifact without JSON transformation."""
+    return f"sha256:{sha256(value).hexdigest()}"

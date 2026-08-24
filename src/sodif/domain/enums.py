@@ -13,6 +13,10 @@ class SignatureStatus(StrEnum):
     INDETERMINATE = "indeterminate"
 
 
+class SignatureAlgorithm(StrEnum):
+    ED25519 = "Ed25519"
+
+
 class VerificationLevel(StrEnum):
     V0_BLOCK = "v0_block"
     V1_TARGETED = "v1_targeted"
@@ -74,4 +78,3 @@ class ProcessingStage(StrEnum):
     EXECUTED = "executed"
     ESCALATED = "escalated"
     BLOCKED = "blocked"
-

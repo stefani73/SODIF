@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — Pasul 3
+
+- validare minimală și limitare de dimensiune pentru artefacte PDF;
+- semnătură detașată Ed25519 peste metadate canonice și digestul conținutului;
+- registru local de chei de încredere, cu perioadă de activitate și revocare;
+- lanț atomic de revizii care blochează salturi, ramificații și reutilizarea conținutului;
+- coduri de respingere stabile și teste pentru modificare, chei nevalide și istoric inconsistent.
+
 ## 0.2.0 — Pasul 2
 
 - modele de domeniu imutabile, stricte și versionabile;

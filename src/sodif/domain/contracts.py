@@ -14,6 +14,7 @@ from sodif.domain.models import (
     RiskAssessment,
     SemanticView,
 )
+from sodif.domain.revisions import RevisionAcceptance, SignedRevision
 from sodif.domain.schemas import IntentSchema
 from sodif.domain.types import Identifier
 
@@ -23,9 +24,9 @@ class SignedRevisionValidator(Protocol):
     def validate(
         self,
         content: bytes,
-        document_id: Identifier,
+        revision: SignedRevision,
         policy: PolicyReference,
-    ) -> DocumentEnvelope: ...
+    ) -> RevisionAcceptance: ...
 
 
 @runtime_checkable
@@ -83,4 +84,3 @@ class EvidenceSink(Protocol):
 @runtime_checkable
 class Clock(Protocol):
     def now(self) -> datetime: ...
-

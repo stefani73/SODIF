@@ -50,7 +50,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
 
     columns = st.columns(3)
     cards = (
-        ("Livrare", "Pasul 2 · Domain Core"),
+        ("Livrare", "Pasul 3 · Signed Revisions"),
         ("Calitate", "Porți automate active"),
         ("Mediu", settings.environment.capitalize()),
     )
@@ -63,7 +63,7 @@ def render_foundation_shell(settings: AppSettings) -> None:
             )
 
     st.info(
-        "Nucleul de domeniu este validat. Integrarea documentelor începe numai după "
-        "acceptarea Pasului 2."
+        "Documentele PDF sunt amprentate, verificate criptografic și acceptate numai într-un "
+        "lanț de revizii fără ramificații."
     )
     st.caption(f"Release {settings.release} · Python OSS · local-first")
