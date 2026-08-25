@@ -200,7 +200,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
 
     flight_title = {
         FlightKind.SECURITY: "RAPORT SECURITY FLIGHT",
-        FlightKind.INTEGRATED: "RAPORT INTEGRATED FLIGHT",
+        FlightKind.TRANSVERSAL: "RAPORT TRANSVERSAL FLIGHT",
     }[report.flight_kind]
     title = document.add_paragraph()
     title.paragraph_format.space_after = Pt(4)
@@ -227,7 +227,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
             "Domeniu",
             "Comandă semnată / API operațional"
             if report.flight_kind is FlightKind.SECURITY
-            else "Comandă semnată / API operațional / registru documentar",
+            else "Comandă semnată / arhivă verificabilă / Gateway semantic / API operațional",
         ),
     )
     for label, value in metadata:

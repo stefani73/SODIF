@@ -32,6 +32,7 @@ def test_required_project_contracts_exist() -> None:
         "docs/DMS_D5_SIGNED_REVISION_LIFECYCLE.md",
         "docs/PLATFORM_MODULE_ARCHITECTURE.md",
         "docs/GATEWAY_ENFORCEMENT_CORE.md",
+        "docs/TRANSVERSAL_FLIGHT.md",
         "scripts/quality.ps1",
         "src/sodif/app.py",
         "src/sodif/product/catalog.py",

@@ -41,7 +41,7 @@ def _render_empty_state(control_page: str) -> None:
         <section class="sodif-empty-panel">
             <div class="sodif-ready-mark" aria-hidden="true"><span></span></div>
             <div><h2>Nu există încă un raport</h2>
-            <p>Rulează Security Flight sau Integrated Flight pentru a genera raportul Word,
+            <p>Rulează Security Flight sau Transversal Flight pentru a genera raportul Word,
             dovezile structurate, jurnalul de audit și manifestul de integritate.</p></div>
         </section>
         """,
@@ -64,7 +64,7 @@ def _render_report_identity(
     sealed_at = escape(completed_at.replace("+00:00", "Z"))
     flight_label = {
         FlightKind.SECURITY: "Security Flight",
-        FlightKind.INTEGRATED: "Integrated Flight",
+        FlightKind.TRANSVERSAL: "Transversal Flight",
     }[kind]
     st.markdown(
         f"""

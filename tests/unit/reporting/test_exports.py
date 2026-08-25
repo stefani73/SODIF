@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from docx import Document
 
 from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_default_flight, run_integrated_memory_flight
+from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
 from sodif.reporting.cli import write_exports
 from sodif.reporting.serializers import serialize_report
 from sodif.reporting.service import build_flight_exports
@@ -54,17 +54,26 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
     }
     assert sum("archive_id" in event for event in decisions) == 0
 
-    integrated_events = [
+    transversal_events = [
         json.loads(line)
-        for line in build_flight_exports(run_integrated_memory_flight())
+        for line in build_flight_exports(run_transversal_memory_flight())
         .audit_log.data.decode()
         .splitlines()
     ]
-    integrated_decisions = [
-        event for event in integrated_events if event["event_type"] == "scenario.decision"
+    transversal_decisions = [
+        event for event in transversal_events if event["event_type"] == "scenario.decision"
     ]
-    assert sum("archive_id" in event for event in integrated_decisions) == 5
-    assert sum(len(event.get("archive_ids", [])) for event in integrated_decisions) == 6
+    gateway_decisions = [
+        event for event in transversal_events if event["event_type"] == "gateway.decision"
+    ]
+    assert sum("archive_id" in event for event in transversal_decisions) == 5
+    assert sum(len(event.get("archive_ids", [])) for event in transversal_decisions) == 6
+    assert len(gateway_decisions) == 5
+    assert sum(event["status"] == "routed" for event in gateway_decisions) == 3
+    assert sum(event["status"] == "blocked" for event in gateway_decisions) == 2
+    assert all(event["checks"] for event in gateway_decisions)
+    assert all(event["route_id"] == "erp.purchase-orders" for event in gateway_decisions)
+    assert sum("gateway_decision_ids" in event for event in transversal_decisions) == 4
 
 
 def test_word_report_contains_the_decision_register_and_scenario_evidence() -> None:
@@ -81,6 +90,17 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
     assert "Permis prezentat din nou" in text
     assert document.tables[0].rows[0].cells[0].text == "Situație"
     assert len(document.tables[0].rows) == 7
+
+
+def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
+    exports = build_flight_exports(run_transversal_memory_flight())
+    document = Document(BytesIO(exports.document.data))
+    text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+
+    assert "RAPORT TRANSVERSAL FLIGHT" in text
+    assert "Arhivă: arc-" in text
+    assert "Decizie Gateway: gateway-" in text
+    assert "Politică rută: erp.purchase-orders" in text
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:

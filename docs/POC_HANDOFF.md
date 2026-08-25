@@ -27,12 +27,13 @@ clasifica, extrage și explica, dar nu autorizează singur o acțiune.
 
 ## Flight-uri demonstrative TRL 4
 
-POC-ul folosește un singur tip de document controlat — o comandă de achiziție PDF — și o
+Demonstratorul folosește un singur tip de document controlat — o comandă de achiziție PDF — și o
 singură acțiune simulată: `POST /purchase-orders`.
 
 Aceleași situații sunt disponibile în două demonstrații: **Security Flight**, care izolează
-nucleul tehnic de semnătură și securitate fără scrieri DMS, și **Integrated Flight**, care
-adaugă arhivarea, registrul, continuitatea reviziilor și pachetul documentar verificabil.
+nucleul tehnic de semnătură și securitate fără scrieri DMS, și **Transversal Flight**, care
+traversează securitatea intenției, arhiva verificabilă și Gateway-ul semantic până la
+execuția sau blocarea API.
 
 Situațiile obligatorii sunt:
 
@@ -56,6 +57,7 @@ SHA-256 și instrucțiunile necesare verificării offline.
 
 ## Limita demonstratorului
 
-POC-ul nu implementează un API Gateway complet, Kubernetes, multi-cloud, arhivă juridică,
+Demonstratorul nu implementează infrastructura completă a unui API Gateway, Kubernetes,
+multi-cloud, arhivă juridică,
 HSM de producție, integrare EUDI sau execuții financiare reale. Interfețele vor permite
 adăugarea ulterioară a acestor capabilități fără schimbarea nucleului.

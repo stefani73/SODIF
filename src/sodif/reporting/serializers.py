@@ -58,6 +58,34 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
         if observation.subject_digest is not None:
             event["subject_digest"] = observation.subject_digest
         events.append(event)
+    for gateway_decision in result.gateway_decisions:
+        gateway_event: dict[str, Any] = {
+            "event_id": (
+                f"{report.report_id}:{result.scenario_id}:gateway:{gateway_decision.decision_id}"
+            ),
+            "event_type": "gateway.decision",
+            "occurred_at": gateway_decision.evaluated_at.isoformat().replace("+00:00", "Z"),
+            "report_id": report.report_id,
+            "scenario": result.scenario_id,
+            "decision_id": gateway_decision.decision_id,
+            "request_id": gateway_decision.request_id,
+            "request_digest": gateway_decision.request_digest,
+            "permit_id": gateway_decision.permit_id,
+            "route_id": gateway_decision.route_id,
+            "audience": gateway_decision.audience,
+            "status": gateway_decision.status,
+            "code": gateway_decision.code,
+            "observed_action_digest": gateway_decision.observed_action_digest,
+            "authorized_action_digest": gateway_decision.authorized_action_digest,
+            "checks": [
+                {"code": check.code, "outcome": check.outcome} for check in gateway_decision.checks
+            ],
+        }
+        if gateway_decision.receipt is not None:
+            gateway_event["execution_id"] = gateway_decision.receipt.execution_id
+            gateway_event["response_digest"] = gateway_decision.receipt.response_digest
+        events.append(gateway_event)
+    events.sort(key=lambda event: (event["occurred_at"], event["event_id"]))
     decision: dict[str, Any] = {
         "event_id": f"{report.report_id}:{result.scenario_id}:decision",
         "event_type": "scenario.decision",
@@ -69,6 +97,10 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
     }
     if result.permit_id is not None:
         decision["permit_id"] = result.permit_id
+    if result.gateway_decisions:
+        decision["gateway_decision_ids"] = [item.decision_id for item in result.gateway_decisions]
+        decision["gateway_status"] = result.gateway_decisions[-1].status
+        decision["gateway_code"] = result.gateway_decisions[-1].code
     if result.archive_id is not None:
         decision["archive_id"] = result.archive_id
         decision["archive_ids"] = list(result.archive_ids)

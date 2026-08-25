@@ -6,7 +6,8 @@ from sodif.ui.state import current_flight_runner
 
 render_control_center(
     current_flight_runner(FlightKind.SECURITY),
-    current_flight_runner(FlightKind.INTEGRATED),
+    current_flight_runner(FlightKind.TRANSVERSAL),
     "pages/reports.py",
     "pages/registry.py",
+    "pages/gateway.py",
 )

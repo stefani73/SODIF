@@ -10,8 +10,8 @@ from sodif.demo.models import (
 from sodif.demo.runner import (
     FlightRunner,
     run_default_flight,
-    run_integrated_flight,
     run_security_flight,
+    run_transversal_flight,
 )
 
 __all__ = [
@@ -22,6 +22,6 @@ __all__ = [
     "ScenarioOutcome",
     "ScenarioResult",
     "run_default_flight",
-    "run_integrated_flight",
     "run_security_flight",
+    "run_transversal_flight",
 ]

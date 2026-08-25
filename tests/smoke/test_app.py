@@ -186,7 +186,7 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
     assert not app.exception
     assert [getattr(button, "label", None) for button in app.button[:2]] == [
         "Rulează Security Flight",
-        "Rulează Integrated Flight",
+        "Rulează Transversal Flight",
     ]
     assert len(app.selectbox) == 0
 
@@ -206,14 +206,20 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
         getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
     )
 
-    integrated_button = next(
-        button for button in app.button if button.label == "Rulează Integrated Flight"
+    transversal_button = next(
+        button for button in app.button if button.label == "Rulează Transversal Flight"
     )
-    integrated_button.click().run(timeout=15)
+    transversal_button.click().run(timeout=15)
     assert not app.exception
-    assert "Fluxul integrat a confirmat securitatea" in _copy(app)
+    transversal_copy = _copy(app)
+    assert "Fluxul transversal a confirmat lanțul complet de încredere" in transversal_copy
+    assert "Decizie Gateway" in transversal_copy
+    assert "Politică rută" in transversal_copy
     assert any(
         getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
+    )
+    assert any(
+        getattr(item, "label", None) == "Deschide Gateway-ul" for item in app.get("page_link")
     )
 
     app.switch_page("pages/reports.py").run(timeout=15)

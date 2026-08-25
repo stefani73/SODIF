@@ -10,7 +10,7 @@ class GatewaySettings:
     """Non-secret routing policy exposed by the local gateway workspace."""
 
     route_id: str = "erp.purchase-orders"
-    audience: str = "erp-api"
+    audience: str = "erp-purchase-api"
     path_prefix: str = "/purchase-orders"
     maximum_parameters: int = 16
 
@@ -63,7 +63,7 @@ def load_settings() -> AppSettings:
         app_name=getenv("SODIF_APP_NAME", "SODIF"),
         tagline=getenv("SODIF_TAGLINE", "Exact ceea ce s-a semnat. O singură dată."),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.16.0-gateway2"),
+        release=getenv("SODIF_RELEASE", "0.17.0-transversal3"),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
         modules=ModuleSettings(
             security_enabled=_environment_flag("SODIF_MODULE_SECURITY_ENABLED", True),
@@ -72,7 +72,7 @@ def load_settings() -> AppSettings:
         ),
         gateway=GatewaySettings(
             route_id=getenv("SODIF_GATEWAY_ROUTE_ID", "erp.purchase-orders"),
-            audience=getenv("SODIF_GATEWAY_AUDIENCE", "erp-api"),
+            audience=getenv("SODIF_GATEWAY_AUDIENCE", "erp-purchase-api"),
             path_prefix=getenv("SODIF_GATEWAY_PATH_PREFIX", "/purchase-orders"),
             maximum_parameters=_environment_integer(
                 "SODIF_GATEWAY_MAXIMUM_PARAMETERS",

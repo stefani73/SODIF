@@ -59,8 +59,9 @@ Aplicația oferă două demonstrații distincte:
 
 - **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
   permis unic, legarea acțiunii API și protecția anti-replay;
-- **Integrated Flight** — același nucleu, completat cu arhivarea unui lanț de revizii,
-  registrul documentar și exportul verificabil. Documentele respinse nu sunt arhivate.
+- **Transversal Flight** — traversează cele trei module: verifică și autorizează intenția,
+  arhivează reviziile acceptate, aplică permisul în Gateway și exportă deciziile corelate.
+  Documentele respinse nu sunt arhivate, iar cererile neconforme nu ajung la API.
 
 ## Configurarea modulelor
 
@@ -72,7 +73,7 @@ SODIF_MODULE_SECURITY_ENABLED=true
 SODIF_MODULE_ARCHIVE_ENABLED=true
 SODIF_MODULE_GATEWAY_ENABLED=true
 SODIF_GATEWAY_ROUTE_ID=erp.purchase-orders
-SODIF_GATEWAY_AUDIENCE=erp-api
+SODIF_GATEWAY_AUDIENCE=erp-purchase-api
 SODIF_GATEWAY_PATH_PREFIX=/purchase-orders
 SODIF_GATEWAY_MAXIMUM_PARAMETERS=16
 ```
@@ -85,7 +86,8 @@ Configurațiile ambigue sunt respinse la pornire.
 
 După rularea demonstrației din centrul de control, pagina „Rapoarte și dovezi” permite
 descărcarea raportului Word, a datelor JSON, a jurnalului de audit și a pachetului complet
-cu manifest de integritate.
+cu manifest de integritate. Pentru Transversal Flight, jurnalul include fiecare decizie
+Gateway, controalele aplicate, amprentele acțiunii și dovada execuției sau blocării.
 
 Export local:
 

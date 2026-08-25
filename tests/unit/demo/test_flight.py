@@ -19,7 +19,7 @@ from sodif.demo.runner import (
     FlightRunner,
     run_archived_flight,
     run_default_flight,
-    run_integrated_memory_flight,
+    run_transversal_memory_flight,
 )
 from sodif.domain.enums import ProcessingStage, VerificationLevel, ViewKind
 from sodif.domain.models import DocumentEnvelope
@@ -44,6 +44,7 @@ def test_default_flight_covers_the_minimal_security_catalog() -> None:
     assert scenarios[FlightScenario.ACTION_TAMPERING].rejection_code == "action_mismatch"
     assert scenarios[FlightScenario.REPLAY_ATTACK].rejection_code == "permit_replayed"
     assert all(result.archive_id is None for result in report.results)
+    assert all(not result.gateway_decisions for result in report.results)
     assert all(
         "document-archived" not in {item.stage for item in result.observations}
         for result in report.results
@@ -94,7 +95,7 @@ def test_product_flight_persists_a_deduplicated_revision_chain(tmp_path: Path) -
     page = SqliteArchiveRepository(archive_root).search(ArchiveQuery())
 
     assert report.passed is True
-    assert report.flight_kind is FlightKind.INTEGRATED
+    assert report.flight_kind is FlightKind.TRANSVERSAL
     assert page.total == 2
     assert {record.document_id for record in page.records} == {"doc-flight-001"}
     assert {record.revision_number for record in page.records} == {1, 2}
@@ -103,16 +104,16 @@ def test_product_flight_persists_a_deduplicated_revision_chain(tmp_path: Path) -
     }
 
 
-def test_integrated_memory_flight_adds_archive_evidence_without_changing_decisions() -> None:
+def test_transversal_memory_flight_connects_all_three_modules_without_changing_outcomes() -> None:
     security = run_default_flight()
-    integrated = run_integrated_memory_flight()
+    transversal = run_transversal_memory_flight()
 
-    assert [item.observed_outcome for item in integrated.results] == [
+    assert [item.observed_outcome for item in transversal.results] == [
         item.observed_outcome for item in security.results
     ]
     archived = [
         result
-        for result in integrated.results
+        for result in transversal.results
         if result.scenario_id is not FlightScenario.TAMPERED_DOCUMENT
     ]
     assert all(result.archive_id is not None for result in archived)
@@ -122,6 +123,16 @@ def test_integrated_memory_flight_adds_archive_evidence_without_changing_decisio
     assert all(
         "document-archived" in {item.stage for item in result.observations} for result in archived
     )
+    scenarios = indexed(transversal)
+    assert scenarios[FlightScenario.HAPPY_PATH].gateway_decisions[-1].status == "routed"
+    assert scenarios[FlightScenario.ADAPTIVE_RECOVERY].gateway_decisions[-1].status == "routed"
+    assert scenarios[FlightScenario.ACTION_TAMPERING].rejection_code == "permit.action_mismatch"
+    assert scenarios[FlightScenario.ACTION_TAMPERING].gateway_decisions[-1].status == "blocked"
+    replay = scenarios[FlightScenario.REPLAY_ATTACK]
+    assert [decision.status for decision in replay.gateway_decisions] == ["routed", "blocked"]
+    assert replay.rejection_code == "permit.permit_replayed"
+    assert not scenarios[FlightScenario.TAMPERED_DOCUMENT].gateway_decisions
+    assert not scenarios[FlightScenario.SEMANTIC_CONFLICT].gateway_decisions
 
 
 def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
@@ -131,7 +142,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.16.0-gateway2"
+    assert report.release == "0.17.0-transversal3"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

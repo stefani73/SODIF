@@ -6,7 +6,7 @@ from typing import cast
 import streamlit as st
 
 from sodif.demo.models import FlightKind, FlightReport
-from sodif.demo.runner import run_integrated_memory_flight, run_security_flight
+from sodif.demo.runner import run_security_flight, run_transversal_memory_flight
 from sodif.reporting import FlightExports, build_flight_exports
 
 _REPORTS_KEY = "sodif_flight_reports"
@@ -17,12 +17,12 @@ _ACTIVE_KIND_KEY = "sodif_active_flight_kind"
 
 def register_flight_runners(
     security: Callable[[], FlightReport],
-    integrated: Callable[[], FlightReport],
+    transversal: Callable[[], FlightReport],
 ) -> None:
     """Register both product flights for the current session."""
     st.session_state[_RUNNERS_KEY] = {
         FlightKind.SECURITY.value: security,
-        FlightKind.INTEGRATED.value: integrated,
+        FlightKind.TRANSVERSAL.value: transversal,
     }
 
 
@@ -32,7 +32,7 @@ def current_flight_runner(kind: FlightKind) -> Callable[[], FlightReport]:
     runner = runners.get(kind.value) if isinstance(runners, dict) else None
     if callable(runner):
         return cast(Callable[[], FlightReport], runner)
-    return run_security_flight if kind is FlightKind.SECURITY else run_integrated_memory_flight
+    return run_security_flight if kind is FlightKind.SECURITY else run_transversal_memory_flight
 
 
 def run_assurance_demo(

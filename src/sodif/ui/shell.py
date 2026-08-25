@@ -8,7 +8,7 @@ import streamlit as st
 from streamlit.navigation.page import StreamlitPage
 
 from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_integrated_flight, run_security_flight
+from sodif.demo.runner import run_security_flight, run_transversal_flight
 from sodif.settings import AppSettings
 from sodif.ui.state import register_flight_runners
 from sodif.ui.styles import PRODUCT_STYLES
@@ -31,8 +31,8 @@ def render_product_shell(
 ) -> None:
     """Render the product navigation and execute the selected page."""
     st.markdown(PRODUCT_STYLES, unsafe_allow_html=True)
-    integrated_runner = flight_runner or partial(run_integrated_flight, settings.archive_root)
-    register_flight_runners(run_security_flight, integrated_runner)
+    transversal_runner = flight_runner or partial(run_transversal_flight, settings.archive_root)
+    register_flight_runners(run_security_flight, transversal_runner)
     _render_sidebar_brand(settings)
 
     overview_page = st.Page(

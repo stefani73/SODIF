@@ -27,7 +27,7 @@ def test_default_settings_are_product_safe(monkeypatch: MonkeyPatch) -> None:
         app_name="SODIF",
         tagline="Exact ceea ce s-a semnat. O singură dată.",
         environment="local",
-        release="0.16.0-gateway2",
+        release="0.17.0-transversal3",
         archive_root=Path("var/archive"),
         modules=ModuleSettings(),
         gateway=GatewaySettings(),

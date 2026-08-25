@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, Field, model_validator
 from sodif.domain.base import DomainModel
 from sodif.domain.enums import ProcessingStage
 from sodif.domain.execution import ExecutionReceipt
+from sodif.domain.gateway import GatewayDecision, GatewayDecisionStatus
 from sodif.domain.state import WorkflowState
 from sodif.domain.types import Digest, Identifier
 from sodif.domain.verification import AdaptiveVerificationOutcome
@@ -26,7 +27,7 @@ class FlightKind(StrEnum):
     """Product-level scope of a reproducible demonstration flight."""
 
     SECURITY = "security"
-    INTEGRATED = "integrated"
+    TRANSVERSAL = "transversal"
 
 
 class ScenarioOutcome(StrEnum):
@@ -55,6 +56,7 @@ class ScenarioResult(DomainModel):
     archive_id: Identifier | None = None
     archive_ids: tuple[Identifier, ...] = ()
     permit_id: Identifier | None = None
+    gateway_decisions: tuple[GatewayDecision, ...] = ()
     receipt: ExecutionReceipt | None = None
     rejection_code: Identifier | None = None
 
@@ -82,6 +84,24 @@ class ScenarioResult(DomainModel):
             raise ValueError("scenario archive_id must identify the latest archived revision")
         if not self.archive_ids and self.archive_id is not None:
             raise ValueError("scenario archive_id requires archive_ids evidence")
+        decision_ids = [decision.decision_id for decision in self.gateway_decisions]
+        if len(decision_ids) != len(set(decision_ids)):
+            raise ValueError("scenario gateway decision identifiers must be unique")
+        if self.gateway_decisions:
+            if self.permit_id is None:
+                raise ValueError("gateway decisions require permit evidence")
+            if any(decision.permit_id != self.permit_id for decision in self.gateway_decisions):
+                raise ValueError("gateway decisions must reference the scenario permit")
+            final_decision = self.gateway_decisions[-1]
+            expected_gateway_status = {
+                ScenarioOutcome.EXECUTED: GatewayDecisionStatus.ROUTED,
+                ScenarioOutcome.BLOCKED: GatewayDecisionStatus.BLOCKED,
+                ScenarioOutcome.ESCALATED: None,
+            }[self.observed_outcome]
+            if final_decision.status is not expected_gateway_status:
+                raise ValueError("final gateway decision differs from the scenario outcome")
+            if self.receipt is not None and final_decision.receipt != self.receipt:
+                raise ValueError("gateway and scenario execution receipts must match")
         return self
 
 
@@ -108,8 +128,12 @@ class FlightReport(DomainModel):
         if self.passed != all(result.passed for result in self.results):
             raise ValueError("flight passed flag differs from scenario results")
         archived = [result for result in self.results if result.archive_ids]
-        if self.flight_kind is FlightKind.SECURITY and archived:
-            raise ValueError("security flight cannot contain document archive evidence")
-        if self.flight_kind is FlightKind.INTEGRATED and not archived:
-            raise ValueError("integrated flight requires document archive evidence")
+        gateway_evidence = [result for result in self.results if result.gateway_decisions]
+        if self.flight_kind is FlightKind.SECURITY and (archived or gateway_evidence):
+            raise ValueError("security flight cannot contain archive or gateway evidence")
+        if self.flight_kind is FlightKind.TRANSVERSAL:
+            if not archived:
+                raise ValueError("transversal flight requires document archive evidence")
+            if not gateway_evidence:
+                raise ValueError("transversal flight requires gateway decision evidence")
         return self

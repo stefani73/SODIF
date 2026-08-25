@@ -62,8 +62,9 @@ Document semnat
     -> rutare sau blocare auditabilă
 ```
 
-Security Flight izolează primul modul și demonstrează garanțiile nucleului. Fluxul transversal
-va utiliza contractele tuturor celor trei module, fără a le amesteca responsabilitățile.
+Security Flight izolează primul modul și demonstrează garanțiile nucleului. Transversal Flight
+utilizează contractele tuturor celor trei module, fără a le amesteca responsabilitățile, și
+corelează în același raport arhiva, permisul, decizia Gateway și efectul API.
 
 ## Reguli arhitecturale
 

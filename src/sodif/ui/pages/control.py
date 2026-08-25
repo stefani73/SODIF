@@ -13,18 +13,19 @@ from sodif.ui.state import current_report, run_assurance_demo
 
 def render_control_center(
     security_runner: Callable[[], FlightReport],
-    integrated_runner: Callable[[], FlightReport],
+    transversal_runner: Callable[[], FlightReport],
     reports_page: str,
     registry_page: str,
+    gateway_page: str,
 ) -> None:
-    """Run and explore the complete controlled-execution demonstration."""
+    """Run and explore the two product assurance flights."""
     render_page_intro(
         "Operațiuni",
         "Centru de control",
-        "Demonstrează separat protecția execuției bazate pe documente semnate sau fluxul "
-        "complet, cu păstrarea verificabilă a documentului.",
+        "Validează separat nucleul de securitate sau întregul lanț de încredere prin "
+        "securitatea intenției, arhiva verificabilă și Gateway-ul semantic.",
     )
-    security, integrated = st.columns(2, gap="large")
+    security, transversal = st.columns(2, gap="large")
     with security, st.container(border=True, key="security_flight_card"):
         st.markdown(
             """
@@ -45,24 +46,24 @@ def render_control_center(
             on_click=run_assurance_demo,
             args=(FlightKind.SECURITY, security_runner),
         )
-    with integrated, st.container(border=True, key="integrated_flight_card"):
+    with transversal, st.container(border=True, key="transversal_flight_card"):
         st.markdown(
             """
             <section class="sodif-flight-choice">
-                <div class="sodif-assurance-label"><span></span>Flux extins</div>
-                <h2>Integrated Flight</h2>
-                <p>Același nucleu de securitate, completat cu arhivare, registru,
-                istoric de revizii și export documentar verificabil.</p>
+                <div class="sodif-assurance-label"><span></span>Lanț end-to-end</div>
+                <h2>Transversal Flight</h2>
+                <p>Securitatea intenției, arhiva documentară verificabilă și Gateway-ul
+                semantic funcționează împreună până la decizia API.</p>
             </section>
             """,
             unsafe_allow_html=True,
         )
         st.button(
-            "Rulează Integrated Flight",
+            "Rulează Transversal Flight",
             icon=":material/account_tree:",
             use_container_width=True,
             on_click=run_assurance_demo,
-            args=(FlightKind.INTEGRATED, integrated_runner),
+            args=(FlightKind.TRANSVERSAL, transversal_runner),
         )
 
     report = current_report()
@@ -73,7 +74,9 @@ def render_control_center(
     view = present_flight(report)
     _render_active_flight(report.flight_kind)
     render_flight_summary(view)
-    reports_shortcut, registry_shortcut, spacer = st.columns((0.24, 0.24, 0.52))
+    reports_shortcut, registry_shortcut, gateway_shortcut, spacer = st.columns(
+        (0.22, 0.22, 0.22, 0.34)
+    )
     with reports_shortcut, st.container(key="reports_shortcut"):
         st.page_link(
             reports_page,
@@ -82,12 +85,21 @@ def render_control_center(
             use_container_width=True,
         )
     with registry_shortcut:
-        if report.flight_kind is FlightKind.INTEGRATED:
+        if report.flight_kind is FlightKind.TRANSVERSAL:
             with st.container(key="registry_shortcut"):
                 st.page_link(
                     registry_page,
                     label="Deschide registrul",
                     icon=":material/folder_open:",
+                    use_container_width=True,
+                )
+    with gateway_shortcut:
+        if report.flight_kind is FlightKind.TRANSVERSAL:
+            with st.container(key="gateway_shortcut"):
+                st.page_link(
+                    gateway_page,
+                    label="Deschide Gateway-ul",
+                    icon=":material/hub:",
                     use_container_width=True,
                 )
     with spacer:
@@ -105,17 +117,17 @@ def _render_ready_state() -> None:
         <section class="sodif-ready-panel">
             <div class="sodif-ready-mark" aria-hidden="true"><span></span></div>
             <div><h2>Sistem pregătit</h2>
-            <p>Alege demonstrația potrivită: nucleul de securitate sau fluxul complet,
-            integrat cu registrul documentar.</p></div>
+            <p>Alege nucleul de securitate sau lanțul transversal care conectează toate
+            cele trei module ale platformei.</p></div>
         </section>
         """,
         unsafe_allow_html=True,
     )
     columns = st.columns(3)
     capabilities = (
-        ("Autenticitate", "Validarea reviziei acoperite de semnătură"),
-        ("Intenție", "Confirmarea adaptivă a valorilor critice"),
-        ("Execuție", "Autorizare exactă și protecție la reutilizare"),
+        ("Securitate", "Validarea semnăturii, intenției și permisului unic"),
+        ("Trasabilitate", "Păstrarea reviziilor și dovezilor verificabile"),
+        ("Control API", "Rutare semantică exactă și blocare fail-closed"),
     )
     for column, (title, body) in zip(columns, capabilities, strict=True):
         with column:
@@ -132,9 +144,9 @@ def _render_active_flight(kind: FlightKind) -> None:
             "Security Flight",
             "Semnătură și execuție controlată",
         ),
-        FlightKind.INTEGRATED: (
-            "Integrated Flight",
-            "Securitate și registru documentar",
+        FlightKind.TRANSVERSAL: (
+            "Transversal Flight",
+            "Securitate, arhivă verificabilă și Gateway semantic",
         ),
     }[kind]
     st.markdown(

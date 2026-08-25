@@ -43,12 +43,19 @@ from sodif.documents import (
 from sodif.domain.canonical import sha256_bytes, sha256_digest
 from sodif.domain.enums import (
     DocumentFormat,
+    HttpMethod,
     ProcessingStage,
     SignatureAlgorithm,
     VerificationOutcomeStatus,
     ViewKind,
 )
 from sodif.domain.execution import ExecutionReceipt
+from sodif.domain.gateway import (
+    GatewayDecision,
+    GatewayDecisionStatus,
+    GatewayRequest,
+    GatewayRoutePolicy,
+)
 from sodif.domain.models import DocumentEnvelope, ExecutionPlan, PolicyReference
 from sodif.domain.permits import ExecutionPermit, TrustedPermitKey
 from sodif.domain.revisions import SignedRevision, SignedRevisionMetadata
@@ -60,6 +67,7 @@ from sodif.execution import (
     DeterministicActionCompiler,
     InMemoryApiExecutor,
 )
+from sodif.gateway import SemanticExecutionGateway
 from sodif.permits import (
     Ed25519PermitIssuer,
     ExecutionPermitAuthorizer,
@@ -106,6 +114,7 @@ class _ScenarioContext:
     permit_issuer: Ed25519PermitIssuer
     permit_authorizer: ExecutionPermitAuthorizer
     api_executor: InMemoryApiExecutor
+    gateway: SemanticExecutionGateway | None
     archive_ids: list[str]
 
     def observe(self, stage: str, detail: str, subject_digest: str | None = None) -> None:
@@ -150,7 +159,7 @@ class FlightRunner:
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
-            release="0.16.0-gateway2",
+            release="0.17.0-transversal3",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -165,14 +174,7 @@ class FlightRunner:
             accepted_values(),
         )
         plan, permit = self._compile_and_issue(context, document, verification)
-        authorization = context.permit_authorizer.authorize(permit, plan, plan.audience)
-        receipt = context.api_executor.execute(authorization, plan)
-        context.move(ProcessingStage.EXECUTED, "authorized action executed")
-        context.observe(
-            "api-executed",
-            "Permisul a autorizat exact planul compilat; API-ul controlat a răspuns 202.",
-            receipt.response_digest,
-        )
+        receipt, gateway_decisions = self._execute(context, plan, permit)
         self._archive_follow_up_revision(context)
         return self._result(
             context,
@@ -180,6 +182,7 @@ class FlightRunner:
             ScenarioOutcome.EXECUTED,
             verification=verification,
             permit=permit,
+            gateway_decisions=gateway_decisions,
             receipt=receipt,
         )
 
@@ -192,20 +195,14 @@ class FlightRunner:
             accepted_values(),
         )
         plan, permit = self._compile_and_issue(context, document, verification)
-        authorization = context.permit_authorizer.authorize(permit, plan, plan.audience)
-        receipt = context.api_executor.execute(authorization, plan)
-        context.move(ProcessingStage.EXECUTED, "extended verification authorized execution")
-        context.observe(
-            "api-executed",
-            "A treia cale a completat dovada lipsă; execuția controlată a reușit.",
-            receipt.response_digest,
-        )
+        receipt, gateway_decisions = self._execute(context, plan, permit)
         return self._result(
             context,
             "Dovadă lipsă rezolvată prin extensie adaptivă",
             ScenarioOutcome.EXECUTED,
             verification=verification,
             permit=permit,
+            gateway_decisions=gateway_decisions,
             receipt=receipt,
         )
 
@@ -254,6 +251,27 @@ class FlightRunner:
         )
         plan, permit = self._compile_and_issue(context, document, verification)
         changed_plan = plan.model_copy(update={"path": "/purchase-orders/privileged"})
+        if context.gateway is not None:
+            decision = context.gateway.handle(
+                self._gateway_request(context, changed_plan, permit, "changed-action")
+            )
+            if decision.status is not GatewayDecisionStatus.BLOCKED:
+                raise AssertionError("changed action was unexpectedly routed")
+            context.move(ProcessingStage.BLOCKED, decision.code)
+            context.observe(
+                "gateway-blocked",
+                "Gateway-ul a respins ruta care nu mai corespunde acțiunii semnate.",
+                sha256_digest(decision),
+            )
+            return self._result(
+                context,
+                "Modificarea acțiunii după emiterea permisului",
+                ScenarioOutcome.BLOCKED,
+                verification=verification,
+                permit=permit,
+                gateway_decisions=(decision,),
+                rejection_code=decision.code,
+            )
         try:
             context.permit_authorizer.authorize(permit, changed_plan, plan.audience)
         except PermitRejected as exc:
@@ -280,6 +298,34 @@ class FlightRunner:
             accepted_values(),
         )
         plan, permit = self._compile_and_issue(context, document, verification)
+        if context.gateway is not None:
+            request = self._gateway_request(context, plan, permit, "replay")
+            first_decision = context.gateway.handle(request)
+            if first_decision.status is not GatewayDecisionStatus.ROUTED:
+                raise AssertionError("first permit presentation was unexpectedly blocked")
+            context.observe(
+                "gateway-routed",
+                "Prima cerere conformă a fost autorizată, rutată și executată o singură dată.",
+                sha256_digest(first_decision),
+            )
+            second_decision = context.gateway.handle(request)
+            if second_decision.status is not GatewayDecisionStatus.BLOCKED:
+                raise AssertionError("permit replay was unexpectedly routed")
+            context.move(ProcessingStage.BLOCKED, second_decision.code)
+            context.observe(
+                "gateway-blocked",
+                "Gateway-ul a respins repetarea aceleiași tranzacții autorizate.",
+                sha256_digest(second_decision),
+            )
+            return self._result(
+                context,
+                "Reutilizarea permisului consumat",
+                ScenarioOutcome.BLOCKED,
+                verification=verification,
+                permit=permit,
+                gateway_decisions=(first_decision, second_decision),
+                rejection_code=second_decision.code,
+            )
         context.permit_authorizer.authorize(permit, plan, plan.audience)
         context.observe(
             "permit-consumed",
@@ -439,6 +485,7 @@ class FlightRunner:
         *,
         verification: AdaptiveVerificationOutcome | None = None,
         permit: ExecutionPermit | None = None,
+        gateway_decisions: tuple[GatewayDecision, ...] = (),
         receipt: ExecutionReceipt | None = None,
         rejection_code: str | None = None,
     ) -> ScenarioResult:
@@ -454,6 +501,7 @@ class FlightRunner:
             archive_id=context.archive_ids[-1] if context.archive_ids else None,
             archive_ids=tuple(context.archive_ids),
             permit_id=permit.claims.permit_id if permit is not None else None,
+            gateway_decisions=gateway_decisions,
             receipt=receipt,
             rejection_code=rejection_code,
         )
@@ -488,6 +536,25 @@ class FlightRunner:
             InMemoryPermitConsumptionStore(),
             clock,
         )
+        api_executor = InMemoryApiExecutor(clock)
+        gateway = (
+            SemanticExecutionGateway(
+                (
+                    GatewayRoutePolicy(
+                        route_id="erp.purchase-orders",
+                        audience="erp-purchase-api",
+                        allowed_methods=(HttpMethod.POST,),
+                        allowed_path_prefixes=("/purchase-orders",),
+                        maximum_parameters=16,
+                    ),
+                ),
+                permit_authorizer,
+                api_executor,
+                clock,
+            )
+            if self._flight_kind is FlightKind.TRANSVERSAL
+            else None
+        )
         return _ScenarioContext(
             scenario_id=scenario_id,
             clock=clock,
@@ -505,8 +572,53 @@ class FlightRunner:
             archive_ids=[],
             permit_issuer=permit_issuer,
             permit_authorizer=permit_authorizer,
-            api_executor=InMemoryApiExecutor(clock),
+            api_executor=api_executor,
+            gateway=gateway,
         )
+
+    @staticmethod
+    def _gateway_request(
+        context: _ScenarioContext,
+        plan: ExecutionPlan,
+        permit: ExecutionPermit,
+        purpose: str,
+    ) -> GatewayRequest:
+        return GatewayRequest(
+            request_id=f"request-{context.scenario_id.value}-{purpose}",
+            route_id="erp.purchase-orders",
+            plan=plan,
+            permit=permit,
+        )
+
+    def _execute(
+        self,
+        context: _ScenarioContext,
+        plan: ExecutionPlan,
+        permit: ExecutionPermit,
+    ) -> tuple[ExecutionReceipt, tuple[GatewayDecision, ...]]:
+        if context.gateway is None:
+            authorization = context.permit_authorizer.authorize(permit, plan, plan.audience)
+            receipt = context.api_executor.execute(authorization, plan)
+            context.move(ProcessingStage.EXECUTED, "authorized action executed")
+            context.observe(
+                "api-executed",
+                "Permisul a autorizat exact planul compilat; API-ul controlat a răspuns 202.",
+                receipt.response_digest,
+            )
+            return receipt, ()
+        decision = context.gateway.handle(
+            self._gateway_request(context, plan, permit, "authorized-transaction")
+        )
+        if decision.status is not GatewayDecisionStatus.ROUTED or decision.receipt is None:
+            raise AssertionError("conform transaction was unexpectedly blocked by the gateway")
+        context.move(ProcessingStage.EXECUTED, "gateway authorized and routed exact action")
+        context.observe(
+            "gateway-routed",
+            "Gateway-ul a validat permisul și politica rutei, apoi a transmis exact "
+            "acțiunea aprobată.",
+            sha256_digest(decision),
+        )
+        return decision.receipt, (decision,)
 
     def _archive_follow_up_revision(self, context: _ScenarioContext) -> None:
         if context.archive_service is None:
@@ -546,22 +658,22 @@ def run_security_flight() -> FlightReport:
     return FlightRunner(flight_kind=FlightKind.SECURITY).run()
 
 
-def run_integrated_memory_flight() -> FlightReport:
-    """Run security and DMS integration against an ephemeral repository."""
+def run_transversal_memory_flight() -> FlightReport:
+    """Run all three product modules against an ephemeral archive repository."""
     return FlightRunner(
         InMemoryArchiveRepository(),
-        flight_kind=FlightKind.INTEGRATED,
+        flight_kind=FlightKind.TRANSVERSAL,
     ).run()
 
 
-def run_integrated_flight(archive_root: Path) -> FlightReport:
-    """Run security and DMS integration against the persistent local archive."""
+def run_transversal_flight(archive_root: Path) -> FlightReport:
+    """Run all three product modules against the persistent local archive."""
     return FlightRunner(
         SqliteArchiveRepository(archive_root),
-        flight_kind=FlightKind.INTEGRATED,
+        flight_kind=FlightKind.TRANSVERSAL,
     ).run()
 
 
 def run_archived_flight(archive_root: Path) -> FlightReport:
-    """Backward-compatible alias for the integrated product flight."""
-    return run_integrated_flight(archive_root)
+    """Compatibility alias for the persistent transversal product flight."""
+    return run_transversal_flight(archive_root)

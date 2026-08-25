@@ -68,8 +68,9 @@ atomic, astfel încât prezentările concurente ale aceluiași permis pot produc
 - registrul ordonat al controalelor aplicate;
 - autorizația și chitanța de execuție, exclusiv pentru rezultatul `routed`.
 
-Decizia poate fi serializată direct ca JSON pentru audit, export sau includere în pachetul de
-dovezi al unui flight transversal.
+Decizia este serializată direct ca JSON în pachetul Transversal Flight. Jurnalul NDJSON
+păstrează separat fiecare evaluare Gateway, inclusiv verificările aplicate, amprentele
+acțiunii observate și autorizate și dovada efectului asupra API-ului.
 
 ## Acoperirea amenințărilor
 
@@ -112,3 +113,5 @@ politicilor criptografice ori a deciziei de domeniu.
 - semnătura nevalidă și refuzul adaptorului sunt fail-closed;
 - deciziile incompatibile cu rezultatul sunt respinse de modelele de domeniu;
 - interfața permite evaluarea cazurilor reprezentative și exportul deciziei JSON.
+- Transversal Flight folosește motorul Gateway real și corelează deciziile sale cu arhiva,
+  permisul și rezultatul scenariului.

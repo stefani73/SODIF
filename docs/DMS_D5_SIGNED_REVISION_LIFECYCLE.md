@@ -18,7 +18,7 @@ Pagina „Preluare documente” oferă un set reproductibil cu două revizii ale
 5. registrul afișează revizia curentă și permite revenirea la versiunea anterioară;
 6. pachetul offline include ambele înregistrări și verifică continuitatea lanțului.
 
-Integrated Flight reproduce aceeași proprietate: după execuția controlată, o revizie
+Transversal Flight reproduce aceeași proprietate: după execuția controlată, o revizie
 ulterioară continuă istoricul documentului și ambele identificatoare de arhivă sunt păstrate
 în dovezile scenariului. Security Flight rămâne neschimbat și fără efecte DMS.
 
@@ -33,6 +33,6 @@ reîncărcare identică rămâne idempotentă și nu creează o versiune suplime
 - revizia a doua nu poate fi demonstrată înaintea reviziei inițiale;
 - setul demonstrativ este determinist și poate fi verificat manual;
 - istoricul persistent conține exact două revizii legate;
-- Integrated Flight expune două dovezi de arhivă pentru scenariul conform;
+- Transversal Flight expune două dovezi de arhivă pentru scenariul conform;
 - Security Flight nu dobândește dependențe sau efecte DMS;
 - toate exporturile păstrează lista reviziilor asociate deciziei.

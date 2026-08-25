@@ -1,7 +1,7 @@
 """Product-view tests for flight evidence."""
 
 from sodif.demo.models import FlightScenario
-from sodif.demo.runner import run_default_flight, run_integrated_memory_flight
+from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
 from sodif.ui.presentation import present_flight
 
 
@@ -36,18 +36,22 @@ def test_executed_scenario_presents_exact_api_evidence() -> None:
     assert "Revizia validată a fost înregistrată în arhiva documentară." not in scenario.timeline
 
 
-def test_integrated_flight_presents_archive_evidence() -> None:
-    view = present_flight(run_integrated_memory_flight())
+def test_transversal_flight_presents_archive_and_gateway_evidence() -> None:
+    view = present_flight(run_transversal_memory_flight())
     scenario = next(
         item for item in view.scenarios if item.scenario_id is FlightScenario.HAPPY_PATH
     )
     evidence = {item.label: item.value for item in scenario.evidence}
 
-    assert "trasabilitatea documentară" in view.title
+    assert "lanțul complet de încredere" in view.title
     assert evidence["Arhivă"].startswith("arc-")
     assert evidence["Istoric"] == "2 revizii legate"
     assert "Revizia validată a fost înregistrată în arhiva documentară." in scenario.timeline
     assert "Revizia următoare a continuat istoricul documentar" in scenario.timeline[-1]
+    assert evidence["Decizie Gateway"].startswith("gateway-")
+    assert evidence["Politică rută"] == "erp.purchase-orders"
+    assert evidence["Rezultat Gateway"] == "Rutată"
+    assert "Gateway-ul a verificat politica" in scenario.timeline[-2]
 
 
 def test_each_protection_case_has_a_distinct_fail_closed_decision() -> None:

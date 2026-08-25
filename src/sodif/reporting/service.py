@@ -17,7 +17,7 @@ def build_flight_exports(report: FlightReport) -> FlightExports:
     """Create human-readable and machine-readable evidence in memory."""
     export_name = {
         FlightKind.SECURITY: "Security",
-        FlightKind.INTEGRATED: "Integrated",
+        FlightKind.TRANSVERSAL: "Transversal",
     }[report.flight_kind]
     document = ExportArtifact(
         f"SODIF_{export_name}_Flight_Report.docx",

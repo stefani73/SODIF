@@ -2,14 +2,13 @@
 
 ## Rezultat
 
-SODIF separă explicit demonstrația nucleului de securitate de demonstrația integrată cu
-managementul documentelor:
+SODIF separă explicit demonstrația nucleului de securitate de demonstrația transversală:
 
 - **Security Flight** validează documentul semnat, confirmă adaptiv intenția, leagă
   criptografic autorizarea de acțiunea API și blochează modificarea sau reutilizarea. Nu
   scrie în arhiva documentară.
-- **Integrated Flight** rulează aceleași controale și păstrează reviziile acceptate în DMS,
-  cu identificatorul arhivei inclus în dovezile deciziei.
+- **Transversal Flight** rulează aceleași controale, păstrează reviziile acceptate în DMS și
+  aplică permisul prin Gateway-ul semantic, cu toate deciziile incluse în dovezi.
 
 Separarea permite evaluarea directă a dezvoltării aflate în nucleul proiectului, fără ca
 extensia DMS să îi dilueze rezultatul, și demonstrează totodată integrarea ulterioară într-un
@@ -33,7 +32,7 @@ fișierele declarate, amprentele, rădăcina de integritate, corespondența docu
 ## Criterii de acceptare
 
 - Security Flight nu produce nicio înregistrare DMS.
-- Integrated Flight păstrează o singură înregistrare deduplicată pentru revizia validă.
+- Transversal Flight păstrează o singură înregistrare deduplicată pentru revizia validă.
 - Deciziile de securitate sunt identice în cele două flight-uri.
 - Pachetul documentar este reproductibil pentru aceeași revizie.
 - Orice modificare a documentului din pachet este detectată offline.

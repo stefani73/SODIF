@@ -137,6 +137,12 @@ _TIMELINE_COPY = {
     "action-compiled": "Intenția aprobată a fost legată de acțiunea API exactă.",
     "permit-issued": "A fost emisă o autorizare criptografică de unică folosință.",
     "api-executed": "Sistemul operațional a acceptat acțiunea autorizată.",
+    "gateway-routed": (
+        "Gateway-ul a verificat politica, permisul și acțiunea, apoi a rutat tranzacția."
+    ),
+    "gateway-blocked": (
+        "Gateway-ul a blocat tranzacția înainte ca aceasta să ajungă la sistemul protejat."
+    ),
     "document-blocked": "Diferența față de revizia semnată a oprit procesarea.",
     "consensus-escalated": "Conflictul critic a suspendat emiterea autorizării.",
     "action-blocked": "Abaterea față de acțiunea autorizată a fost respinsă.",
@@ -153,10 +159,10 @@ def present_flight(report: FlightReport) -> FlightView:
             "Acțiunile conforme au fost autorizate, iar modificările, ambiguitățile și "
             "reutilizările au fost oprite înainte de sistemul operațional.",
         ),
-        FlightKind.INTEGRATED: (
-            "Fluxul integrat a confirmat securitatea și trasabilitatea documentară",
-            "Controalele de execuție au produs deciziile așteptate, iar reviziile valide "
-            "au fost legate de înregistrări documentare verificabile.",
+        FlightKind.TRANSVERSAL: (
+            "Fluxul transversal a confirmat lanțul complet de încredere",
+            "Documentele valide au fost protejate și arhivate, iar Gateway-ul semantic a "
+            "rutat numai acțiunile legate de permisul unic și a blocat abaterile.",
         ),
     }[report.flight_kind]
     return FlightView(
@@ -272,6 +278,23 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
         evidence.append(EvidenceView("Arhivă", result.archive_id))
     if len(result.archive_ids) > 1:
         evidence.append(EvidenceView("Istoric", f"{len(result.archive_ids)} revizii legate"))
+    if result.gateway_decisions:
+        final_decision = result.gateway_decisions[-1]
+        status = "Rutată" if final_decision.status.value == "routed" else "Blocată"
+        evidence.extend(
+            (
+                EvidenceView("Decizie Gateway", final_decision.decision_id),
+                EvidenceView("Politică rută", final_decision.route_id),
+                EvidenceView("Rezultat Gateway", status),
+            )
+        )
+        if len(result.gateway_decisions) > 1:
+            evidence.append(
+                EvidenceView(
+                    "Evaluări Gateway",
+                    f"{len(result.gateway_decisions)} decizii corelate",
+                )
+            )
     if result.receipt is not None:
         evidence.extend(
             (
