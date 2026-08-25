@@ -14,6 +14,7 @@ from sodif.domain.base import DomainModel
 from sodif.domain.contracts import Clock
 from sodif.domain.models import PolicyReference
 from sodif.domain.revisions import RevisionAcceptance, RevisionRecord, SignedRevision
+from sodif.domain.types import Identifier
 
 
 class SystemUtcClock:
@@ -71,6 +72,10 @@ class SignedDocumentIngestionService:
                 self._clock,
             ).archive(content, acceptance, original_name)
             return IngestionReceipt(acceptance=acceptance, archive=archived)
+
+    def history(self, document_id: Identifier) -> tuple[ArchiveRecord, ...]:
+        """Return the accepted chain used to determine the next admissible revision."""
+        return self._archive_repository.history(document_id)
 
 
 def build_local_ingestion_service(archive_root: Path) -> SignedDocumentIngestionService:

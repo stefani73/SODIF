@@ -32,7 +32,7 @@ singură acțiune simulată: `POST /purchase-orders`.
 
 Aceleași situații sunt disponibile în două demonstrații: **Security Flight**, care izolează
 nucleul tehnic de semnătură și securitate fără scrieri DMS, și **Integrated Flight**, care
-adaugă arhivarea, registrul și pachetul documentar verificabil.
+adaugă arhivarea, registrul, continuitatea reviziilor și pachetul documentar verificabil.
 
 Situațiile obligatorii sunt:
 

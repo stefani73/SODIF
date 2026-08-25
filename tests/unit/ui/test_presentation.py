@@ -45,7 +45,9 @@ def test_integrated_flight_presents_archive_evidence() -> None:
 
     assert "trasabilitatea documentară" in view.title
     assert evidence["Arhivă"].startswith("arc-")
+    assert evidence["Istoric"] == "2 revizii legate"
     assert "Revizia validată a fost înregistrată în arhiva documentară." in scenario.timeline
+    assert "Revizia următoare a continuat istoricul documentar" in scenario.timeline[-1]
 
 
 def test_each_protection_case_has_a_distinct_fail_closed_decision() -> None:

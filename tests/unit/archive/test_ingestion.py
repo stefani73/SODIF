@@ -10,14 +10,13 @@ from sodif.archive import (
     SignedDocumentIngestionService,
     ingestion_policy,
 )
-from sodif.archive.sample import build_signed_sample
+from sodif.archive.sample import build_signed_sample, build_signed_sample_sequence
 from sodif.documents import (
     DocumentRejected,
     DocumentRejectionCode,
     InMemoryTrustStore,
     demo_trusted_signer,
 )
-from sodif.documents.demo import sign_demo_revision
 
 
 @dataclass(slots=True)
@@ -56,23 +55,36 @@ def test_signed_sample_is_archived_and_exact_retry_is_not_duplicated() -> None:
 def test_next_signed_revision_extends_archived_history() -> None:
     repository = InMemoryArchiveRepository()
     ingestion = service(repository)
-    sample = build_signed_sample()
-    first = ingestion.ingest(sample.content, sample.revision, sample.original_name)
-    content_v2 = sample.content.replace(b"1250.00", b"1350.00")
-    revision_v2 = sign_demo_revision(
-        content_v2,
-        document_id=sample.revision.metadata.document_id,
-        revision_number=2,
-        previous_revision_digest=first.archive.content_digest,
-        signed_at=sample.revision.metadata.signed_at + timedelta(minutes=1),
+    sequence = build_signed_sample_sequence()
+    first = ingestion.ingest(
+        sequence.initial.content,
+        sequence.initial.revision,
+        sequence.initial.original_name,
     )
 
-    second = ingestion.ingest(content_v2, revision_v2, "comanda-achizitie-demo-v2.pdf")
-    history = repository.history(first.archive.document_id)
+    second = ingestion.ingest(
+        sequence.revised.content,
+        sequence.revised.revision,
+        sequence.revised.original_name,
+    )
+    history = ingestion.history(first.archive.document_id)
 
     assert second.archive.revision_number == 2
     assert second.archive.previous_revision_digest == first.archive.content_digest
     assert history == (first.archive, second.archive)
+
+
+def test_signed_sample_sequence_is_reproducible_and_chain_bound() -> None:
+    first = build_signed_sample_sequence()
+    second = build_signed_sample_sequence()
+
+    assert first == second
+    assert first.revised.revision.metadata.revision_number == 2
+    assert (
+        first.revised.revision.metadata.previous_revision_digest
+        == first.initial.revision.metadata.content_digest
+    )
+    assert first.revised.content != first.initial.content
 
 
 def test_ingestion_rejects_bytes_not_covered_by_signature() -> None:

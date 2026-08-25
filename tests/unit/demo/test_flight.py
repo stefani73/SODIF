@@ -87,7 +87,7 @@ def test_flight_is_reproducible_and_serializable() -> None:
     assert restored.model_dump_json(exclude_computed_fields=True) == serialized
 
 
-def test_product_flight_persists_one_deduplicated_archive_record(tmp_path: Path) -> None:
+def test_product_flight_persists_a_deduplicated_revision_chain(tmp_path: Path) -> None:
     archive_root = tmp_path / "archive"
 
     report = run_archived_flight(archive_root)
@@ -95,10 +95,11 @@ def test_product_flight_persists_one_deduplicated_archive_record(tmp_path: Path)
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.INTEGRATED
-    assert page.total == 1
-    assert page.records[0].document_id == "doc-flight-001"
+    assert page.total == 2
+    assert {record.document_id for record in page.records} == {"doc-flight-001"}
+    assert {record.revision_number for record in page.records} == {1, 2}
     assert {result.archive_id for result in report.results if result.archive_id is not None} == {
-        page.records[0].archive_id
+        record.archive_id for record in page.records
     }
 
 
@@ -115,6 +116,9 @@ def test_integrated_memory_flight_adds_archive_evidence_without_changing_decisio
         if result.scenario_id is not FlightScenario.TAMPERED_DOCUMENT
     ]
     assert all(result.archive_id is not None for result in archived)
+    happy = next(result for result in archived if result.scenario_id is FlightScenario.HAPPY_PATH)
+    assert len(happy.archive_ids) == 2
+    assert all(len(result.archive_ids) == 1 for result in archived if result is not happy)
     assert all(
         "document-archived" in {item.stage for item in result.observations} for result in archived
     )
@@ -127,7 +131,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.13.0-dms4"
+    assert report.release == "0.14.0-dms5"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

@@ -6,11 +6,15 @@ from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from sodif.documents.demo import DEMO_SIGNED_AT, sign_demo_revision
+from sodif.domain.canonical import sha256_bytes
 from sodif.domain.revisions import SignedRevision
 
 SAMPLE_PDF_NAME = "comanda-achizitie-demo.pdf"
 SAMPLE_SIGNATURE_NAME = "comanda-achizitie-demo.signature.json"
 SAMPLE_ZIP_NAME = "sodif-document-semnat.zip"
+SAMPLE_REVISION_PDF_NAME = "comanda-achizitie-demo-r2.pdf"
+SAMPLE_REVISION_SIGNATURE_NAME = "comanda-achizitie-demo-r2.signature.json"
+SAMPLE_SEQUENCE_ZIP_NAME = "sodif-istoric-document-semnat.zip"
 SAMPLE_DOCUMENT_ID = "doc-ingestion-demo-002"
 _ZIP_TIMESTAMP = (2026, 8, 24, 14, 0, 0)
 
@@ -23,6 +27,15 @@ class SignedSample:
     package: bytes
 
 
+@dataclass(frozen=True, slots=True)
+class SignedSampleSequence:
+    """Two chain-bound revisions and their portable verification package."""
+
+    initial: SignedSample
+    revised: SignedSample
+    package: bytes
+
+
 def build_signed_sample() -> SignedSample:
     """Build the deterministic PDF, detached signature and portable ZIP package."""
     content = _build_sample_pdf()
@@ -31,12 +44,69 @@ def build_signed_sample() -> SignedSample:
         document_id=SAMPLE_DOCUMENT_ID,
         signed_at=DEMO_SIGNED_AT - timedelta(hours=12),
     )
-    signature = (revision.model_dump_json(indent=2) + "\n").encode()
+    package = _signed_revision_package(
+        SAMPLE_PDF_NAME,
+        SAMPLE_SIGNATURE_NAME,
+        content,
+        revision,
+    )
+    return SignedSample(SAMPLE_PDF_NAME, content, revision, package)
+
+
+def build_signed_sample_sequence() -> SignedSampleSequence:
+    """Build a deterministic two-revision history with an exact predecessor link."""
+    initial = build_signed_sample()
+    content = initial.content.replace(b"1250.00", b"1350.00")
+    revision = sign_demo_revision(
+        content,
+        document_id=SAMPLE_DOCUMENT_ID,
+        revision_number=2,
+        previous_revision_digest=sha256_bytes(initial.content),
+        signed_at=initial.revision.metadata.signed_at + timedelta(minutes=5),
+    )
+    revised = SignedSample(
+        SAMPLE_REVISION_PDF_NAME,
+        content,
+        revision,
+        _signed_revision_package(
+            SAMPLE_REVISION_PDF_NAME,
+            SAMPLE_REVISION_SIGNATURE_NAME,
+            content,
+            revision,
+        ),
+    )
     output = BytesIO()
     with ZipFile(output, mode="w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
-        _write_zip_entry(archive, SAMPLE_PDF_NAME, content)
-        _write_zip_entry(archive, SAMPLE_SIGNATURE_NAME, signature)
-    return SignedSample(SAMPLE_PDF_NAME, content, revision, output.getvalue())
+        _write_zip_entry(archive, f"revizia-1/{initial.original_name}", initial.content)
+        _write_zip_entry(
+            archive,
+            f"revizia-1/{SAMPLE_SIGNATURE_NAME}",
+            _signature_bytes(initial.revision),
+        )
+        _write_zip_entry(archive, f"revizia-2/{revised.original_name}", revised.content)
+        _write_zip_entry(
+            archive,
+            f"revizia-2/{SAMPLE_REVISION_SIGNATURE_NAME}",
+            _signature_bytes(revised.revision),
+        )
+    return SignedSampleSequence(initial, revised, output.getvalue())
+
+
+def _signed_revision_package(
+    document_name: str,
+    signature_name: str,
+    content: bytes,
+    revision: SignedRevision,
+) -> bytes:
+    output = BytesIO()
+    with ZipFile(output, mode="w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
+        _write_zip_entry(archive, document_name, content)
+        _write_zip_entry(archive, signature_name, _signature_bytes(revision))
+    return output.getvalue()
+
+
+def _signature_bytes(revision: SignedRevision) -> bytes:
+    return (revision.model_dump_json(indent=2) + "\n").encode()
 
 
 def _build_sample_pdf() -> bytes:

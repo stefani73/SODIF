@@ -29,6 +29,7 @@ def test_required_project_contracts_exist() -> None:
         "docs/DMS_D2_DOCUMENT_INGESTION.md",
         "docs/DMS_D3_DOCUMENT_REGISTRY.md",
         "docs/DMS_D4_OFFLINE_EVIDENCE_AND_FLIGHTS.md",
+        "docs/DMS_D5_SIGNED_REVISION_LIFECYCLE.md",
         "scripts/quality.ps1",
         "src/sodif/app.py",
         "src/sodif/archive/service.py",

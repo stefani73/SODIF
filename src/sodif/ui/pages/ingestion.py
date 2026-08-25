@@ -11,7 +11,12 @@ from sodif.archive import (
     IngestionReceipt,
     SignedDocumentIngestionService,
 )
-from sodif.archive.sample import SAMPLE_ZIP_NAME, SignedSample, build_signed_sample
+from sodif.archive.sample import (
+    SAMPLE_DOCUMENT_ID,
+    SAMPLE_SEQUENCE_ZIP_NAME,
+    SignedSampleSequence,
+    build_signed_sample_sequence,
+)
 from sodif.documents import DocumentRejected, DocumentRejectionCode
 from sodif.domain.revisions import SignedRevision
 from sodif.ui.pages.shared import render_page_intro
@@ -50,7 +55,7 @@ def render_document_ingestion(service: SignedDocumentIngestionService) -> None:
         "integritatea și continuitatea reviziei înainte de arhivare.",
     )
 
-    sample = build_signed_sample()
+    sample = build_signed_sample_sequence()
     _render_sample_panel(service, sample)
     _render_upload_panel(service)
 
@@ -62,42 +67,67 @@ def render_document_ingestion(service: SignedDocumentIngestionService) -> None:
         st.error(error, icon=":material/error:")
 
 
-def _render_sample_panel(service: SignedDocumentIngestionService, sample: SignedSample) -> None:
+def _render_sample_panel(
+    service: SignedDocumentIngestionService,
+    sample: SignedSampleSequence,
+) -> None:
+    history = service.history(SAMPLE_DOCUMENT_ID)
+    has_initial = any(item.revision_number == 1 for item in history)
+    has_revised = any(item.revision_number == 2 for item in history)
     st.markdown(
         """
         <section class="sodif-ingestion-sample">
             <div><div class="sodif-card-caption">Exemplu verificabil</div>
-            <h2>Testează imediat fluxul complet</h2>
-            <p>Pachetul conține documentul PDF și dovada detașată a semnăturii, gata pentru
-            verificare și arhivare.</p></div>
+            <h2>Construiește un istoric semnat</h2>
+            <p>Preia revizia inițială, apoi continuă documentul cu o revizie nouă legată
+            criptografic de conținutul deja acceptat.</p></div>
         </section>
         """,
         unsafe_allow_html=True,
     )
-    archive_action, download_action, spacer = st.columns((0.28, 0.28, 0.44))
-    with archive_action:
+    initial_action, revision_action, download_action = st.columns(3)
+    with initial_action:
         if st.button(
-            "Arhivează exemplul semnat",
+            "Arhivează revizia inițială",
             type="primary",
             icon=":material/archive:",
             use_container_width=True,
+        ) and _ingest(
+            service,
+            sample.initial.content,
+            sample.initial.revision,
+            sample.initial.original_name,
         ):
-            _ingest(service, sample.content, sample.revision, sample.original_name)
+            st.rerun()
+    with revision_action:
+        if st.button(
+            "Arhivează revizia următoare",
+            icon=":material/upgrade:",
+            disabled=not has_initial,
+            use_container_width=True,
+        ) and _ingest(
+            service,
+            sample.revised.content,
+            sample.revised.revision,
+            sample.revised.original_name,
+        ):
+            st.rerun()
     with download_action:
         st.download_button(
-            "Descarcă pachetul semnat",
+            "Descarcă istoricul semnat",
             data=sample.package,
-            file_name=SAMPLE_ZIP_NAME,
+            file_name=SAMPLE_SEQUENCE_ZIP_NAME,
             mime="application/zip",
             icon=":material/download:",
             use_container_width=True,
         )
-    with spacer:
-        st.markdown(
-            '<p class="sodif-inline-note">Poate fi reîncărcat mai jos pentru validarea '
-            "manuală a aceleiași revizii.</p>",
-            unsafe_allow_html=True,
-        )
+    if has_revised:
+        status = "Istoricul demonstrativ are două revizii semnate și legate verificabil."
+    elif has_initial:
+        status = "Revizia inițială este confirmată. Următoarea revizie poate continua istoricul."
+    else:
+        status = "Revizia următoare devine disponibilă după acceptarea reviziei inițiale."
+    st.markdown(f'<p class="sodif-inline-note">{status}</p>', unsafe_allow_html=True)
 
 
 def _render_upload_panel(service: SignedDocumentIngestionService) -> None:
@@ -147,18 +177,22 @@ def _ingest(
     content: bytes,
     revision: SignedRevision,
     original_name: str,
-) -> None:
+) -> bool:
     try:
         receipt = service.ingest(content, revision, original_name)
     except DocumentRejected as exc:
         _set_error(_REJECTION_MESSAGES[exc.code])
+        return False
     except ArchiveConflict:
         _set_error("Revizia intră în conflict cu un document existent în arhivă.")
+        return False
     except ArchiveError:
         _set_error("Arhiva nu a putut confirma integritatea documentului.")
+        return False
     else:
         st.session_state[_RECEIPT_KEY] = receipt
         st.session_state.pop(_ERROR_KEY, None)
+        return True
 
 
 def _set_error(message: str) -> None:

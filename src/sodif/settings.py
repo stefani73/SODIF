@@ -22,6 +22,6 @@ def load_settings() -> AppSettings:
         app_name=getenv("SODIF_APP_NAME", "SODIF"),
         tagline=getenv("SODIF_TAGLINE", "Exact ceea ce s-a semnat. O singură dată."),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.13.0-dms4"),
+        release=getenv("SODIF_RELEASE", "0.14.0-dms5"),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
     )

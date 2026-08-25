@@ -10,7 +10,8 @@ rapoarte și dovezi. Reviziile semnate validate sunt păstrate într-o arhivă l
 verificabilă, deduplicată și indexată.
 
 Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură JSON înainte de
-arhivare. Un pachet demonstrativ semnat poate fi verificat direct sau descărcat pentru
+arhivare. Exemplul inclus construiește două revizii succesive: a doua este acceptată numai
+dacă indică exact amprenta reviziei precedente. Setul semnat poate fi descărcat pentru
 reîncărcare manuală.
 
 Pagina „Registru documente” oferă căutare, filtrare, previzualizare PDF, istoricul verificabil
@@ -44,8 +45,8 @@ Aplicația oferă două demonstrații distincte:
 
 - **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
   permis unic, legarea acțiunii API și protecția anti-replay;
-- **Integrated Flight** — același nucleu, completat cu arhivarea reviziei valide, registrul
-  documentar și exportul verificabil. Documentele respinse nu sunt arhivate.
+- **Integrated Flight** — același nucleu, completat cu arhivarea unui lanț de revizii,
+  registrul documentar și exportul verificabil. Documentele respinse nu sunt arhivate.
 
 ## Pachet de dovezi
 

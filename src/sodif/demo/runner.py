@@ -16,6 +16,7 @@ from sodif.archive import (
 from sodif.demo.adapters import ScenarioSemanticAdapter, ScenarioValue
 from sodif.demo.fixtures import (
     BASE_PDF,
+    REVISED_PDF,
     TAMPERED_PDF,
     accepted_values,
     flight_policy,
@@ -105,7 +106,7 @@ class _ScenarioContext:
     permit_issuer: Ed25519PermitIssuer
     permit_authorizer: ExecutionPermitAuthorizer
     api_executor: InMemoryApiExecutor
-    archive_id: str | None = None
+    archive_ids: list[str]
 
     def observe(self, stage: str, detail: str, subject_digest: str | None = None) -> None:
         self.observations.append(
@@ -149,7 +150,7 @@ class FlightRunner:
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
-            release="0.13.0-dms4",
+            release="0.14.0-dms5",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -172,6 +173,7 @@ class FlightRunner:
             "Permisul a autorizat exact planul compilat; API-ul controlat a răspuns 202.",
             receipt.response_digest,
         )
+        self._archive_follow_up_revision(context)
         return self._result(
             context,
             "Flux valid cu oprire adaptivă timpurie",
@@ -324,7 +326,7 @@ class FlightRunner:
                 acceptance,
                 "comanda-achizitie-demo.pdf",
             )
-            context.archive_id = archived.archive_id
+            context.archive_ids.append(archived.archive_id)
             context.observe(
                 "document-archived",
                 "Revizia validată a fost înregistrată în arhiva documentară verificabilă.",
@@ -408,16 +410,24 @@ class FlightRunner:
         return plan, permit
 
     @staticmethod
-    def _signed_revision(context: _ScenarioContext, content: bytes) -> SignedRevision:
+    def _signed_revision(
+        context: _ScenarioContext,
+        content: bytes,
+        *,
+        revision_number: int = 1,
+        previous_revision_digest: str | None = None,
+        signed_at: datetime | None = None,
+    ) -> SignedRevision:
         metadata = SignedRevisionMetadata(
             document_id="doc-flight-001",
-            revision_number=1,
+            revision_number=revision_number,
             format=DocumentFormat.PDF,
             content_digest=sha256_bytes(content),
+            previous_revision_digest=previous_revision_digest,
             signer_id=context.document_signer.signer_id,
             key_id=context.document_signer.key_id,
             algorithm=SignatureAlgorithm.ED25519,
-            signed_at=FLIGHT_START - timedelta(minutes=1),
+            signed_at=signed_at or FLIGHT_START - timedelta(minutes=1),
         )
         return context.document_signer.sign(metadata)
 
@@ -441,7 +451,8 @@ class FlightRunner:
             workflow=context.workflow,
             observations=tuple(context.observations),
             verification=verification,
-            archive_id=context.archive_id,
+            archive_id=context.archive_ids[-1] if context.archive_ids else None,
+            archive_ids=tuple(context.archive_ids),
             permit_id=permit.claims.permit_id if permit is not None else None,
             receipt=receipt,
             rejection_code=rejection_code,
@@ -491,9 +502,37 @@ class FlightRunner:
                 if self._archive_repository is not None
                 else None
             ),
+            archive_ids=[],
             permit_issuer=permit_issuer,
             permit_authorizer=permit_authorizer,
             api_executor=InMemoryApiExecutor(clock),
+        )
+
+    def _archive_follow_up_revision(self, context: _ScenarioContext) -> None:
+        if context.archive_service is None:
+            return
+        signed_revision = self._signed_revision(
+            context,
+            REVISED_PDF,
+            revision_number=2,
+            previous_revision_digest=sha256_bytes(BASE_PDF),
+            signed_at=FLIGHT_START + timedelta(seconds=1),
+        )
+        acceptance = context.document_service.validate(
+            REVISED_PDF,
+            signed_revision,
+            context.policy,
+        )
+        archived = context.archive_service.archive(
+            REVISED_PDF,
+            acceptance,
+            "comanda-achizitie-demo-r2.pdf",
+        )
+        context.archive_ids.append(archived.archive_id)
+        context.observe(
+            "document-revision-archived",
+            "Revizia următoare a continuat verificabil istoricul documentului.",
+            sha256_digest(archived),
         )
 
 

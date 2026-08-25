@@ -71,6 +71,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
         decision["permit_id"] = result.permit_id
     if result.archive_id is not None:
         decision["archive_id"] = result.archive_id
+        decision["archive_ids"] = list(result.archive_ids)
     if result.receipt is not None:
         decision["execution_id"] = result.receipt.execution_id
         decision["response_digest"] = result.receipt.response_digest

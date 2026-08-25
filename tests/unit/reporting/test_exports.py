@@ -64,6 +64,7 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
         event for event in integrated_events if event["event_type"] == "scenario.decision"
     ]
     assert sum("archive_id" in event for event in integrated_decisions) == 5
+    assert sum(len(event.get("archive_ids", [])) for event in integrated_decisions) == 6
 
 
 def test_word_report_contains_the_decision_register_and_scenario_evidence() -> None:
@@ -73,7 +74,7 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
 
     assert "RAPORT SECURITY FLIGHT" in text
     assert "Registrul deciziilor" in text
-    assert "0.13.0-dms4" not in text
+    assert "0.14.0-dms5" not in text
     assert "Comandă autentică și neambiguă" in text
     assert "Arhivă: arc-" not in text
     assert "Document modificat după semnare" in text

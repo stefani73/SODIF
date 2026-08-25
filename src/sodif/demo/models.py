@@ -53,6 +53,7 @@ class ScenarioResult(DomainModel):
     observations: tuple[ScenarioObservation, ...] = Field(min_length=1)
     verification: AdaptiveVerificationOutcome | None = None
     archive_id: Identifier | None = None
+    archive_ids: tuple[Identifier, ...] = ()
     permit_id: Identifier | None = None
     receipt: ExecutionReceipt | None = None
     rejection_code: Identifier | None = None
@@ -75,6 +76,12 @@ class ScenarioResult(DomainModel):
             raise ValueError("executed scenario requires an execution receipt")
         if self.observed_outcome is not ScenarioOutcome.EXECUTED and self.receipt is not None:
             raise ValueError("non-executed scenario cannot contain an execution receipt")
+        if len(self.archive_ids) != len(set(self.archive_ids)):
+            raise ValueError("scenario archive identifiers must be unique")
+        if self.archive_ids and self.archive_id != self.archive_ids[-1]:
+            raise ValueError("scenario archive_id must identify the latest archived revision")
+        if not self.archive_ids and self.archive_id is not None:
+            raise ValueError("scenario archive_id requires archive_ids evidence")
         return self
 
 
@@ -100,7 +107,7 @@ class FlightReport(DomainModel):
             raise ValueError("flight passed_scenarios differs from scenario results")
         if self.passed != all(result.passed for result in self.results):
             raise ValueError("flight passed flag differs from scenario results")
-        archived = [result for result in self.results if result.archive_id is not None]
+        archived = [result for result in self.results if result.archive_ids]
         if self.flight_kind is FlightKind.SECURITY and archived:
             raise ValueError("security flight cannot contain document archive evidence")
         if self.flight_kind is FlightKind.INTEGRATED and not archived:

@@ -14,6 +14,7 @@ BASE_PDF = (
     b"%%EOF\n"
 )
 TAMPERED_PDF = BASE_PDF.replace(b"1250.00", b"9250.00")
+REVISED_PDF = BASE_PDF.replace(b"1250.00", b"1350.00")
 
 
 def flight_policy() -> PolicyReference:

@@ -7,8 +7,8 @@ from _pytest.monkeypatch import MonkeyPatch
 from streamlit.testing.v1 import AppTest
 
 from sodif.app import main
-from sodif.archive import build_local_ingestion_service
-from sodif.archive.sample import build_signed_sample
+from sodif.archive import SqliteArchiveRepository, build_local_ingestion_service
+from sodif.archive.sample import build_signed_sample_sequence
 from sodif.settings import AppSettings
 
 
@@ -63,17 +63,30 @@ def test_document_ingestion_page_archives_the_signed_sample(
     assert not app.exception
     copy = _copy(app)
     assert "Preluare documente" in copy
-    assert "Exemplu verificabil" in copy
-    sample_button = next(
-        button for button in app.button if button.label == "Arhivează exemplul semnat"
+    assert "Construiește un istoric semnat" in copy
+    initial_button = next(
+        button for button in app.button if button.label == "Arhivează revizia inițială"
     )
-    sample_button.click().run(timeout=15)
+    revised_button = next(
+        button for button in app.button if button.label == "Arhivează revizia următoare"
+    )
+    assert revised_button.disabled is True
+    initial_button.click().run(timeout=15)
 
     assert not app.exception
     result_copy = _copy(app)
     assert "Document verificat și arhivat" in result_copy
     assert "Identificator arhivă" in result_copy
-    assert (tmp_path / "archive" / "index.sqlite3").is_file()
+    revised_button = next(
+        button for button in app.button if button.label == "Arhivează revizia următoare"
+    )
+    assert revised_button.disabled is False
+    revised_button.click().run(timeout=15)
+
+    assert not app.exception
+    assert "Revizie</small><strong>2</strong>" in _copy(app)
+    repository = SqliteArchiveRepository(tmp_path / "archive")
+    assert len(repository.history("doc-ingestion-demo-002")) == 2
 
 
 def test_document_registry_searches_and_opens_the_verified_pdf(
@@ -82,11 +95,17 @@ def test_document_registry_searches_and_opens_the_verified_pdf(
 ) -> None:
     archive_root = tmp_path / "archive"
     monkeypatch.setenv("SODIF_ARCHIVE_ROOT", str(archive_root))
-    sample = build_signed_sample()
-    build_local_ingestion_service(archive_root).ingest(
-        sample.content,
-        sample.revision,
-        sample.original_name,
+    sequence = build_signed_sample_sequence()
+    ingestion = build_local_ingestion_service(archive_root)
+    ingestion.ingest(
+        sequence.initial.content,
+        sequence.initial.revision,
+        sequence.initial.original_name,
+    )
+    ingestion.ingest(
+        sequence.revised.content,
+        sequence.revised.revision,
+        sequence.revised.original_name,
     )
     app = _application().run(timeout=15).switch_page("pages/registry.py").run(timeout=15)
 
@@ -97,7 +116,8 @@ def test_document_registry_searches_and_opens_the_verified_pdf(
     assert "Previzualizare securizată" in copy
     assert "doc-ingestion-demo-002" in copy
     assert "1 document" in copy
-    assert "1 revizie găsită" in copy
+    assert "2 revizii găsite" in copy
+    assert "doc-ingestion-demo-002 · Revizia 2" in copy
     assert [getattr(item, "label", None) for item in app.get("download_button")] == [
         "Descarcă revizia",
         "Pachet verificabil",
