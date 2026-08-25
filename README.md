@@ -1,13 +1,22 @@
-# SODIF POC
+# SODIF
 
-**Signed Intent Execution** — controlul execuției digitale autorizate prin documente semnate.
+**Signed Intent Infrastructure** — controlul tranzacțiilor digitale autorizate prin documente
+semnate.
 
 Promisiunea produsului: **Exact ceea ce s-a semnat. O singură dată.**
 
-Acest repository conține demonstratorul TRL 4 realizat incremental. Interfața multipagină
-separă prezentarea produsului, explicația funcțională, centrul de control și zona de
-rapoarte și dovezi. Reviziile semnate validate sunt păstrate într-o arhivă locală
-verificabilă, deduplicată și indexată.
+Aplicația este organizată în trei module de produs cu limite și contracte explicite:
+
+- **Signed Intent Security** — verifică documentul și intenția, apoi emite permisul
+  criptografic legat de acțiunea API autorizată;
+- **Verifiable Document Archive** — păstrează reviziile validate, istoricul criptografic și
+  pachetele portabile de dovezi;
+- **Semantic Execution Gateway** — verifică permisul față de cererea API și aplică decizia
+  de rutare sau blocare la limita de execuție.
+
+Interfața multipagină individualizează fiecare modul, operațiunile documentare, demonstrațiile
+și dovezile. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
+contractele modulelor sincronizate în întreaga aplicație.
 
 Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură JSON înainte de
 arhivare. Exemplul inclus construiește două revizii succesive: a doua este acceptată numai
@@ -48,6 +57,20 @@ Aplicația oferă două demonstrații distincte:
 - **Integrated Flight** — același nucleu, completat cu arhivarea unui lanț de revizii,
   registrul documentar și exportul verificabil. Documentele respinse nu sunt arhivate.
 
+## Configurarea modulelor
+
+Toate modulele sunt active implicit. Expunerea lor în navigație poate fi controlată fără
+modificarea codului:
+
+```text
+SODIF_MODULE_SECURITY_ENABLED=true
+SODIF_MODULE_ARCHIVE_ENABLED=true
+SODIF_MODULE_GATEWAY_ENABLED=true
+```
+
+Valorile acceptate sunt `true/false`, `yes/no`, `on/off` și `1/0`. Configurațiile ambigue sunt
+respinse la pornire.
+
 ## Pachet de dovezi
 
 După rularea demonstrației din centrul de control, pagina „Rapoarte și dovezi” permite
@@ -74,6 +97,7 @@ acoperire de 85%.
 ## Structură
 
 - `src/sodif/` — codul aplicației;
+- `src/sodif/product/` — catalogul și limitele celor trei module de produs;
 - `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `src/sodif/archive/` — depozit documentar, index SQLite și verificarea integrității;

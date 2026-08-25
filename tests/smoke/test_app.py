@@ -32,14 +32,17 @@ def test_product_overview_boots_with_sidebar_navigation_and_natural_copy() -> No
     assert not app.exception
     assert len(app.radio) == 0
     copy = _copy(app)
-    assert "Din document semnat în acțiune digitală de încredere." in copy
-    assert "Încredere verificabilă între document și API" in copy
+    assert "Din document semnat în acțiune API controlată." in copy
+    assert "Signed Intent Infrastructure" in copy
+    assert "Signed Intent Security" in copy
+    assert "Verifiable Document Archive" in copy
+    assert "Semantic Execution Gateway" in copy
     assert "Procurement" not in copy
     assert "Assurance Flight" not in copy
     assert "◈" not in copy
     assert "✓" not in copy
     assert any(
-        getattr(item, "label", None) == "Deschide demonstrația" for item in app.get("page_link")
+        getattr(item, "label", None) == "Explorează platforma" for item in app.get("page_link")
     )
 
 
@@ -48,9 +51,37 @@ def test_product_explainer_is_a_distinct_page() -> None:
 
     assert not app.exception
     copy = _copy(app)
-    assert "Cum funcționează SODIF" in copy
-    assert "Decizia privește tranzacția" in copy
-    assert "Înaintea sistemului care produce efectul" in copy
+    assert "Trei module. Un singur lanț de încredere." in copy
+    assert "Modulele schimbă dovezi verificabile" in copy
+    assert "Între aprobarea formală și sistemul care produce efectul" in copy
+
+
+def test_three_product_modules_have_distinct_workspaces() -> None:
+    application = _application().run(timeout=15)
+
+    security = application.switch_page("pages/security.py").run(timeout=15)
+    assert not security.exception
+    assert "Transformă aprobarea semnată" in _copy(security)
+    assert "Consens semantic adaptiv" in _copy(security)
+    assert any(
+        getattr(item, "label", None) == "Deschide Security Flight"
+        for item in security.get("page_link")
+    )
+
+    archive = security.switch_page("pages/archive.py").run(timeout=15)
+    assert not archive.exception
+    assert "Păstrează documentul, reviziile și dovezile" in _copy(archive)
+    assert "Continuitatea reviziilor" in _copy(archive)
+    assert {getattr(item, "label", None) for item in archive.get("page_link")} >= {
+        "Deschide preluarea",
+        "Deschide registrul",
+    }
+
+    gateway = archive.switch_page("pages/gateway.py").run(timeout=15)
+    assert not gateway.exception
+    assert "Permite API-ului să execute numai tranzacția aprobată" in _copy(gateway)
+    assert "Potrivire exactă" in _copy(gateway)
+    assert "Un punct de control, fără rescrierea API-urilor protejate" in _copy(gateway)
 
 
 def test_document_ingestion_page_archives_the_signed_sample(

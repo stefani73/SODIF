@@ -4,6 +4,7 @@ from html import escape
 
 import streamlit as st
 
+from sodif.product import ProductModule
 from sodif.ui.presentation import FlightView
 
 
@@ -15,6 +16,26 @@ def render_page_intro(eyebrow: str, title: str, lead: str) -> None:
             <div class="sodif-eyebrow">{escape(eyebrow)}</div>
             <h1 class="sodif-page-title">{escape(title)}</h1>
             <p class="sodif-page-lead">{escape(lead)}</p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_module_intro(module: ProductModule) -> None:
+    """Render the stable identity and promise of a product module."""
+    render_page_intro("Modul SODIF", module.name, module.promise)
+
+
+def render_module_contract(module: ProductModule) -> None:
+    """Render the explicit input, responsibility, and output boundary."""
+    st.markdown(
+        f"""
+        <section class="sodif-module-contract">
+            <div><small>Primește</small><p>{escape(module.input_contract)}</p></div>
+            <div class="active"><small>Controlează</small>
+            <p>{escape(module.responsibility)}</p></div>
+            <div><small>Produce</small><p>{escape(module.output_contract)}</p></div>
         </section>
         """,
         unsafe_allow_html=True,

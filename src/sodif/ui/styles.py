@@ -117,15 +117,17 @@ section[data-testid="stSidebar"] [data-testid="stElementContainer"]:has(.sodif-s
     color:#53667d; font-size:1.18rem; line-height:1.68; max-width:790px; margin:0;
 }
 .sodif-promise { color:#52657b; font-weight:650; margin:0 0 0 .75rem; }
-.st-key-overview_demo_link a, .st-key-product_demo_link a,
+.st-key-overview_architecture_link a, .st-key-security_demo_link a,
 .st-key-empty_control_link a, .st-key-reports_shortcut a {
     min-height:2.75rem; border-radius:9px; border:1px solid var(--teal); font-weight:750;
     color:white; background:var(--teal); box-shadow:0 9px 22px rgba(8,127,140,.16);
 }
-.st-key-overview_demo_link a:hover, .st-key-product_demo_link a:hover,
+.st-key-overview_architecture_link a:hover, .st-key-security_demo_link a:hover,
 .st-key-empty_control_link a:hover, .st-key-reports_shortcut a:hover {
     color:white; background:var(--teal-dark); border-color:var(--teal-dark);
 }
+.st-key-overview_architecture_link a *, .st-key-security_demo_link a *,
+.st-key-empty_control_link a *, .st-key-reports_shortcut a * { color:white !important; }
 div[data-testid="stButton"] button[kind="primary"] {
     border:none; border-radius:9px; min-height:2.85rem; font-weight:750; background:var(--teal);
     box-shadow:0 10px 24px rgba(8,127,140,.19); transition:all .2s ease;
@@ -173,6 +175,97 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
 .sodif-protection-list small { color:#9fb2c7; margin-top:.18rem; font-size:.77rem; }
 .sodif-use-card {
     min-height:125px; padding:1.25rem; border-top:3px solid rgba(8,127,140,.72);
+}
+.sodif-module-card, .sodif-architecture-card {
+    height:100%; background:rgba(255,255,255,.92); border:1px solid var(--line);
+    border-radius:16px; box-shadow:0 10px 30px rgba(20,42,70,.05); overflow:hidden;
+}
+.sodif-module-card {
+    position:relative; min-height:226px; padding:1.35rem 1.35rem 1.5rem;
+    border-top:4px solid var(--teal);
+}
+.sodif-module-card.module-archive, .sodif-architecture-card.module-archive {
+    border-top-color:#326da8;
+}
+.sodif-module-card.module-gateway, .sodif-architecture-card.module-gateway {
+    border-top-color:#7957a8;
+}
+.sodif-module-card-head { display:flex; justify-content:space-between; align-items:center; }
+.sodif-module-card-head span {
+    display:grid; place-items:center; width:32px; height:32px; color:var(--teal-dark);
+    background:#e7f4f4; border-radius:9px; font-size:.7rem; font-weight:850;
+}
+.sodif-module-card-head small {
+    color:#8794a4; font-size:.61rem; font-weight:750; letter-spacing:.09em;
+    text-transform:uppercase;
+}
+.sodif-module-card h2 {
+    color:var(--navy); font-size:1.15rem; line-height:1.28; margin:1.4rem 0 .65rem;
+}
+.sodif-module-card p {
+    color:var(--muted); font-size:.81rem; line-height:1.58; margin:0;
+}
+.sodif-module-contract {
+    display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:1px; margin:2.2rem 0 .5rem;
+    overflow:hidden; background:#d6e1e8; border:1px solid #d6e1e8; border-radius:15px;
+}
+.sodif-module-contract > div { min-height:142px; padding:1.25rem; background:#fff; }
+.sodif-module-contract > div.active { background:#edf7f7; }
+.sodif-module-contract small {
+    color:#718197; font-size:.64rem; font-weight:850; letter-spacing:.11em;
+    text-transform:uppercase;
+}
+.sodif-module-contract .active small { color:var(--teal-dark); }
+.sodif-module-contract p {
+    color:#4f6278; font-size:.81rem; line-height:1.55; margin:.7rem 0 0;
+}
+.sodif-module-value { margin-top:3.4rem; }
+.sodif-architecture-card {
+    min-height:335px; padding:1.35rem; border-top:4px solid var(--teal);
+}
+.sodif-architecture-card > small {
+    color:var(--teal-dark); font-size:.64rem; font-weight:850; letter-spacing:.08em;
+    text-transform:uppercase;
+}
+.sodif-architecture-card h2 {
+    color:var(--navy); min-height:55px; font-size:1.12rem; line-height:1.35;
+    margin:1rem 0 .7rem;
+}
+.sodif-architecture-card p {
+    min-height:112px; color:var(--muted); font-size:.8rem; line-height:1.58; margin:0;
+}
+.sodif-architecture-card footer {
+    display:grid; gap:.35rem; margin-top:1rem; padding-top:.9rem; border-top:1px solid #e5ebf0;
+}
+.sodif-architecture-card footer b {
+    color:#718197; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase;
+}
+.sodif-architecture-card footer span { color:#41576f; font-size:.72rem; line-height:1.45; }
+.sodif-platform-flow, .sodif-gateway-flow {
+    display:grid; align-items:stretch; margin:1rem 0 0; padding:1.15rem;
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+}
+.sodif-platform-flow { grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr; }
+.sodif-gateway-flow { grid-template-columns:1fr 42px 1.25fr 42px 1fr; margin-top:3.2rem; }
+.sodif-platform-flow > div, .sodif-gateway-flow > div {
+    display:grid; align-content:center; gap:.28rem; min-height:94px; padding:1rem;
+    background:#f7f9fb; border-radius:11px;
+}
+.sodif-gateway-flow > div.active { background:#eaf6f6; border:1px solid #cde5e5; }
+.sodif-platform-flow small, .sodif-gateway-flow small {
+    color:#718197; font-size:.6rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase;
+}
+.sodif-platform-flow strong, .sodif-gateway-flow strong {
+    color:var(--navy); font-size:.82rem;
+}
+.sodif-gateway-flow span { color:var(--muted); font-size:.68rem; line-height:1.4; }
+.sodif-platform-flow > i, .sodif-gateway-flow > i { position:relative; }
+.sodif-platform-flow > i::before, .sodif-gateway-flow > i::before {
+    content:""; position:absolute; top:50%; left:7px; right:7px; height:1px; background:#9db5c5;
+}
+.sodif-platform-flow > i::after, .sodif-gateway-flow > i::after {
+    content:""; position:absolute; top:calc(50% - 3px); right:7px; width:6px; height:6px;
+    border-top:1px solid #7e9aab; border-right:1px solid #7e9aab; transform:rotate(45deg);
 }
 .sodif-page-title { font-size:3rem; margin:.45rem 0 .7rem; }
 .sodif-page-lead { font-size:1rem; }
@@ -507,6 +600,15 @@ div[data-testid="stSelectbox"] > div > div {
     .sodif-context { display:none; }
     .sodif-header { margin-bottom:2.2rem; }
     .sodif-value-panel { grid-template-columns:1fr; gap:2rem; padding:2rem 1.4rem; }
+    .sodif-module-contract { grid-template-columns:1fr; }
+    .sodif-platform-flow, .sodif-gateway-flow { grid-template-columns:1fr; }
+    .sodif-platform-flow > i, .sodif-gateway-flow > i { min-height:24px; }
+    .sodif-platform-flow > i::before, .sodif-gateway-flow > i::before {
+        top:5px; bottom:5px; left:50%; width:1px; height:auto;
+    }
+    .sodif-platform-flow > i::after, .sodif-gateway-flow > i::after {
+        top:auto; bottom:5px; left:calc(50% - 3px); transform:rotate(135deg);
+    }
     .sodif-export-panel { display:grid; }
     .sodif-bundle-digest { min-width:0; text-align:left; }
     .sodif-report-identity { grid-template-columns:1fr; }

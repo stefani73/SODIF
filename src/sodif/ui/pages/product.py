@@ -1,58 +1,57 @@
-"""Product explanation and differentiation page."""
+"""SODIF platform architecture page."""
+
+from html import escape
 
 import streamlit as st
 
+from sodif.product import MODULES
+from sodif.settings import AppSettings
 from sodif.ui.pages.shared import render_page_intro
 
 
-def render_product_explainer(control_page: str) -> None:
-    """Explain the product flow without exposing implementation vocabulary."""
+def render_product_explainer(settings: AppSettings) -> None:
+    """Explain product boundaries and the end-to-end trust chain."""
     render_page_intro(
-        "Model de control",
-        "Cum funcționează SODIF",
-        "Un strat de siguranță care transformă aprobarea din document într-o autorizație "
-        "digitală precisă, verificabilă și de unică folosință.",
+        "Arhitectura produsului",
+        "Trei module. Un singur lanț de încredere.",
+        "Fiecare modul are o responsabilitate precisă și poate evolua independent; împreună, "
+        "controlează traseul complet de la aprobare la efectul produs de API.",
     )
 
+    active_modules = [module for module in MODULES if settings.modules.is_enabled(module.key)]
+    columns = st.columns(len(active_modules)) if active_modules else ()
+    for column, module in zip(columns, active_modules, strict=True):
+        with column:
+            st.markdown(
+                f"""
+                <article class="sodif-architecture-card module-{escape(module.key)}">
+                    <small>{escape(module.sequence)} · {escape(module.navigation_label)}</small>
+                    <h2>{escape(module.name)}</h2>
+                    <p>{escape(module.responsibility)}</p>
+                    <footer><b>Produce</b><span>{escape(module.output_contract)}</span></footer>
+                </article>
+                """,
+                unsafe_allow_html=True,
+            )
+
     st.markdown(
-        '<div class="sodif-section-label compact">De la aprobare la execuție</div>',
+        '<div class="sodif-section-label">Lanțul transversal</div>',
         unsafe_allow_html=True,
     )
-    steps = (
-        (
-            "verified_user",
-            "Verifică documentul",
-            "Confirmă semnătura, revizia și integritatea înaintea oricărei interpretări.",
-        ),
-        (
-            "compare_arrows",
-            "Confirmă intenția",
-            "Confruntă independent valorile care pot schimba efectul tranzacției.",
-        ),
-        (
-            "policy",
-            "Aplică verificarea potrivită",
-            "Extinde controlul numai când dovezile inițiale sunt insuficiente sau divergente.",
-        ),
-        (
-            "key",
-            "Emite permisul unic",
-            "Leagă rezultatul de metoda, ruta, parametrii și destinația API aprobate.",
-        ),
-        (
-            "shield_lock",
-            "Protejează execuția",
-            "Respinge modificarea acțiunii și orice tentativă de reutilizare a permisului.",
-        ),
+    st.markdown(
+        """
+        <section class="sodif-platform-flow">
+            <div><small>Aprobare</small><strong>Document semnat</strong></div><i></i>
+            <div><small>Control</small><strong>Intenție + permis</strong></div><i></i>
+            <div><small>Dovadă</small><strong>Revizie verificabilă</strong></div><i></i>
+            <div><small>Efect</small><strong>Acțiune API exactă</strong></div>
+        </section>
+        """,
+        unsafe_allow_html=True,
     )
-    columns = st.columns(5)
-    for column, (icon, title, body) in zip(columns, steps, strict=True):
-        with column, st.container(border=True, key=f"product_step_{icon}"):
-            st.markdown(f"#### :material/{icon}: {title}")
-            st.caption(body)
 
     st.markdown(
-        '<div class="sodif-section-label">Diferențiere practică</div>',
+        '<div class="sodif-section-label">Separare fără fragmentarea încrederii</div>',
         unsafe_allow_html=True,
     )
     left, right = st.columns(2)
@@ -60,11 +59,10 @@ def render_product_explainer(control_page: str) -> None:
         st.markdown(
             """
             <article class="sodif-feature-panel">
-                <div class="sodif-card-caption">Control semantic aplicat</div>
-                <h2>Decizia privește tranzacția, nu doar identitatea apelantului.</h2>
-                <p>SODIF verifică dacă acțiunea digitală păstrează valorile și limitele
-                aprobate în document, chiar dacă apelantul este autorizat, iar API-ul
-                este legitim.</p>
+                <div class="sodif-card-caption">Contracte stabile</div>
+                <h2>Modulele schimbă dovezi verificabile, nu presupuneri.</h2>
+                <p>Permisul, amprentele documentelor și deciziile de enforcement au forme
+                explicite, versionabile și verificabile independent.</p>
             </article>
             """,
             unsafe_allow_html=True,
@@ -73,10 +71,10 @@ def render_product_explainer(control_page: str) -> None:
         st.markdown(
             """
             <article class="sodif-feature-panel accent">
-                <div class="sodif-card-caption">Eficiență adaptivă</div>
-                <h2>Consumă dovezi suplimentare numai când decizia o cere.</h2>
-                <p>Fluxul conform se încheie rapid. Situațiile incomplete sau riscante
-                primesc verificări suplimentare și se opresc controlat dacă rămân ambigue.</p>
+                <div class="sodif-card-caption">Extensibilitate controlată</div>
+                <h2>Domeniile noi adaugă politici, nu rescriu nucleul.</h2>
+                <p>Schemele de intenție, regulile de risc și adaptoarele API pot fi extinse
+                separat, păstrând aceleași garanții criptografice și de audit.</p>
             </article>
             """,
             unsafe_allow_html=True,
@@ -85,19 +83,11 @@ def render_product_explainer(control_page: str) -> None:
     st.markdown(
         """
         <section class="sodif-boundary-panel">
-            <div><div class="sodif-section-label light">Poziționare în arhitectură</div>
-            <h2>Înaintea sistemului care produce efectul.</h2></div>
-            <p>SODIF poate proteja direct un API sau poate funcționa împreună cu un gateway,
-            fără să înlocuiască autentificarea, semnătura electronică ori arhivarea.</p>
+            <div><div class="sodif-section-label light">Poziționare</div>
+            <h2>Între aprobarea formală și sistemul care produce efectul.</h2></div>
+            <p>SODIF completează semnătura electronică, identitatea și politicile clasice
+            ale gateway-ului cu un control explicit asupra tranzacției autorizate.</p>
         </section>
         """,
         unsafe_allow_html=True,
     )
-
-    with st.container(key="product_demo_link"):
-        st.page_link(
-            control_page,
-            label="Vezi controalele în acțiune",
-            icon=":material/play_arrow:",
-            use_container_width=False,
-        )

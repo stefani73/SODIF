@@ -150,7 +150,7 @@ class FlightRunner:
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
-            release="0.14.0-dms5",
+            release="0.15.0-platform1",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
