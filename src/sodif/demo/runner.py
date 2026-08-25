@@ -169,7 +169,7 @@ class FlightRunner:
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
             configuration=self._configuration,
-            release="0.18.0-product4",
+            release="0.19.0-product5",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,

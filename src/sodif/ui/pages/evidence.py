@@ -26,8 +26,11 @@ def render_evidence_hub(control_page: str) -> None:
 
     render_flight_summary(present_flight(report))
     exports = current_exports(report)
+    persisted = current_persisted_run(report)
     _render_report_identity(report)
-    _render_export_panel(exports, current_persisted_run(report))
+    _render_export_panel(exports, persisted)
+    if persisted is not None:
+        _render_integrity_registry(persisted)
     _render_package_contents()
 
 
@@ -38,7 +41,8 @@ def _render_empty_state(control_page: str) -> None:
             <div class="sodif-ready-mark" aria-hidden="true"><span></span></div>
             <div><h2>Nicio rulare disponibilă</h2>
             <p>Pornește Security Flight sau Transversal Flight. Raportul Word, datele
-            structurate, jurnalul tehnic și manifestul sunt create automat la final.</p></div>
+            structurate, jurnalul tehnic, manifestul și înscrierea în registrul de
+            integritate sunt create automat la final.</p></div>
         </section>
         """,
         unsafe_allow_html=True,
@@ -133,9 +137,54 @@ def _render_export_panel(
         )
 
 
+def _render_integrity_registry(persisted: PersistedFlightRun) -> None:
+    entry = persisted.ledger_entry
+    verification = persisted.ledger_verification
+    head = verification.head_digest or entry.entry_digest
+    compact_head = f"{head[:25]}…{head[-10:]}"
+    previous = (
+        f"{entry.previous_entry_digest[:18]}…{entry.previous_entry_digest[-8:]}"
+        if entry.previous_entry_digest is not None
+        else "Originea lanțului"
+    )
+    st.markdown(
+        f"""
+        <section class="sodif-export-panel">
+            <div><div class="sodif-card-caption">Registru de integritate</div>
+            <h2>Lanț criptografic verificat</h2>
+            <p>Pachetul curent este legat de istoricul rulărilor. Orice modificare a
+            registrului, manifestului sau arhivei ZIP este detectată independent.</p></div>
+            <div class="sodif-bundle-digest"><small>{verification.entries} rulări legate ·
+            poziția {entry.sequence}</small><code>{escape(compact_head)}</code>
+            <small>{escape(previous)}</small></div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    receipt, ledger = st.columns(2)
+    with receipt:
+        st.download_button(
+            "Chitanță de registru",
+            data=persisted.ledger_receipt.read_bytes(),
+            file_name=persisted.ledger_receipt.name,
+            mime="application/json",
+            icon=":material/verified_user:",
+            use_container_width=True,
+        )
+    with ledger:
+        st.download_button(
+            "Registru criptografic",
+            data=persisted.ledger_path.read_bytes(),
+            file_name=persisted.ledger_path.name,
+            mime="application/x-ndjson",
+            icon=":material/account_tree:",
+            use_container_width=True,
+        )
+
+
 def _render_package_contents() -> None:
     st.markdown(
-        '<div class="sodif-section-label">Conținutul pachetului</div>',
+        '<div class="sodif-section-label">Artefactele rulării</div>',
         unsafe_allow_html=True,
     )
     items = (
@@ -151,8 +200,13 @@ def _render_package_contents() -> None:
             "Manifest de integritate",
             "Dimensiuni și amprente pentru verificarea fișierelor.",
         ),
+        (
+            "account_tree",
+            "Registru criptografic",
+            "Continuitatea verificabilă a rulărilor și pachetelor de audit.",
+        ),
     )
-    columns = st.columns(4)
+    columns = st.columns(5)
     for column, (icon, title, body) in zip(columns, items, strict=True):
         with column, st.container(border=True, key=f"evidence_item_{icon}"):
             st.markdown(f"#### :material/{icon}: {title}")

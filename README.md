@@ -94,15 +94,17 @@ de flight-uri, politicile Gateway și rapoarte.
 ## Audit și exporturi
 
 La finalul fiecărui flight, aplicația scrie automat raportul Word, datele JSON, jurnalul
-NDJSON, manifestul de integritate și pachetul ZIP. Pagina „Audit și exporturi” permite
-descărcarea acelorași artefacte
-cu manifest de integritate. Pentru Transversal Flight, jurnalul include fiecare decizie
+NDJSON, manifestul de integritate, pachetul ZIP și chitanța registrului criptografic. Fiecare
+pachet este înscris într-un lanț anti-tamper comun, verificat înaintea unei noi înscrieri.
+Pagina „Audit și exporturi” permite descărcarea artefactelor, a chitanței și a registrului
+criptografic. Pentru Transversal Flight, jurnalul include fiecare decizie
 Gateway, controalele aplicate, amprentele acțiunii și dovada execuției sau blocării.
 
 Fișierele sunt organizate pe sesiune, tip de flight și identificatorul rulării:
 
 ```text
 var/exports/<session>/<security|transversal>/<report-id>/
+var/exports/sodif-run-integrity-ledger.ndjson
 ```
 
 Export local:
@@ -134,7 +136,7 @@ acoperire de 85%.
 - `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
 - `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
 - `src/sodif/demo/` — catalogul și motorul flight-ului reproductibil;
-- `src/sodif/reporting/` — raport Word, serializări și pachet de dovezi;
+- `src/sodif/reporting/` — raport Word, serializări, pachet de audit și registrul anti-tamper;
 - `src/sodif/ui/pages/` — pagini de produs și operațiuni independente;
 - `tests/` — teste unitare și smoke tests;
 - `docs/` — decizii, specificații și criterii de acceptare;

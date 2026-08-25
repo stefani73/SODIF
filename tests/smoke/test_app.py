@@ -268,19 +268,51 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports(
     report_copy = _copy(app)
     assert "Audit și exporturi" in report_copy
     assert "Arhiva rulării este disponibilă" in report_copy
+    assert "Lanț criptografic verificat" in report_copy
+    assert "2 rulări legate" in report_copy
     assert "Pachet de dovezi" not in report_copy
     assert [str(getattr(item, "label", "")) for item in app.get("download_button")] == [
         "Pachet complet",
         "Raport Word",
         "Date JSON",
         "Jurnal de audit",
+        "Chitanță de registru",
+        "Registru criptografic",
     ]
     assert "Evidence package" not in report_copy
     assert "cost" not in report_copy.casefold()
     assert "v1_targeted" not in report_copy
     assert len(list(export_root.rglob("*.zip"))) == 2
     assert len(list(export_root.rglob("*.docx"))) == 2
-    assert len(list(export_root.rglob("*.ndjson"))) == 2
+    assert len(list(export_root.rglob("*.ndjson"))) == 3
+
+
+def test_control_center_fails_closed_when_the_run_ledger_is_modified(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    export_root = tmp_path / "exports"
+    monkeypatch.setenv("SODIF_EXPORT_ROOT", str(export_root))
+    app = _application().run(timeout=15).switch_page("pages/control.py").run(timeout=15)
+    next(button for button in app.button if button.label == "Rulează Security Flight").click().run(
+        timeout=15
+    )
+    ledger = export_root / "sodif-run-integrity-ledger.ndjson"
+    content = ledger.read_text(encoding="utf-8")
+    ledger.write_text(
+        content.replace('"organization":"PowerNet"', '"organization":"PowerNex"', 1),
+        encoding="utf-8",
+    )
+
+    next(
+        button for button in app.button if button.label == "Rulează Transversal Flight"
+    ).click().run(timeout=15)
+
+    assert not app.exception
+    assert len(app.error) == 1
+    assert "Rularea a fost oprită" in app.error[0].value
+    assert "Istoricul nu a fost modificat" in app.error[0].value
+    assert "Fluxul transversal a confirmat" not in _copy(app)
 
 
 def _application() -> AppTest:

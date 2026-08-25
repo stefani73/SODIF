@@ -33,17 +33,23 @@ Configurația nu este doar metadată de prezentare:
 
 ## Finalizarea unei rulări
 
-La încheierea fiecărui flight sunt generate automat cinci artefacte:
+La încheierea fiecărui flight sunt generate automat șase artefacte:
 
 - raport operațional Word;
 - raport complet JSON;
 - jurnal tehnic NDJSON;
 - manifest SHA-256;
-- pachet ZIP portabil.
+- pachet ZIP portabil;
+- chitanță JSON pentru înscrierea în registrul criptografic al rulărilor.
 
 Scrierea fiecărui fișier este atomică. Destinația urmează structura
 `<export-root>/<session>/<flight-kind>/<report-id>/`, ceea ce evită amestecarea rulărilor și
 permite preluarea ulterioară de către un sistem de audit, CI/CD sau arhivare.
+
+În plus, toate rulările sunt legate într-un registru NDJSON comun. Fiecare intrare include
+amprenta intrării precedente și amprentele pachetului ZIP și manifestului curent. Registrul
+este verificat integral înaintea unei noi înscrieri; un istoric sau un pachet modificat
+blochează extinderea lanțului.
 
 ## Principii de produs
 
@@ -58,6 +64,7 @@ permite preluarea ulterioară de către un sistem de audit, CI/CD sau arhivare.
 - valorile preconfigurate sunt vizibile și editabile într-o pagină dedicată;
 - valorile modificate rămân disponibile la navigarea între pagini în aceeași sesiune;
 - ruta și audiența configurate controlează efectiv Transversal Flight;
-- fiecare flight produce automat toate cele cinci artefacte;
+- fiecare flight produce automat toate cele șase artefacte și o intrare în registru;
+- registrul detectează modificarea unei intrări, a manifestului sau a pachetului ZIP;
 - rapoartele includ profilul operațional și identificatorii de trasabilitate;
 - interfața nu expune termeni precum POC, TRL, pași interni sau justificări de dezvoltare.

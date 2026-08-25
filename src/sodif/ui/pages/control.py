@@ -8,7 +8,7 @@ import streamlit as st
 from sodif.demo.models import FlightKind, FlightReport
 from sodif.ui.pages.shared import render_flight_summary, render_page_intro
 from sodif.ui.presentation import FlightView, ScenarioView, present_flight
-from sodif.ui.state import current_report, run_assurance_demo
+from sodif.ui.state import current_report, current_run_error, run_assurance_demo
 
 
 def render_control_center(
@@ -65,6 +65,10 @@ def render_control_center(
             on_click=run_assurance_demo,
             args=(FlightKind.TRANSVERSAL, transversal_runner),
         )
+
+    run_error = current_run_error()
+    if run_error is not None:
+        st.error(run_error, icon=":material/gpp_bad:")
 
     report = current_report()
     if report is None:

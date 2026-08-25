@@ -5,11 +5,18 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
 from docx import Document
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
-from sodif.reporting import persist_flight_run
+from sodif.reporting import (
+    LEDGER_FILENAME,
+    RECEIPT_FILENAME,
+    RunLedgerIntegrityError,
+    persist_flight_run,
+    verify_run_ledger,
+)
 from sodif.reporting.cli import write_exports
 from sodif.reporting.serializers import serialize_report
 from sodif.reporting.service import build_flight_exports
@@ -138,5 +145,73 @@ def test_completed_run_is_persisted_by_session_kind_and_report(tmp_path: Path) -
         exports.audit_log.filename,
         exports.manifest.filename,
         exports.bundle.filename,
+        RECEIPT_FILENAME,
     }
     assert all(path.is_file() and path.stat().st_size > 0 for path in persisted.artifacts)
+    assert persisted.ledger_path == tmp_path / LEDGER_FILENAME
+    assert persisted.ledger_verification.valid
+    assert persisted.ledger_verification.entries == 1
+
+
+def test_run_integrity_ledger_chains_both_flights_and_issues_receipts(tmp_path: Path) -> None:
+    security_report = run_default_flight()
+    transversal_report = run_transversal_memory_flight()
+
+    first = persist_flight_run(
+        tmp_path,
+        security_report,
+        build_flight_exports(security_report),
+    )
+    second = persist_flight_run(
+        tmp_path,
+        transversal_report,
+        build_flight_exports(transversal_report),
+    )
+    verification = verify_run_ledger(tmp_path)
+    receipt = json.loads(second.ledger_receipt.read_bytes())
+
+    assert verification.valid
+    assert verification.entries == 2
+    assert verification.head_digest == second.ledger_entry.entry_digest
+    assert first.ledger_entry.sequence == 1
+    assert first.ledger_entry.previous_entry_digest is None
+    assert second.ledger_entry.sequence == 2
+    assert second.ledger_entry.previous_entry_digest == first.ledger_entry.entry_digest
+    assert receipt["protocol"] == "sodif.run-integrity-receipt/v1"
+    assert receipt["entry_digest"] == second.ledger_entry.entry_digest
+    assert receipt["verified_entries"] == 2
+    assert receipt["verified_head_digest"] == verification.head_digest
+
+
+def test_run_integrity_ledger_detects_tampering_and_refuses_a_new_entry(
+    tmp_path: Path,
+) -> None:
+    report = run_default_flight()
+    exports = build_flight_exports(report)
+    persisted = persist_flight_run(tmp_path, report, exports)
+    ledger = persisted.ledger_path
+    original = ledger.read_text(encoding="utf-8")
+    ledger.write_text(
+        original.replace('"organization":"PowerNet"', '"organization":"PowerNex"', 1),
+        encoding="utf-8",
+    )
+
+    verification = verify_run_ledger(tmp_path)
+
+    assert not verification.valid
+    assert "entry digest does not match its content" in " ".join(verification.errors)
+    with pytest.raises(RunLedgerIntegrityError, match="verification failed"):
+        persist_flight_run(tmp_path, report, exports)
+
+
+def test_run_integrity_ledger_detects_a_modified_audit_package(tmp_path: Path) -> None:
+    report = run_default_flight()
+    exports = build_flight_exports(report)
+    persisted = persist_flight_run(tmp_path, report, exports)
+    bundle = persisted.directory / exports.bundle.filename
+    bundle.write_bytes(bundle.read_bytes() + b"tampered")
+
+    verification = verify_run_ledger(tmp_path)
+
+    assert not verification.valid
+    assert "audit package digest does not match" in " ".join(verification.errors)

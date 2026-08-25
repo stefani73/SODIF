@@ -12,6 +12,7 @@ from sodif.demo.runner import run_security_flight, run_transversal_memory_flight
 from sodif.reporting import (
     FlightExports,
     PersistedFlightRun,
+    RunLedgerIntegrityError,
     build_flight_exports,
     persist_flight_run,
 )
@@ -24,6 +25,7 @@ _ACTIVE_KIND_KEY = "sodif_active_flight_kind"
 _PROFILE_KEY = "sodif_operational_profile"
 _EXPORT_ROOT_KEY = "sodif_export_root"
 _PERSISTED_RUNS_KEY = "sodif_persisted_runs"
+_RUN_ERROR_KEY = "sodif_run_error"
 
 
 def initialize_operational_profile(settings: AppSettings) -> FlightConfiguration:
@@ -48,6 +50,7 @@ def save_operational_profile(profile: FlightConfiguration) -> None:
         _ACTIVE_KIND_KEY,
         _PERSISTED_RUNS_KEY,
         _RUNNERS_KEY,
+        _RUN_ERROR_KEY,
     ):
         st.session_state.pop(key, None)
 
@@ -109,20 +112,36 @@ def run_assurance_demo(
     report = runner()
     if report.flight_kind is not kind:
         raise ValueError("flight runner returned a report for a different product scope")
-    reports = dict(st.session_state.get(_REPORTS_KEY, {}))
-    reports[kind.value] = report
-    st.session_state[_REPORTS_KEY] = reports
     generated = build_flight_exports(report)
-    exports = dict(st.session_state.get(_EXPORTS_KEY, {}))
-    exports[kind.value] = generated
-    st.session_state[_EXPORTS_KEY] = exports
     export_root = st.session_state.get(_EXPORT_ROOT_KEY, Path("var/exports"))
     if not isinstance(export_root, Path):
         raise TypeError("session export root must be a Path")
+    try:
+        persisted_run = persist_flight_run(export_root, report, generated)
+    except RunLedgerIntegrityError:
+        st.session_state[_RUN_ERROR_KEY] = (
+            "Rularea a fost oprită: registrul de integritate sau unul dintre pachetele "
+            "înscrise anterior nu mai poate fi verificat. Istoricul nu a fost modificat."
+        )
+        return
+
+    reports = dict(st.session_state.get(_REPORTS_KEY, {}))
+    reports[kind.value] = report
+    st.session_state[_REPORTS_KEY] = reports
+    exports = dict(st.session_state.get(_EXPORTS_KEY, {}))
+    exports[kind.value] = generated
+    st.session_state[_EXPORTS_KEY] = exports
     persisted = dict(st.session_state.get(_PERSISTED_RUNS_KEY, {}))
-    persisted[kind.value] = persist_flight_run(export_root, report, generated)
+    persisted[kind.value] = persisted_run
     st.session_state[_PERSISTED_RUNS_KEY] = persisted
     st.session_state[_ACTIVE_KIND_KEY] = kind.value
+    st.session_state.pop(_RUN_ERROR_KEY, None)
+
+
+def current_run_error() -> str | None:
+    """Return the controlled fail-closed message for the latest attempted run."""
+    value = st.session_state.get(_RUN_ERROR_KEY)
+    return value if isinstance(value, str) else None
 
 
 def current_report(kind: FlightKind | None = None) -> FlightReport | None:
