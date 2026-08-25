@@ -102,6 +102,7 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
     assert "Permis prezentat din nou" in text
     assert document.tables[0].rows[0].cells[0].text == "Situație"
     assert len(document.tables[0].rows) == 7
+    assert len(document.tables) == 1
 
 
 def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
@@ -114,6 +115,16 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Decizie Gateway: gateway-" in text
     assert "Politică rută: erp.purchase-orders" in text
     assert "Organizație: PowerNet" in text
+    assert "Sinteza modulelor și a dovezilor" in text
+    assert "Evidența arhivei documentare verificabile" in text
+    assert "Decizii de rutare și blocare" in text
+    assert "Trasabilitatea end-to-end între module" in text
+    assert "Exemplu de corelare completă" in text
+    assert "Document modificat după semnare" in text
+    assert "Neînregistrat" in "\n".join(
+        cell.text for table in document.tables for row in table.rows for cell in row.cells
+    )
+    assert len(document.tables) == 5
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:

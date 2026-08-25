@@ -41,6 +41,8 @@ def render_docx_report(report: FlightReport) -> bytes:
     view = present_flight(report)
     _add_masthead(document, report, view)
     _add_decision_register(document, view)
+    if report.flight_kind is FlightKind.TRANSVERSAL:
+        _add_transversal_evidence(document, report)
     for scenario in view.scenarios:
         _add_scenario(document, scenario)
     buffer = BytesIO()
@@ -310,9 +312,247 @@ def _add_decision_register(document: WordDocument, view: FlightView) -> None:
         _set_cell_text(cells[2], scenario.api_effect, size=9.5)
     note = document.add_paragraph(
         "Pachetul de audit include reprezentarea structurată a raportului, jurnalul ordonat "
-        "ordonat și manifestul de integritate care permit verificarea acestor concluzii."
+        "și manifestul de integritate care permit verificarea acestor concluzii."
     )
     note.paragraph_format.space_before = Pt(8)
+
+
+def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> None:
+    """Expose the additional DMS and Gateway evidence carried by a transversal flight."""
+    archived_results = tuple(result for result in report.results if result.archive_ids)
+    archive_records = sum(len(result.archive_ids) for result in archived_results)
+    gateway_decisions = tuple(
+        decision for result in report.results for decision in result.gateway_decisions
+    )
+    routed = sum(decision.status.value == "routed" for decision in gateway_decisions)
+    blocked = sum(decision.status.value == "blocked" for decision in gateway_decisions)
+
+    _add_chapter_heading(
+        document,
+        "ACOPERIRE TRANSVERSALĂ",
+        "Sinteza modulelor și a dovezilor",
+        "Raportul transversal separă rezultatele fiecărui modul și păstrează legătura "
+        "dintre documentul semnat, înregistrarea documentară, decizia Gateway și efectul API.",
+    )
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    widths = (1850, 3250, 2300, 1960)
+    _set_table_geometry(table, widths)
+    headers = ("Modul", "Responsabilitate demonstrată", "Dovadă observată", "Rezultat")
+    for cell, text in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    module_rows = (
+        (
+            "Signed Intent Control",
+            "Validează revizia semnată, confirmă semantic intenția și emite permisul unic.",
+            f"{report.passed_scenarios}/{len(report.results)} scenarii conforme",
+            "CONTROLAT",
+        ),
+        (
+            "Document Archive",
+            "Înregistrează numai reviziile validate și păstrează continuitatea versiunilor.",
+            f"{archive_records} referințe de arhivare în {len(archived_results)} scenarii",
+            "VERIFICABIL",
+        ),
+        (
+            "Semantic API Gateway",
+            "Aplică permisul, politica rutei și legarea exactă de acțiunea solicitată.",
+            f"{len(gateway_decisions)} decizii: {routed} rutate / {blocked} blocate",
+            "APLICAT",
+        ),
+    )
+    for module, responsibility, evidence, result in module_rows:
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], module, bold=True, size=9.2)
+        _set_cell_text(cells[1], responsibility, size=9.2)
+        _set_cell_text(cells[2], evidence, size=9.2)
+        _set_cell_text(cells[3], result, bold=True, color=_SUCCESS, size=9.2)
+
+    document.add_heading("Flux operațional demonstrat", level=2)
+    for item in (
+        "Documentul este acceptat numai dacă revizia și semnătura corespund conținutului primit.",
+        "Intenția confirmată este compilată într-o acțiune exactă și legată de un permis unic.",
+        "Arhiva păstrează reviziile validate, iar Gateway-ul decide dacă acțiunea poate fi rutată.",
+        "Fiecare rezultat rămâne corelat cu identificatorii tehnici incluși în pachetul de audit.",
+    ):
+        document.add_paragraph(item, style="List Bullet")
+
+    _add_dms_evidence(document, report)
+    _add_gateway_evidence(document, report)
+    _add_end_to_end_traceability(document, report)
+
+
+def _add_dms_evidence(document: WordDocument, report: FlightReport) -> None:
+    _add_chapter_heading(
+        document,
+        "DOCUMENT ARCHIVE",
+        "Evidența arhivei documentare verificabile",
+        "Registrul de mai jos inventariază numai reviziile acceptate de controlul criptografic. "
+        "Documentul modificat după semnare este oprit înainte de arhivare.",
+    )
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    widths = (2700, 1150, 3300, 2210)
+    _set_table_geometry(table, widths)
+    headers = ("Scenariu", "Revizii", "Ultima înregistrare", "Continuitate")
+    for cell, text in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    for result in report.results:
+        if not result.archive_ids:
+            continue
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], result.title, size=9.2)
+        _set_cell_text(cells[1], str(len(result.archive_ids)), bold=True, size=9.2)
+        _set_cell_text(cells[2], result.archive_ids[-1], size=8.8)
+        continuity = "Lanț de revizii" if len(result.archive_ids) > 1 else "Revizie validată"
+        _set_cell_text(cells[3], continuity, size=9.2)
+
+    document.add_heading("Controale demonstrate", level=2)
+    for item in (
+        "Arhivarea este declanșată după validarea semnăturii și a digestului reviziei.",
+        "O revizie ulterioară declară explicit amprenta reviziei anterioare.",
+        "Identificatorul arhivei este inclus în rezultatul scenariului și în jurnalul exportat.",
+        "Respingerea timpurie împiedică introducerea în arhivă a documentelor alterate.",
+    ):
+        document.add_paragraph(item, style="List Bullet")
+
+
+def _add_gateway_evidence(document: WordDocument, report: FlightReport) -> None:
+    _add_chapter_heading(
+        document,
+        "SEMANTIC API GATEWAY",
+        "Decizii de rutare și blocare",
+        "Gateway-ul aplică politica rutei și verifică permisul criptografic direct față de "
+        "acțiunea observată înainte ca cererea să ajungă la serviciul protejat.",
+    )
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    widths = (2450, 2350, 1450, 3110)
+    _set_table_geometry(table, widths)
+    headers = ("Scenariu", "Decizie Gateway", "Rezultat", "Politică și verificări")
+    for cell, text in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    for result in report.results:
+        for decision in result.gateway_decisions:
+            cells = table.add_row().cells
+            _apply_row_geometry(cells, widths)
+            _set_cell_text(cells[0], result.title, size=9.1)
+            _set_cell_text(cells[1], decision.decision_id, size=8.8)
+            status = "RUTATĂ" if decision.status.value == "routed" else "BLOCATĂ"
+            tone = _SUCCESS if decision.status.value == "routed" else _DANGER
+            _set_cell_text(cells[2], status, bold=True, color=tone, size=9.1)
+            _set_cell_text(
+                cells[3],
+                f"{decision.route_id} · {len(decision.checks)} controale · {decision.code}",
+                size=8.9,
+            )
+
+    document.add_heading("Limita de execuție demonstrată", level=2)
+    for item in (
+        "O rută modificată după emiterea permisului este blocată înainte de serviciul protejat.",
+        "Prima prezentare conformă poate fi rutată, iar reutilizarea aceluiași permis "
+        "este respinsă.",
+        "Deciziile păstrează digestul cererii, digestul acțiunii autorizate și rezultatul "
+        "controalelor.",
+    ):
+        document.add_paragraph(item, style="List Bullet")
+
+
+def _add_end_to_end_traceability(document: WordDocument, report: FlightReport) -> None:
+    _add_chapter_heading(
+        document,
+        "TRASABILITATE",
+        "Trasabilitatea end-to-end între module",
+        "Matricea confirmă unde s-a oprit sau a continuat fiecare scenariu și separă "
+        "explicit efectul documentar de decizia de securitate și de execuția API.",
+    )
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    widths = (2450, 2450, 1700, 2760)
+    _set_table_geometry(table, widths)
+    headers = ("Scenariu", "Document și intenție", "Arhivă", "Gateway și API")
+    for cell, text in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    for result in report.results:
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], result.title, size=9)
+        if result.scenario_id.value == "tampered-document":
+            document_state = "Blocat la integritate"
+        elif result.scenario_id.value == "semantic-conflict":
+            document_state = "Validat; consens neconcludent"
+        else:
+            document_state = "Validat; intenție confirmată"
+        _set_cell_text(cells[1], document_state, size=9)
+        archive_count = len(result.archive_ids)
+        archive_state = (
+            f"{archive_count} {'revizie' if archive_count == 1 else 'revizii'}"
+            if archive_count
+            else "Neînregistrat"
+        )
+        _set_cell_text(cells[2], archive_state, size=9)
+        gateway_states = tuple(
+            "Rutată" if decision.status.value == "routed" else "Blocată"
+            for decision in result.gateway_decisions
+        )
+        if gateway_states:
+            execution = " · ".join(gateway_states)
+            if result.receipt is not None:
+                execution = f"{execution}; API {result.receipt.response_code}"
+        else:
+            execution = "Gateway neapelat; API neexecutat"
+        _set_cell_text(cells[3], execution, size=9)
+
+    reference = next(
+        result
+        for result in report.results
+        if result.archive_ids and result.gateway_decisions and result.receipt is not None
+    )
+    if reference.verification is None or reference.receipt is None:
+        raise AssertionError("complete transversal reference lacks verification or receipt")
+    document.add_heading("Exemplu de corelare completă", level=2)
+    correlation_items = (
+        f"Flux: {reference.workflow.correlation_id}",
+        f"Document: {_compact_report_digest(reference.verification.revision_digest)}",
+        f"Arhivă: {', '.join(reference.archive_ids)}",
+        f"Permis: {reference.permit_id}",
+        f"Decizie Gateway: {reference.gateway_decisions[-1].decision_id}",
+        (
+            f"Execuție API: {reference.receipt.execution_id} · "
+            f"răspuns {reference.receipt.response_code}"
+        ),
+    )
+    for item in correlation_items:
+        paragraph = document.add_paragraph(style="SODIF Evidence")
+        _set_run_font(paragraph.add_run(item), "Consolas", 9, _DARK_BLUE)
+
+
+def _add_chapter_heading(
+    document: WordDocument,
+    kicker_text: str,
+    title: str,
+    introduction: str,
+) -> None:
+    kicker = document.add_paragraph()
+    kicker.paragraph_format.page_break_before = True
+    kicker.paragraph_format.space_after = Pt(3)
+    _set_run_font(kicker.add_run(kicker_text), "Calibri", 8.5, _TEAL, bold=True)
+    document.add_heading(title, level=1)
+    document.add_paragraph(introduction)
+
+
+def _compact_report_digest(value: str) -> str:
+    return f"{value[:18]}…{value[-8:]}"
 
 
 def _add_scenario(document: WordDocument, scenario: ScenarioView) -> None:
