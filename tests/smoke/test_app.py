@@ -186,10 +186,10 @@ def test_operational_configuration_is_retained_and_drives_the_active_session() -
     assert not app.exception
     assert "Configurare operațională" in _copy(app)
     fields = {item.label: item for item in app.text_input}
-    assert fields["Organizație"].value == "PowerNet"
+    assert fields["Organizație"].value == "TECHSUITE"
     assert fields["Domeniu"].value == "Achiziții"
     assert fields["Politică de rutare"].value == "erp.purchase-orders"
-    fields["Organizație"].set_value("PowerNet Labs")
+    fields["Organizație"].set_value("TECHSUITE Labs")
     fields["Domeniu"].set_value("Aprobări operaționale")
     fields["Politică de rutare"].set_value("operations.approvals")
     fields["Audiență autorizată"].set_value("operations-api")
@@ -200,7 +200,7 @@ def test_operational_configuration_is_retained_and_drives_the_active_session() -
 
     assert not app.exception
     configured_copy = _copy(app)
-    assert "PowerNet Labs" in configured_copy
+    assert "TECHSUITE Labs" in configured_copy
     assert "Aprobări operaționale" in configured_copy
     control = app.switch_page("pages/control.py").run(timeout=15)
     next(
@@ -300,7 +300,7 @@ def test_control_center_fails_closed_when_the_run_ledger_is_modified(
     ledger = export_root / "sodif-run-integrity-ledger.ndjson"
     content = ledger.read_text(encoding="utf-8")
     ledger.write_text(
-        content.replace('"organization":"PowerNet"', '"organization":"PowerNex"', 1),
+        content.replace('"organization":"TECHSUITE"', '"organization":"TECHSUITX"', 1),
         encoding="utf-8",
     )
 

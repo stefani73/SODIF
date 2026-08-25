@@ -44,7 +44,7 @@ def test_export_package_is_deterministic_and_self_verifying() -> None:
     assert manifest["protocol"] == "sodif.evidence-manifest/v1"
     assert manifest["report_id"] == report.report_id
     assert manifest["flight_kind"] == "security"
-    assert manifest["organization"] == "PowerNet"
+    assert manifest["organization"] == "TECHSUITE"
     assert manifest["session_id"] == "session-local-default"
     assert manifest["evidence_root"].startswith("sha256:")
 
@@ -57,7 +57,7 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
 
     assert serialize_report(restored) == exports.report.data
     assert events[0]["event_type"] == "flight.opened"
-    assert events[0]["organization"] == "PowerNet"
+    assert events[0]["organization"] == "TECHSUITE"
     assert events[0]["route_id"] == "erp.purchase-orders"
     assert events[-1]["event_type"] == "flight.sealed"
     decisions = [event for event in events if event["event_type"] == "scenario.decision"]
@@ -114,7 +114,7 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Arhivă: arc-" in text
     assert "Decizie Gateway: gateway-" in text
     assert "Politică rută: erp.purchase-orders" in text
-    assert "Organizație: PowerNet" in text
+    assert "Organizație: TECHSUITE" in text
     assert "Sinteza modulelor și a dovezilor" in text
     assert "Evidența arhivei documentare verificabile" in text
     assert "Decizii de rutare și blocare" in text
@@ -203,7 +203,7 @@ def test_run_integrity_ledger_detects_tampering_and_refuses_a_new_entry(
     ledger = persisted.ledger_path
     original = ledger.read_text(encoding="utf-8")
     ledger.write_text(
-        original.replace('"organization":"PowerNet"', '"organization":"PowerNex"', 1),
+        original.replace('"organization":"TECHSUITE"', '"organization":"TECHSUITX"', 1),
         encoding="utf-8",
     )
 

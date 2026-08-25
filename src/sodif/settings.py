@@ -48,7 +48,7 @@ class ModuleSettings:
 class ProductProfileSettings:
     """Preconfigured operational identity used to initialize a user session."""
 
-    organization_name: str = "PowerNet"
+    organization_name: str = "TECHSUITE"
     workspace_name: str = "SODIF Transaction Control"
     domain_name: str = "Achiziții"
     protected_service: str = "ERP Purchase API"
@@ -103,7 +103,7 @@ def load_settings() -> AppSettings:
             ),
         ),
         profile=ProductProfileSettings(
-            organization_name=getenv("SODIF_ORGANIZATION_NAME", "PowerNet"),
+            organization_name=getenv("SODIF_ORGANIZATION_NAME", "TECHSUITE"),
             workspace_name=getenv("SODIF_WORKSPACE_NAME", "SODIF Transaction Control"),
             domain_name=getenv("SODIF_DOMAIN_NAME", "Achiziții"),
             protected_service=getenv("SODIF_PROTECTED_SERVICE", "ERP Purchase API"),
