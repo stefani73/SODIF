@@ -72,3 +72,26 @@ class ArchiveSearchPage(DomainModel):
         if len(self.records) > self.total:
             raise ValueError("archive page contains more records than the total")
         return self
+
+
+class ArchiveSummary(DomainModel):
+    """Aggregate archive facts displayed by registry clients."""
+
+    total_documents: int = Field(ge=0)
+    total_revisions: int = Field(ge=0)
+    total_bytes: int = Field(ge=0)
+    signer_ids: tuple[Identifier, ...]
+    latest_archived_at: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def totals_are_consistent(self) -> Self:
+        if self.total_documents > self.total_revisions:
+            raise ValueError("archive cannot contain more documents than revisions")
+        if self.total_revisions == 0 and (
+            self.total_documents != 0
+            or self.total_bytes != 0
+            or self.signer_ids
+            or self.latest_archived_at is not None
+        ):
+            raise ValueError("an empty archive cannot expose aggregate values")
+        return self

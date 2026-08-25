@@ -13,6 +13,10 @@ Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură
 arhivare. Un pachet demonstrativ semnat poate fi verificat direct sau descărcat pentru
 reîncărcare manuală.
 
+Pagina „Registru documente” oferă căutare, filtrare, previzualizare PDF și acces la istoricul
+verificabil al reviziilor. Conținutul este furnizat interfeței numai după ce arhiva îi
+reconfirmă dimensiunea și amprenta criptografică.
+
 ## Pornire locală
 
 ```powershell

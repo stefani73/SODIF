@@ -5,10 +5,12 @@ from sodif.ui.pages.evidence import render_evidence_hub
 from sodif.ui.pages.ingestion import render_document_ingestion
 from sodif.ui.pages.overview import render_overview
 from sodif.ui.pages.product import render_product_explainer
+from sodif.ui.pages.registry import render_document_registry
 
 __all__ = [
     "render_control_center",
     "render_document_ingestion",
+    "render_document_registry",
     "render_evidence_hub",
     "render_overview",
     "render_product_explainer",

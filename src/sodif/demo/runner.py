@@ -139,7 +139,7 @@ class FlightRunner:
         report_digest = sha256_digest(results)
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
-            release="0.11.0-dms2",
+            release="0.12.0-dms3",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,

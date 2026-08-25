@@ -5,14 +5,13 @@ from datetime import timedelta
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-from sodif.demo.fixtures import BASE_PDF
 from sodif.documents.demo import DEMO_SIGNED_AT, sign_demo_revision
 from sodif.domain.revisions import SignedRevision
 
 SAMPLE_PDF_NAME = "comanda-achizitie-demo.pdf"
 SAMPLE_SIGNATURE_NAME = "comanda-achizitie-demo.signature.json"
 SAMPLE_ZIP_NAME = "sodif-document-semnat.zip"
-SAMPLE_DOCUMENT_ID = "doc-ingestion-demo-001"
+SAMPLE_DOCUMENT_ID = "doc-ingestion-demo-002"
 _ZIP_TIMESTAMP = (2026, 8, 24, 14, 0, 0)
 
 
@@ -26,17 +25,61 @@ class SignedSample:
 
 def build_signed_sample() -> SignedSample:
     """Build the deterministic PDF, detached signature and portable ZIP package."""
+    content = _build_sample_pdf()
     revision = sign_demo_revision(
-        BASE_PDF,
+        content,
         document_id=SAMPLE_DOCUMENT_ID,
         signed_at=DEMO_SIGNED_AT - timedelta(hours=12),
     )
     signature = (revision.model_dump_json(indent=2) + "\n").encode()
     output = BytesIO()
     with ZipFile(output, mode="w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
-        _write_zip_entry(archive, SAMPLE_PDF_NAME, BASE_PDF)
+        _write_zip_entry(archive, SAMPLE_PDF_NAME, content)
         _write_zip_entry(archive, SAMPLE_SIGNATURE_NAME, signature)
-    return SignedSample(SAMPLE_PDF_NAME, BASE_PDF, revision, output.getvalue())
+    return SignedSample(SAMPLE_PDF_NAME, content, revision, output.getvalue())
+
+
+def _build_sample_pdf() -> bytes:
+    """Create a small standards-compliant PDF that can be rendered by the product viewer."""
+    stream = (
+        b"BT\n/F1 20 Tf\n72 760 Td\n(SODIF Purchase Order) Tj\n"
+        b"0 -38 Td\n/F1 11 Tf\n(Supplier: SUP-01) Tj\n"
+        b"0 -22 Td\n(Total: 1250.00 EUR) Tj\n"
+        b"0 -22 Td\n(Status: signed document sample) Tj\nET\n"
+    )
+    objects = (
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        (
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
+            b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>"
+        ),
+        (
+            b"<< /Length "
+            + str(len(stream)).encode("ascii")
+            + b" >>\nstream\n"
+            + stream
+            + b"endstream"
+        ),
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    )
+    output = bytearray(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
+    offsets: list[int] = []
+    for object_number, body in enumerate(objects, start=1):
+        offsets.append(len(output))
+        output.extend(f"{object_number} 0 obj\n".encode("ascii"))
+        output.extend(body)
+        output.extend(b"\nendobj\n")
+    xref_offset = len(output)
+    output.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
+    output.extend(b"0000000000 65535 f \n")
+    for offset in offsets:
+        output.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    output.extend(
+        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{xref_offset}\n%%EOF\n".encode("ascii")
+    )
+    return bytes(output)
 
 
 def _write_zip_entry(archive: ZipFile, name: str, data: bytes) -> None:

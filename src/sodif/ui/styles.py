@@ -347,6 +347,84 @@ div[data-testid="stDownloadButton"] button[kind="primary"] {
 .sodif-ingestion-metadata strong, .sodif-ingestion-metadata code {
     color:var(--navy); font-size:.76rem; overflow-wrap:anywhere;
 }
+.sodif-registry-stat {
+    display:grid; min-height:116px; padding:1.05rem 1.15rem; background:#fff;
+    border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(20,42,70,.035);
+}
+.sodif-registry-stat small {
+    color:#748399; font-size:.63rem; font-weight:800; letter-spacing:.09em;
+    text-transform:uppercase;
+}
+.sodif-registry-stat strong { color:var(--navy); font-size:1.65rem; margin:.28rem 0 .08rem; }
+.sodif-registry-stat span { color:var(--muted); font-size:.73rem; }
+.sodif-registry-results-head {
+    display:flex; align-items:center; justify-content:space-between; margin:.2rem 0 .8rem;
+}
+.sodif-registry-results-head strong { color:var(--navy); font-size:.87rem; }
+.sodif-registry-results-head span { color:#7a8899; font-size:.7rem; }
+.sodif-registry-record {
+    margin-top:.7rem; padding:1rem 1.05rem; background:#fff; border:1px solid var(--line);
+    border-radius:13px 13px 6px 6px; transition:border-color .18s, box-shadow .18s;
+}
+.sodif-registry-record.active {
+    border-color:#8ec8ce; box-shadow:0 8px 24px rgba(18,139,148,.09);
+}
+.sodif-registry-record > div { display:flex; align-items:center; justify-content:space-between; }
+.sodif-registry-record > div span {
+    padding:.22rem .42rem; color:#0d7780; background:#e7f4f4; border-radius:5px;
+    font-size:.6rem; font-weight:850; letter-spacing:.08em;
+}
+.sodif-registry-record small { color:#7b899a; font-size:.67rem; }
+.sodif-registry-record h3 {
+    color:var(--navy); font-size:.92rem; line-height:1.35; margin:.75rem 0 .28rem;
+}
+.sodif-registry-record p { color:#64748b; font-size:.72rem; margin:0; }
+.sodif-registry-record footer {
+    display:flex; justify-content:space-between; gap:.7rem; margin-top:.8rem; padding-top:.65rem;
+    border-top:1px solid #edf1f5; color:#758497; font-size:.66rem;
+}
+div[class*="st-key-registry-open-"] button { margin-top:-.2rem; border-radius:0 0 9px 9px; }
+.sodif-registry-detail-head { padding:.15rem 0 .5rem; }
+.sodif-registry-detail-head h2 { color:var(--navy); font-size:1.45rem; margin:.5rem 0 .25rem; }
+.sodif-registry-detail-head p { color:var(--muted); margin:0; font-size:.8rem; }
+.sodif-assurance-label {
+    display:flex; align-items:center; gap:.42rem; color:#167460; font-size:.65rem;
+    font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+}
+.sodif-assurance-label span { width:7px; height:7px; border-radius:50%; background:#23b58d; }
+.sodif-registry-metadata {
+    display:grid; grid-template-columns:1fr 1.15fr .65fr 1.35fr; gap:1px; margin:.8rem 0 1rem;
+    overflow:hidden; background:var(--line); border:1px solid var(--line); border-radius:12px;
+}
+.sodif-registry-metadata > div { display:grid; gap:.32rem; padding:.85rem; background:#fff; }
+.sodif-registry-metadata small {
+    color:#7a8899; font-size:.59rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase;
+}
+.sodif-registry-metadata strong, .sodif-registry-metadata code {
+    color:var(--navy); font-size:.71rem; overflow-wrap:anywhere;
+}
+.sodif-preview-label {
+    color:#607187; font-size:.68rem; font-weight:750; margin:.25rem 0 .65rem;
+}
+.sodif-traceability-intro {
+    display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0 .9rem;
+    color:var(--navy); font-size:.78rem;
+}
+.sodif-traceability-intro span { color:var(--muted); font-size:.7rem; }
+.sodif-revision-history {
+    padding:.4rem 1rem; background:#fff; border:1px solid var(--line); border-radius:13px;
+}
+.sodif-revision-item {
+    position:relative; display:grid; grid-template-columns:12px 1fr auto; gap:.7rem;
+    align-items:center; padding:.8rem 0;
+}
+.sodif-revision-item:not(:last-child) { border-bottom:1px solid #edf1f5; }
+.sodif-revision-item > span { width:8px; height:8px; border-radius:50%; background:#bdc9d5; }
+.sodif-revision-item.active > span { background:var(--teal); box-shadow:0 0 0 4px #e4f3f3; }
+.sodif-revision-item div { display:grid; gap:.15rem; }
+.sodif-revision-item strong { color:var(--navy); font-size:.78rem; }
+.sodif-revision-item small, .sodif-revision-item time { color:#748399; font-size:.65rem; }
 section[data-testid="stFileUploaderDropzone"] button div[data-testid="stMarkdownContainer"] p {
     display:none !important;
 }
@@ -415,6 +493,8 @@ div[data-testid="stSelectbox"] > div > div {
     .sodif-report-identity { grid-template-columns:1fr; }
     .sodif-boundary-panel { grid-template-columns:1fr; gap:1.2rem; }
     .sodif-ingestion-metadata { grid-template-columns:1fr; }
+    .sodif-registry-metadata { grid-template-columns:1fr 1fr; }
+    .sodif-traceability-intro { display:grid; }
     .sodif-scenario-head { display:grid; }
     .sodif-verdict { text-align:left; }
 }

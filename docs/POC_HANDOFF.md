@@ -18,6 +18,8 @@ Mecanismul **Signed Intent Execution** leagă verificabil:
 7. dovada execuției sau a blocării.
 8. înregistrarea verificabilă a reviziei acceptate în arhiva documentară locală.
 9. preluarea controlată a perechii document–semnătură și continuitatea versiunilor.
+10. consultarea documentului și a istoricului său printr-un registru care reverifică
+    integritatea la fiecare deschidere.
 
 Verificarea este adaptivă. Câmpurile critice sunt reverificate independent, iar procesarea
 extinsă este activată numai când riscul, incertitudinea sau impactul o justifică. AI poate

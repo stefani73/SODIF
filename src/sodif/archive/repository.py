@@ -11,7 +11,7 @@ from threading import RLock
 from typing import Protocol, runtime_checkable
 
 from sodif.archive.errors import ArchiveConflict, ArchiveIntegrityError, ArchiveNotFound
-from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage
+from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage, ArchiveSummary
 from sodif.domain.canonical import sha256_bytes
 from sodif.domain.enums import DocumentFormat
 from sodif.domain.types import Identifier
@@ -41,6 +41,8 @@ class ArchiveRepository(Protocol):
     def history(self, document_id: Identifier) -> tuple[ArchiveRecord, ...]: ...
 
     def search(self, query: ArchiveQuery) -> ArchiveSearchPage: ...
+
+    def summary(self) -> ArchiveSummary: ...
 
 
 class InMemoryArchiveRepository:
@@ -112,6 +114,17 @@ class InMemoryArchiveRepository:
         total = len(records)
         page = tuple(records[query.offset : query.offset + query.limit])
         return ArchiveSearchPage(records=page, total=total, limit=query.limit, offset=query.offset)
+
+    def summary(self) -> ArchiveSummary:
+        with self._lock:
+            records = tuple(self._records.values())
+        return ArchiveSummary(
+            total_documents=len({record.document_id for record in records}),
+            total_revisions=len(records),
+            total_bytes=sum(record.size_bytes for record in records),
+            signer_ids=tuple(sorted({record.signer_id for record in records})),
+            latest_archived_at=max((record.archived_at for record in records), default=None),
+        )
 
 
 class SqliteArchiveRepository:
@@ -227,6 +240,27 @@ class SqliteArchiveRepository:
             total=total,
             limit=query.limit,
             offset=query.offset,
+        )
+
+    def summary(self) -> ArchiveSummary:
+        with self._lock, self._connect() as connection:
+            totals = connection.execute(
+                """
+                SELECT COUNT(DISTINCT document_id), COUNT(*), COALESCE(SUM(size_bytes), 0),
+                       MAX(archived_at)
+                FROM archive_records
+                """
+            ).fetchone()
+            signer_rows = connection.execute(
+                "SELECT DISTINCT signer_id FROM archive_records ORDER BY signer_id ASC"
+            ).fetchall()
+        latest = totals[3]
+        return ArchiveSummary(
+            total_documents=int(totals[0]),
+            total_revisions=int(totals[1]),
+            total_bytes=int(totals[2]),
+            signer_ids=tuple(str(row[0]) for row in signer_rows),
+            latest_archived_at=None if latest is None else datetime.fromisoformat(str(latest)),
         )
 
     def _initialize(self) -> None:

@@ -12,8 +12,13 @@ from sodif.archive.ingestion import (
     SystemUtcClock,
     build_local_ingestion_service,
 )
-from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage
+from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage, ArchiveSummary
 from sodif.archive.policy import ingestion_policy
+from sodif.archive.registry import (
+    DocumentRegistryService,
+    RegistrySelection,
+    build_local_registry_service,
+)
 from sodif.archive.repository import (
     ArchivedDocument,
     ArchiveRepository,
@@ -31,13 +36,17 @@ __all__ = [
     "ArchiveRecord",
     "ArchiveRepository",
     "ArchiveSearchPage",
+    "ArchiveSummary",
     "ArchivedDocument",
     "DocumentArchiveService",
+    "DocumentRegistryService",
     "InMemoryArchiveRepository",
     "IngestionReceipt",
+    "RegistrySelection",
     "SignedDocumentIngestionService",
     "SqliteArchiveRepository",
     "SystemUtcClock",
     "build_local_ingestion_service",
+    "build_local_registry_service",
     "ingestion_policy",
 ]

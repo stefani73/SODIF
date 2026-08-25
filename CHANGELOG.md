@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 — DMS D3: registrul documentelor
+
+- registru de produs cu sumar, căutare și filtrare după semnatar;
+- gruparea reviziilor sub identitatea documentului;
+- deschiderea conținutului numai după reverificarea integrității;
+- previzualizare PDF și descărcarea reviziei selectate;
+- trasabilitatea completă a lanțului de revizii;
+- acces direct la registru din demonstrația controlată.
+
 ## 0.11.0 — DMS D2: preluarea documentelor semnate
 
 - pagină de produs dedicată preluării documentului PDF și dovezii de semnătură;

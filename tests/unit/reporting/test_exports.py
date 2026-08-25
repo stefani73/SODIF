@@ -61,7 +61,7 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
 
     assert "RAPORT ASSURANCE FLIGHT" in text
     assert "Registrul deciziilor" in text
-    assert "0.11.0-dms2" not in text
+    assert "0.12.0-dms3" not in text
     assert "Comandă autentică și neambiguă" in text
     assert "Arhivă: arc-" in text
     assert "Document modificat după semnare" in text

@@ -7,6 +7,8 @@ from _pytest.monkeypatch import MonkeyPatch
 from streamlit.testing.v1 import AppTest
 
 from sodif.app import main
+from sodif.archive import build_local_ingestion_service
+from sodif.archive.sample import build_signed_sample
 from sodif.settings import AppSettings
 
 
@@ -74,6 +76,36 @@ def test_document_ingestion_page_archives_the_signed_sample(
     assert (tmp_path / "archive" / "index.sqlite3").is_file()
 
 
+def test_document_registry_searches_and_opens_the_verified_pdf(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    archive_root = tmp_path / "archive"
+    monkeypatch.setenv("SODIF_ARCHIVE_ROOT", str(archive_root))
+    sample = build_signed_sample()
+    build_local_ingestion_service(archive_root).ingest(
+        sample.content,
+        sample.revision,
+        sample.original_name,
+    )
+    app = _application().run(timeout=15).switch_page("pages/registry.py").run(timeout=15)
+
+    assert not app.exception
+    copy = _copy(app)
+    assert "Registru documente" in copy
+    assert "Integritate reconfirmată" in copy
+    assert "Previzualizare securizată" in copy
+    assert "doc-ingestion-demo-002" in copy
+    assert "1 document" in copy
+    assert "1 revizie găsită" in copy
+    assert [item.label for item in app.get("download_button")] == ["Descarcă revizia"]
+    search = next(item for item in app.text_input if item.label == "Document, fișier sau semnatar")
+    search.set_value("document-inexistent").run(timeout=15)
+
+    assert not app.exception
+    assert app.info[0].value == "Nu există documente care corespund criteriilor selectate."
+
+
 def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> None:
     app = _application().run(timeout=15).switch_page("pages/control.py").run(timeout=15)
 
@@ -90,6 +122,9 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
     assert "Comandă autentică și neambiguă" in control_copy
     assert "Sens aprobat" not in control_copy
     assert len(app.get("download_button")) == 0
+    assert any(
+        getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
+    )
 
     app.switch_page("pages/reports.py").run(timeout=15)
 

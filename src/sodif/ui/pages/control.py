@@ -14,6 +14,7 @@ from sodif.ui.state import current_report, run_assurance_demo
 def render_control_center(
     flight_runner: Callable[[], FlightReport],
     reports_page: str,
+    registry_page: str,
 ) -> None:
     """Run and explore the complete controlled-execution demonstration."""
     intro, action = st.columns((0.7, 0.3), vertical_alignment="bottom")
@@ -41,12 +42,19 @@ def render_control_center(
 
     view = present_flight(report)
     render_flight_summary(view)
-    shortcut, spacer = st.columns((0.3, 0.7))
-    with shortcut, st.container(key="reports_shortcut"):
+    reports_shortcut, registry_shortcut, spacer = st.columns((0.24, 0.24, 0.52))
+    with reports_shortcut, st.container(key="reports_shortcut"):
         st.page_link(
             reports_page,
             label="Deschide rapoartele",
             icon=":material/fact_check:",
+            use_container_width=True,
+        )
+    with registry_shortcut, st.container(key="registry_shortcut"):
+        st.page_link(
+            registry_page,
+            label="Deschide registrul",
+            icon=":material/folder_open:",
             use_container_width=True,
         )
     with spacer:
