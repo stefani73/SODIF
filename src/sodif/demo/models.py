@@ -30,6 +30,27 @@ class FlightKind(StrEnum):
     TRANSVERSAL = "transversal"
 
 
+class FlightConfiguration(DomainModel):
+    """Operational context captured with every product run."""
+
+    session_id: Identifier
+    organization_name: str = Field(min_length=1, max_length=120)
+    workspace_name: str = Field(min_length=1, max_length=120)
+    domain_name: str = Field(min_length=1, max_length=120)
+    environment: Identifier
+    protected_service: str = Field(min_length=1, max_length=120)
+    route_id: Identifier
+    audience: Identifier
+    path_prefix: str = Field(min_length=1, max_length=160)
+    maximum_parameters: int = Field(ge=1, le=256)
+
+    @model_validator(mode="after")
+    def gateway_boundary_is_valid(self) -> Self:
+        if not self.path_prefix.startswith("/") or self.path_prefix.endswith("/"):
+            raise ValueError("flight path prefix must start with / and omit a trailing /")
+        return self
+
+
 class ScenarioOutcome(StrEnum):
     EXECUTED = "executed"
     BLOCKED = "blocked"
@@ -108,6 +129,7 @@ class ScenarioResult(DomainModel):
 class FlightReport(DomainModel):
     report_id: Identifier
     flight_kind: FlightKind
+    configuration: FlightConfiguration
     release: Identifier
     started_at: AwareDatetime
     completed_at: AwareDatetime

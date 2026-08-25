@@ -43,12 +43,12 @@ def render_module_contract(module: ProductModule) -> None:
 
 
 def render_flight_summary(view: FlightView) -> None:
-    """Render the user-facing conclusion of a completed demonstration."""
+    """Render the user-facing conclusion of a completed product run."""
     st.markdown(
         f"""
         <section class="sodif-flight-summary {view.tone}">
             <span class="sodif-summary-icon" aria-hidden="true"></span>
-            <div><div class="sodif-summary-kicker">Rezultatul demonstrației</div>
+            <div><div class="sodif-summary-kicker">Starea rulării</div>
             <h2>{escape(view.title)}</h2><p>{escape(view.detail)}</p></div>
         </section>
         """,

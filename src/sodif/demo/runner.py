@@ -24,6 +24,7 @@ from sodif.demo.fixtures import (
     purchase_order_schema,
 )
 from sodif.demo.models import (
+    FlightConfiguration,
     FlightKind,
     FlightReport,
     FlightScenario,
@@ -140,11 +141,13 @@ class FlightRunner:
         archive_repository: ArchiveRepository | None = None,
         *,
         flight_kind: FlightKind = FlightKind.SECURITY,
+        configuration: FlightConfiguration | None = None,
     ) -> None:
         if flight_kind is FlightKind.SECURITY and archive_repository is not None:
             raise ValueError("security flight cannot use a document archive")
         self._flight_kind = flight_kind
         self._archive_repository = archive_repository
+        self._configuration = configuration or default_flight_configuration()
 
     def run(self) -> FlightReport:
         results = (
@@ -155,11 +158,18 @@ class FlightRunner:
             self._action_tampering(),
             self._replay_attack(),
         )
-        report_digest = sha256_digest({"flight_kind": self._flight_kind, "results": results})
+        report_digest = sha256_digest(
+            {
+                "flight_kind": self._flight_kind,
+                "configuration": self._configuration,
+                "results": results,
+            }
+        )
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
-            release="0.17.0-transversal3",
+            configuration=self._configuration,
+            release="0.18.0-product4",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -250,7 +260,9 @@ class FlightRunner:
             accepted_values(),
         )
         plan, permit = self._compile_and_issue(context, document, verification)
-        changed_plan = plan.model_copy(update={"path": "/purchase-orders/privileged"})
+        changed_plan = plan.model_copy(
+            update={"path": f"{self._configuration.path_prefix}/privileged"}
+        )
         if context.gateway is not None:
             decision = context.gateway.handle(
                 self._gateway_request(context, changed_plan, permit, "changed-action")
@@ -392,7 +404,10 @@ class FlightRunner:
             acceptance.envelope,
             BASE_PDF,
             context.schema,
-            purchase_order_action(),
+            purchase_order_action(
+                audience=self._configuration.audience,
+                path=self._configuration.path_prefix,
+            ),
         )
         context.move(ProcessingStage.RISK_TRIAGED, verification.initial_level.value)
         context.observe(
@@ -439,7 +454,13 @@ class FlightRunner:
             context.schema,
             context.policy,
         )
-        plan = DeterministicActionCompiler().compile(manifest, purchase_order_action())
+        plan = DeterministicActionCompiler().compile(
+            manifest,
+            purchase_order_action(
+                audience=self._configuration.audience,
+                path=self._configuration.path_prefix,
+            ),
+        )
         context.move(ProcessingStage.ACTION_COMPILED, "intent compiled into exact API action")
         context.observe(
             "action-compiled",
@@ -541,11 +562,11 @@ class FlightRunner:
             SemanticExecutionGateway(
                 (
                     GatewayRoutePolicy(
-                        route_id="erp.purchase-orders",
-                        audience="erp-purchase-api",
+                        route_id=self._configuration.route_id,
+                        audience=self._configuration.audience,
                         allowed_methods=(HttpMethod.POST,),
-                        allowed_path_prefixes=("/purchase-orders",),
-                        maximum_parameters=16,
+                        allowed_path_prefixes=(self._configuration.path_prefix,),
+                        maximum_parameters=self._configuration.maximum_parameters,
                     ),
                 ),
                 permit_authorizer,
@@ -576,8 +597,8 @@ class FlightRunner:
             gateway=gateway,
         )
 
-    @staticmethod
     def _gateway_request(
+        self,
         context: _ScenarioContext,
         plan: ExecutionPlan,
         permit: ExecutionPermit,
@@ -585,7 +606,7 @@ class FlightRunner:
     ) -> GatewayRequest:
         return GatewayRequest(
             request_id=f"request-{context.scenario_id.value}-{purpose}",
-            route_id="erp.purchase-orders",
+            route_id=self._configuration.route_id,
             plan=plan,
             permit=permit,
         )
@@ -648,29 +669,55 @@ class FlightRunner:
         )
 
 
+def default_flight_configuration() -> FlightConfiguration:
+    """Return a deterministic operational profile for CLI and automated tests."""
+    return FlightConfiguration(
+        session_id="session-local-default",
+        organization_name="PowerNet",
+        workspace_name="SODIF Transaction Control",
+        domain_name="Achiziții",
+        environment="local",
+        protected_service="ERP Purchase API",
+        route_id="erp.purchase-orders",
+        audience="erp-purchase-api",
+        path_prefix="/purchase-orders",
+        maximum_parameters=16,
+    )
+
+
 def run_default_flight() -> FlightReport:
     """Run the funding-core security flight without DMS side effects."""
     return run_security_flight()
 
 
-def run_security_flight() -> FlightReport:
+def run_security_flight(configuration: FlightConfiguration | None = None) -> FlightReport:
     """Run signed-intent security controls without document archiving."""
-    return FlightRunner(flight_kind=FlightKind.SECURITY).run()
+    return FlightRunner(
+        flight_kind=FlightKind.SECURITY,
+        configuration=configuration,
+    ).run()
 
 
-def run_transversal_memory_flight() -> FlightReport:
+def run_transversal_memory_flight(
+    configuration: FlightConfiguration | None = None,
+) -> FlightReport:
     """Run all three product modules against an ephemeral archive repository."""
     return FlightRunner(
         InMemoryArchiveRepository(),
         flight_kind=FlightKind.TRANSVERSAL,
+        configuration=configuration,
     ).run()
 
 
-def run_transversal_flight(archive_root: Path) -> FlightReport:
+def run_transversal_flight(
+    archive_root: Path,
+    configuration: FlightConfiguration | None = None,
+) -> FlightReport:
     """Run all three product modules against the persistent local archive."""
     return FlightRunner(
         SqliteArchiveRepository(archive_root),
         flight_kind=FlightKind.TRANSVERSAL,
+        configuration=configuration,
     ).run()
 
 

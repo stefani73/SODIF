@@ -9,6 +9,7 @@ from docx import Document
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
+from sodif.reporting import persist_flight_run
 from sodif.reporting.cli import write_exports
 from sodif.reporting.serializers import serialize_report
 from sodif.reporting.service import build_flight_exports
@@ -36,6 +37,8 @@ def test_export_package_is_deterministic_and_self_verifying() -> None:
     assert manifest["protocol"] == "sodif.evidence-manifest/v1"
     assert manifest["report_id"] == report.report_id
     assert manifest["flight_kind"] == "security"
+    assert manifest["organization"] == "PowerNet"
+    assert manifest["session_id"] == "session-local-default"
     assert manifest["evidence_root"].startswith("sha256:")
 
 
@@ -47,6 +50,8 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
 
     assert serialize_report(restored) == exports.report.data
     assert events[0]["event_type"] == "flight.opened"
+    assert events[0]["organization"] == "PowerNet"
+    assert events[0]["route_id"] == "erp.purchase-orders"
     assert events[-1]["event_type"] == "flight.sealed"
     decisions = [event for event in events if event["event_type"] == "scenario.decision"]
     assert {event["scenario"] for event in decisions} == {
@@ -101,6 +106,7 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Arhivă: arc-" in text
     assert "Decizie Gateway: gateway-" in text
     assert "Politică rută: erp.purchase-orders" in text
+    assert "Organizație: PowerNet" in text
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:
@@ -115,3 +121,22 @@ def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:
         exports.bundle.filename,
     }
     assert all(path.is_file() and path.stat().st_size > 0 for path in paths)
+
+
+def test_completed_run_is_persisted_by_session_kind_and_report(tmp_path: Path) -> None:
+    report = run_transversal_memory_flight()
+    exports = build_flight_exports(report)
+
+    persisted = persist_flight_run(tmp_path, report, exports)
+
+    assert persisted.directory == (
+        tmp_path / report.configuration.session_id / "transversal" / report.report_id
+    )
+    assert {path.name for path in persisted.artifacts} == {
+        exports.document.filename,
+        exports.report.filename,
+        exports.audit_log.filename,
+        exports.manifest.filename,
+        exports.bundle.filename,
+    }
+    assert all(path.is_file() and path.stat().st_size > 0 for path in persisted.artifacts)

@@ -9,6 +9,7 @@ from sodif.demo.adapters import ScenarioSemanticAdapter
 from sodif.demo.cli import main
 from sodif.demo.fixtures import accepted_values, purchase_order_schema
 from sodif.demo.models import (
+    FlightConfiguration,
     FlightKind,
     FlightReport,
     FlightScenario,
@@ -135,6 +136,32 @@ def test_transversal_memory_flight_connects_all_three_modules_without_changing_o
     assert not scenarios[FlightScenario.SEMANTIC_CONFLICT].gateway_decisions
 
 
+def test_operational_configuration_drives_report_and_gateway_boundary() -> None:
+    configuration = FlightConfiguration(
+        session_id="session-customer-a",
+        organization_name="PowerNet Labs",
+        workspace_name="Regulated Operations",
+        domain_name="Aprobări operaționale",
+        environment="validation",
+        protected_service="Operations API",
+        route_id="operations.approvals",
+        audience="operations-api",
+        path_prefix="/approvals",
+        maximum_parameters=24,
+    )
+    report = run_transversal_memory_flight(configuration)
+    happy = indexed(report)[FlightScenario.HAPPY_PATH]
+
+    assert report.configuration == configuration
+    assert happy.receipt is not None
+    assert happy.receipt.path == "/approvals"
+    assert happy.receipt.audience == "operations-api"
+    assert happy.gateway_decisions[-1].route_id == "operations.approvals"
+    assert indexed(report)[FlightScenario.ACTION_TAMPERING].rejection_code == (
+        "permit.action_mismatch"
+    )
+
+
 def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
     main()
     output = capsys.readouterr().out
@@ -142,7 +169,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.17.0-transversal3"
+    assert report.release == "0.18.0-product4"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

@@ -61,14 +61,14 @@ def _configure_document(document: WordDocument, report: FlightReport) -> None:
     section.footer_distance = Inches(0.492)
 
     properties = document.core_properties
-    properties.title = "Raport de demonstrație SODIF"
-    properties.subject = "Dovezi privind execuția controlată a intenției semnate"
+    properties.title = "Raport operațional SODIF"
+    properties.subject = "Auditul execuției controlate a intenției semnate"
     properties.author = "SODIF"
     properties.last_modified_by = "SODIF"
     properties.created = report.started_at.replace(tzinfo=None)
     properties.modified = report.completed_at.replace(tzinfo=None)
     properties.revision = 1
-    properties.comments = "Generat determinist din dovezile demonstrației SODIF."
+    properties.comments = "Generat automat din jurnalul operațional SODIF."
 
     _configure_styles(document)
     _configure_numbering(document)
@@ -165,7 +165,7 @@ def _configure_numbering(document: WordDocument) -> None:
 def _configure_header(paragraph: Paragraph) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
     paragraph.paragraph_format.space_after = Pt(0)
-    run = paragraph.add_run("SODIF  |  DOVEZI DE ASIGURARE")
+    run = paragraph.add_run("SODIF  |  CONTROL TRANZACȚIONAL")
     _set_run_font(run, "Calibri", 8, _MUTED, bold=True)
 
 
@@ -212,7 +212,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
     subtitle.paragraph_format.keep_with_next = True
     _set_run_font(
         subtitle.add_run(
-            "Dovezi Document-to-API pentru execuția controlată a unei comenzi de achiziție"
+            "Raport Document-to-API pentru execuția controlată a unei comenzi de achiziție"
         ),
         "Calibri",
         12,
@@ -220,6 +220,10 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
     )
 
     metadata = (
+        ("Organizație", report.configuration.organization_name),
+        ("Spațiu operațional", report.configuration.workspace_name),
+        ("Domeniu", report.configuration.domain_name),
+        ("Mediu", report.configuration.environment),
         ("Raport", report.report_id),
         ("Rezultat", "CONFORM" if report.passed else "NECONFORM"),
         ("Sigilat la", report.completed_at.isoformat().replace("+00:00", "Z")),
@@ -228,6 +232,10 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
             "Comandă semnată / API operațional"
             if report.flight_kind is FlightKind.SECURITY
             else "Comandă semnată / arhivă verificabilă / Gateway semantic / API operațional",
+        ),
+        (
+            "Serviciu protejat",
+            f"{report.configuration.protected_service} · {report.configuration.route_id}",
         ),
     )
     for label, value in metadata:
@@ -301,7 +309,7 @@ def _add_decision_register(document: WordDocument, view: FlightView) -> None:
         )
         _set_cell_text(cells[2], scenario.api_effect, size=9.5)
     note = document.add_paragraph(
-        "Pachetul de dovezi include reprezentarea structurată a raportului, jurnalul auditabil "
+        "Pachetul de audit include reprezentarea structurată a raportului, jurnalul ordonat "
         "ordonat și manifestul de integritate care permit verificarea acestor concluzii."
     )
     note.paragraph_format.space_before = Pt(8)
@@ -341,7 +349,7 @@ def _add_scenario(document: WordDocument, scenario: ScenarioView) -> None:
     for timeline_item in scenario.timeline:
         document.add_paragraph(timeline_item, style="List Bullet")
 
-    document.add_heading("Dovezi verificabile", level=2)
+    document.add_heading("Identificatori și trasabilitate", level=2)
     for evidence in scenario.evidence:
         paragraph = document.add_paragraph(style="SODIF Evidence")
         _set_run_font(

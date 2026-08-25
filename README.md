@@ -14,8 +14,8 @@ Aplicația este organizată în trei module de produs cu limite și contracte ex
 - **Semantic Execution Gateway** — verifică permisul față de cererea API, aplică politicile
   de rutare și produce decizia auditabilă `route/block` la limita de execuție.
 
-Interfața multipagină individualizează fiecare modul, operațiunile documentare, demonstrațiile
-și dovezile. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
+Interfața multipagină individualizează fiecare modul, operațiunile documentare, rulările
+controlate și auditul. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
 contractele modulelor sincronizate în întreaga aplicație.
 
 Pagina Gateway include un `Policy Studio` funcțional. Tranzacțiile conforme sunt autorizate
@@ -55,7 +55,7 @@ Alternativ:
 Comanda rulează Security Flight și afișează dovada structurată JSON, fără efecte asupra unui
 sistem extern și fără scrieri în DMS.
 
-Aplicația oferă două demonstrații distincte:
+Aplicația oferă două rulări distincte:
 
 - **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
   permis unic, legarea acțiunii API și protecția anti-replay;
@@ -76,18 +76,34 @@ SODIF_GATEWAY_ROUTE_ID=erp.purchase-orders
 SODIF_GATEWAY_AUDIENCE=erp-purchase-api
 SODIF_GATEWAY_PATH_PREFIX=/purchase-orders
 SODIF_GATEWAY_MAXIMUM_PARAMETERS=16
+SODIF_ORGANIZATION_NAME=PowerNet
+SODIF_WORKSPACE_NAME=SODIF Transaction Control
+SODIF_DOMAIN_NAME=Achiziții
+SODIF_PROTECTED_SERVICE=ERP Purchase API
+SODIF_EXPORT_ROOT=var/exports
 ```
 
 Pentru variabilele `*_ENABLED`, valorile acceptate sunt `true/false`, `yes/no`, `on/off` și
 `1/0`. Identificatorii și prefixul rutei sunt validați, iar limita parametrilor este numerică.
 Configurațiile ambigue sunt respinse la pornire.
 
-## Pachet de dovezi
+Valorile sunt preconfigurate din mediu și pot fi ajustate în pagina „Configurare
+operațională”. Modificările sunt validate, păstrate în sesiunea activă și utilizate efectiv
+de flight-uri, politicile Gateway și rapoarte.
 
-După rularea demonstrației din centrul de control, pagina „Rapoarte și dovezi” permite
-descărcarea raportului Word, a datelor JSON, a jurnalului de audit și a pachetului complet
+## Audit și exporturi
+
+La finalul fiecărui flight, aplicația scrie automat raportul Word, datele JSON, jurnalul
+NDJSON, manifestul de integritate și pachetul ZIP. Pagina „Audit și exporturi” permite
+descărcarea acelorași artefacte
 cu manifest de integritate. Pentru Transversal Flight, jurnalul include fiecare decizie
 Gateway, controalele aplicate, amprentele acțiunii și dovada execuției sau blocării.
+
+Fișierele sunt organizate pe sesiune, tip de flight și identificatorul rulării:
+
+```text
+var/exports/<session>/<security|transversal>/<report-id>/
+```
 
 Export local:
 
@@ -127,5 +143,5 @@ acoperire de 85%.
 - `var/archive/` — indexul și obiectele documentare generate local;
 - `scripts/` — comenzi reproductibile pentru rulare și calitate.
 
-Interfața rulează direct motorul demonstrativ, prezintă deciziile și oferă exporturi
-verificabile pentru evaluare umană, audit automat și arhivare.
+Interfața rulează direct motorul operațional, prezintă deciziile și oferă exporturi
+verificabile pentru analiză umană, audit automat și arhivare.

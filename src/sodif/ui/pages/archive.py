@@ -29,7 +29,7 @@ def render_archive_module(ingestion_page: str, registry_page: str) -> None:
         )
     with registry, st.container(border=True, key="archive_registry_workspace"):
         st.markdown("#### :material/folder_open: Registru verificabil")
-        st.caption("Caută, vizualizează și exportă documente împreună cu istoricul și dovada lor.")
+        st.caption("Caută, vizualizează și exportă documente împreună cu istoricul de audit.")
         st.page_link(
             registry_page,
             label="Deschide registrul",

@@ -75,7 +75,7 @@ def render_overview(settings: AppSettings, architecture_page: str) -> None:
                 <div><span></span><p><b>Verifică</b>
                 <small>Document, semnătură și valori cu efect critic</small></p></div>
                 <div><span></span><p><b>Păstrează</b>
-                <small>Revizii, dovezi și istoric criptografic</small></p></div>
+                <small>Revizii, audit și istoric criptografic</small></p></div>
                 <div><span></span><p><b>Execută</b>
                 <small>Doar acțiunea API autorizată, o singură dată</small></p></div>
             </div>

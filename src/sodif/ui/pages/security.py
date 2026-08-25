@@ -51,7 +51,7 @@ def render_security_module(control_page: str) -> None:
         <section class="sodif-value-panel sodif-module-value">
             <div><div class="sodif-section-label light">Decizie explicabilă</div>
             <h2>Controlul crește numai când tranzacția o cere.</h2>
-            <p>Cazurile coerente folosesc traseul scurt. Valorile divergente, lipsa dovezilor
+            <p>Cazurile coerente folosesc traseul scurt. Valorile divergente, lipsa confirmărilor
             sau abaterea acțiunii API declanșează verificări suplimentare ori blocarea.</p></div>
             <div class="sodif-protection-list">
                 <div><span></span><p><b>Pragmatism</b>
@@ -59,7 +59,7 @@ def render_security_module(control_page: str) -> None:
                 <div><span></span><p><b>Siguranță</b>
                 <small>Fail-closed când sensul critic nu poate fi confirmat</small></p></div>
                 <div><span></span><p><b>Trasabilitate</b>
-                <small>Motiv și dovezi pentru fiecare decizie</small></p></div>
+                <small>Motiv și trasabilitate pentru fiecare decizie</small></p></div>
             </div>
         </section>
         """,

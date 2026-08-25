@@ -122,7 +122,7 @@ def _render_sample_panel(
             use_container_width=True,
         )
     if has_revised:
-        status = "Istoricul demonstrativ are două revizii semnate și legate verificabil."
+        status = "Istoricul curent are două revizii semnate și legate verificabil."
     elif has_initial:
         status = "Revizia inițială este confirmată. Următoarea revizie poate continua istoricul."
     else:

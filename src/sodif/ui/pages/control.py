@@ -22,8 +22,8 @@ def render_control_center(
     render_page_intro(
         "Operațiuni",
         "Centru de control",
-        "Validează separat nucleul de securitate sau întregul lanț de încredere prin "
-        "securitatea intenției, arhiva verificabilă și Gateway-ul semantic.",
+        "Execută separat validarea nucleului de securitate sau întregul lanț de încredere "
+        "prin securitatea intenției, arhiva verificabilă și Gateway-ul semantic.",
     )
     security, transversal = st.columns(2, gap="large")
     with security, st.container(border=True, key="security_flight_card"):
@@ -104,8 +104,8 @@ def render_control_center(
                 )
     with spacer:
         st.markdown(
-            '<p class="sodif-inline-note">Rezultatele și exporturile provin din '
-            "aceeași rulare.</p>",
+            '<p class="sodif-inline-note">Raportul operațional și jurnalul de audit au fost '
+            "generate automat pentru această rulare.</p>",
             unsafe_allow_html=True,
         )
     _render_scenario_explorer(view)
@@ -126,7 +126,7 @@ def _render_ready_state() -> None:
     columns = st.columns(3)
     capabilities = (
         ("Securitate", "Validarea semnăturii, intenției și permisului unic"),
-        ("Trasabilitate", "Păstrarea reviziilor și dovezilor verificabile"),
+        ("Trasabilitate", "Păstrarea reviziilor și a istoricului verificabil"),
         ("Control API", "Rutare semantică exactă și blocare fail-closed"),
     )
     for column, (title, body) in zip(columns, capabilities, strict=True):
@@ -158,7 +158,7 @@ def _render_active_flight(kind: FlightKind) -> None:
 
 def _render_scenario_explorer(view: FlightView) -> None:
     st.markdown(
-        '<div class="sodif-section-label">Situații verificate</div>', unsafe_allow_html=True
+        '<div class="sodif-section-label">Tranzacții evaluate</div>', unsafe_allow_html=True
     )
     labels = {scenario.scenario_id: scenario.title for scenario in view.scenarios}
     selected_id = st.selectbox(
@@ -232,7 +232,7 @@ def _render_scenario(scenario: ScenarioView) -> None:
         st.markdown(f'<div class="sodif-timeline">{timeline_html}</div>', unsafe_allow_html=True)
     with evidence:
         st.markdown(
-            '<div class="sodif-subsection-title">Dovezi verificabile</div>',
+            '<div class="sodif-subsection-title">Identificatori și trasabilitate</div>',
             unsafe_allow_html=True,
         )
         evidence_html = "".join(

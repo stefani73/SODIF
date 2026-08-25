@@ -45,6 +45,26 @@ class ModuleSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductProfileSettings:
+    """Preconfigured operational identity used to initialize a user session."""
+
+    organization_name: str = "PowerNet"
+    workspace_name: str = "SODIF Transaction Control"
+    domain_name: str = "Achiziții"
+    protected_service: str = "ERP Purchase API"
+
+    def __post_init__(self) -> None:
+        values = (
+            self.organization_name,
+            self.workspace_name,
+            self.domain_name,
+            self.protected_service,
+        )
+        if any(not value.strip() for value in values):
+            raise ValueError("product profile values must not be empty")
+
+
+@dataclass(frozen=True, slots=True)
 class AppSettings:
     """Immutable settings required by the application shell."""
 
@@ -53,8 +73,10 @@ class AppSettings:
     environment: str
     release: str
     archive_root: Path = Path("var/archive")
+    export_root: Path = Path("var/exports")
     modules: ModuleSettings = ModuleSettings()
     gateway: GatewaySettings = GatewaySettings()
+    profile: ProductProfileSettings = ProductProfileSettings()
 
 
 def load_settings() -> AppSettings:
@@ -63,8 +85,9 @@ def load_settings() -> AppSettings:
         app_name=getenv("SODIF_APP_NAME", "SODIF"),
         tagline=getenv("SODIF_TAGLINE", "Exact ceea ce s-a semnat. O singură dată."),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.17.0-transversal3"),
+        release=getenv("SODIF_RELEASE", "0.18.0-product4"),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
+        export_root=Path(getenv("SODIF_EXPORT_ROOT", "var/exports")),
         modules=ModuleSettings(
             security_enabled=_environment_flag("SODIF_MODULE_SECURITY_ENABLED", True),
             archive_enabled=_environment_flag("SODIF_MODULE_ARCHIVE_ENABLED", True),
@@ -78,6 +101,12 @@ def load_settings() -> AppSettings:
                 "SODIF_GATEWAY_MAXIMUM_PARAMETERS",
                 16,
             ),
+        ),
+        profile=ProductProfileSettings(
+            organization_name=getenv("SODIF_ORGANIZATION_NAME", "PowerNet"),
+            workspace_name=getenv("SODIF_WORKSPACE_NAME", "SODIF Transaction Control"),
+            domain_name=getenv("SODIF_DOMAIN_NAME", "Achiziții"),
+            protected_service=getenv("SODIF_PROTECTED_SERVICE", "ERP Purchase API"),
         ),
     )
 

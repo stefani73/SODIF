@@ -22,6 +22,14 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "report_id": report.report_id,
             "flight_kind": report.flight_kind,
             "release": report.release,
+            "session_id": report.configuration.session_id,
+            "organization": report.configuration.organization_name,
+            "workspace": report.configuration.workspace_name,
+            "domain": report.configuration.domain_name,
+            "environment": report.configuration.environment,
+            "protected_service": report.configuration.protected_service,
+            "route_id": report.configuration.route_id,
+            "audience": report.configuration.audience,
         }
     ]
     for result in report.results:

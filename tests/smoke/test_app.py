@@ -52,7 +52,7 @@ def test_product_explainer_is_a_distinct_page() -> None:
     assert not app.exception
     copy = _copy(app)
     assert "Trei module. Un singur lanț de încredere." in copy
-    assert "Modulele schimbă dovezi verificabile" in copy
+    assert "Modulele schimbă artefacte verificabile" in copy
     assert "Între aprobarea formală și sistemul care produce efectul" in copy
 
 
@@ -70,7 +70,7 @@ def test_three_product_modules_have_distinct_workspaces() -> None:
 
     archive = security.switch_page("pages/archive.py").run(timeout=15)
     assert not archive.exception
-    assert "Păstrează documentul, reviziile și dovezile" in _copy(archive)
+    assert "Păstrează documentul și reviziile" in _copy(archive)
     assert "Continuitatea reviziilor" in _copy(archive)
     assert {getattr(item, "label", None) for item in archive.get("page_link")} >= {
         "Deschide preluarea",
@@ -180,7 +180,45 @@ def test_document_registry_searches_and_opens_the_verified_pdf(
     assert app.info[0].value == "Nu există documente care corespund criteriilor selectate."
 
 
-def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> None:
+def test_operational_configuration_is_retained_and_drives_the_active_session() -> None:
+    app = _application().run(timeout=15).switch_page("pages/configuration.py").run(timeout=15)
+
+    assert not app.exception
+    assert "Configurare operațională" in _copy(app)
+    fields = {item.label: item for item in app.text_input}
+    assert fields["Organizație"].value == "PowerNet"
+    assert fields["Domeniu"].value == "Achiziții"
+    assert fields["Politică de rutare"].value == "erp.purchase-orders"
+    fields["Organizație"].set_value("PowerNet Labs")
+    fields["Domeniu"].set_value("Aprobări operaționale")
+    fields["Politică de rutare"].set_value("operations.approvals")
+    fields["Audiență autorizată"].set_value("operations-api")
+    fields["Resursă API"].set_value("/approvals")
+    next(button for button in app.button if button.label == "Salvează configurația").click().run(
+        timeout=15
+    )
+
+    assert not app.exception
+    configured_copy = _copy(app)
+    assert "PowerNet Labs" in configured_copy
+    assert "Aprobări operaționale" in configured_copy
+    control = app.switch_page("pages/control.py").run(timeout=15)
+    next(
+        button for button in control.button if button.label == "Rulează Transversal Flight"
+    ).click().run(timeout=15)
+
+    assert not control.exception
+    control_copy = _copy(control)
+    assert "operations.approvals" in control_copy
+    assert "POST /approvals" in control_copy
+
+
+def test_control_center_runs_scenarios_and_reports_page_exposes_exports(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    export_root = tmp_path / "exports"
+    monkeypatch.setenv("SODIF_EXPORT_ROOT", str(export_root))
     app = _application().run(timeout=15).switch_page("pages/control.py").run(timeout=15)
 
     assert not app.exception
@@ -201,6 +239,8 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
     assert "Nucleul de securitate a confirmat comportamentul așteptat" in control_copy
     assert "Comandă autentică și neambiguă" in control_copy
     assert "Sens aprobat" not in control_copy
+    assert "Rezultatul demonstrației" not in control_copy
+    assert "Dovezi verificabile" not in control_copy
     assert len(app.get("download_button")) == 0
     assert not any(
         getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
@@ -226,8 +266,9 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
 
     assert not app.exception
     report_copy = _copy(app)
-    assert "Rapoarte și dovezi" in report_copy
-    assert "Fișiere pregătite pentru preluare" in report_copy
+    assert "Audit și exporturi" in report_copy
+    assert "Arhiva rulării este disponibilă" in report_copy
+    assert "Pachet de dovezi" not in report_copy
     assert [str(getattr(item, "label", "")) for item in app.get("download_button")] == [
         "Pachet complet",
         "Raport Word",
@@ -237,6 +278,9 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
     assert "Evidence package" not in report_copy
     assert "cost" not in report_copy.casefold()
     assert "v1_targeted" not in report_copy
+    assert len(list(export_root.rglob("*.zip"))) == 2
+    assert len(list(export_root.rglob("*.docx"))) == 2
+    assert len(list(export_root.rglob("*.ndjson"))) == 2
 
 
 def _application() -> AppTest:

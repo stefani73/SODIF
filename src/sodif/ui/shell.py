@@ -10,7 +10,7 @@ from streamlit.navigation.page import StreamlitPage
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_security_flight, run_transversal_flight
 from sodif.settings import AppSettings
-from sodif.ui.state import register_flight_runners
+from sodif.ui.state import initialize_operational_profile, register_flight_runners
 from sodif.ui.styles import PRODUCT_STYLES
 
 
@@ -31,8 +31,14 @@ def render_product_shell(
 ) -> None:
     """Render the product navigation and execute the selected page."""
     st.markdown(PRODUCT_STYLES, unsafe_allow_html=True)
-    transversal_runner = flight_runner or partial(run_transversal_flight, settings.archive_root)
-    register_flight_runners(run_security_flight, transversal_runner)
+    profile = initialize_operational_profile(settings)
+    security_runner = partial(run_security_flight, profile)
+    transversal_runner = flight_runner or partial(
+        run_transversal_flight,
+        settings.archive_root,
+        profile,
+    )
+    register_flight_runners(security_runner, transversal_runner, settings.export_root)
     _render_sidebar_brand(settings)
 
     overview_page = st.Page(
@@ -47,6 +53,12 @@ def render_product_shell(
         title="Arhitectura platformei",
         icon=":material/account_tree:",
         url_path="product",
+    )
+    configuration_page = st.Page(
+        "pages/configuration.py",
+        title="Configurare operațională",
+        icon=":material/tune:",
+        url_path="configuration",
     )
     security_page = st.Page(
         "pages/security.py",
@@ -86,12 +98,12 @@ def render_product_shell(
     )
     reports_page = st.Page(
         "pages/reports.py",
-        title="Rapoarte și dovezi",
+        title="Audit și exporturi",
         icon=":material/fact_check:",
         url_path="reports",
     )
     sections: dict[str, tuple[StreamlitPage, ...]] = {
-        "Platformă": (overview_page, architecture_page)
+        "Platformă": (overview_page, architecture_page, configuration_page)
     }
     if settings.modules.security_enabled:
         sections["Signed Intent Security"] = (security_page,)
@@ -104,11 +116,11 @@ def render_product_shell(
     if settings.modules.gateway_enabled:
         sections["Semantic Execution Gateway"] = (gateway_page,)
     if settings.modules.security_enabled:
-        sections["Demonstrații și dovezi"] = (control_page, reports_page)
+        sections["Operațiuni și audit"] = (control_page, reports_page)
 
     navigation = st.navigation(sections, position="sidebar", expanded=True)
-    _render_sidebar_footer()
-    _render_header(settings)
+    _render_sidebar_footer(profile.environment)
+    _render_header(settings, profile.organization_name, profile.domain_name)
     navigation.run()
 
 
@@ -126,27 +138,27 @@ def _render_sidebar_brand(settings: AppSettings) -> None:
         )
 
 
-def _render_sidebar_footer() -> None:
+def _render_sidebar_footer(environment: str) -> None:
     with st.sidebar:
         st.markdown(
-            """
+            f"""
             <div class="sodif-sidebar-footer">
-                <span></span><div><strong>Mediu protejat</strong>
-                <small>Controalele configurate sunt active.</small></div>
+                <span></span><div><strong>Politici active</strong>
+                <small>Mediu: {escape(environment)}</small></div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
 
-def _render_header(settings: AppSettings) -> None:
+def _render_header(settings: AppSettings, organization: str, domain: str) -> None:
     name = escape(settings.app_name)
     st.markdown(
         f"""
         <div class="sodif-header">
             <div class="sodif-brand">
                 <span class="sodif-wordmark">{name}</span>
-                <span class="sodif-context">Signed Intent Infrastructure</span>
+                <span class="sodif-context">{escape(organization)} · {escape(domain)}</span>
             </div>
             <div class="sodif-trust-chip"><span></span> Lanț de încredere activ</div>
         </div>

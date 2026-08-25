@@ -1,6 +1,7 @@
 """Public page renderers for the SODIF product experience."""
 
 from sodif.ui.pages.archive import render_archive_module
+from sodif.ui.pages.configuration import render_configuration
 from sodif.ui.pages.control import render_control_center
 from sodif.ui.pages.evidence import render_evidence_hub
 from sodif.ui.pages.gateway import render_gateway_module
@@ -12,6 +13,7 @@ from sodif.ui.pages.security import render_security_module
 
 __all__ = [
     "render_archive_module",
+    "render_configuration",
     "render_control_center",
     "render_document_ingestion",
     "render_document_registry",

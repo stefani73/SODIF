@@ -68,17 +68,17 @@ _SCENARIO_COPY = {
         "Comandă autentică și neambiguă",
         "Documentul semnat, valorile critice și acțiunea solicitată sunt consistente.",
         "Autorizată",
-        "Dovezile independente confirmă aceeași intenție operațională.",
+        "Controalele independente confirmă aceeași intenție operațională.",
         "Cerere acceptată",
         "Permisul unic autorizează exact crearea comenzii aprobate.",
-        "Verificarea s-a oprit imediat ce dovezile disponibile au devenit suficiente.",
+        "Verificarea s-a oprit imediat ce informațiile disponibile au devenit suficiente.",
     ),
     FlightScenario.ADAPTIVE_RECOVERY: _ScenarioCopy(
         "Verificare adaptivă",
         "Dovadă suplimentară necesară",
         "O valoare critică lipsește inițial, iar verificarea se extinde controlat.",
         "Autorizată",
-        "Dovada suplimentară completează informația fără a reduce nivelul de siguranță.",
+        "Verificarea suplimentară completează informația fără a reduce nivelul de siguranță.",
         "Cerere acceptată",
         "Execuția este permisă numai după confirmarea valorii lipsă.",
         "Resursele suplimentare sunt activate doar când traseul normal nu este concludent.",
@@ -304,7 +304,7 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
             )
         )
     elif digests:
-        evidence.append(EvidenceView("Dovada deciziei", _compact_digest(digests[-1])))
+        evidence.append(EvidenceView("Amprenta deciziei", _compact_digest(digests[-1])))
     return tuple(evidence)
 
 

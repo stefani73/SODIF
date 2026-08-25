@@ -52,12 +52,16 @@ def purchase_order_schema() -> IntentSchema:
     )
 
 
-def purchase_order_action() -> ActionContext:
+def purchase_order_action(
+    *,
+    audience: str = "erp-purchase-api",
+    path: str = "/purchase-orders",
+) -> ActionContext:
     return ActionContext(
         action_type="create-purchase-order",
         method=HttpMethod.POST,
-        path="/purchase-orders",
-        audience="erp-purchase-api",
+        path=path,
+        audience=audience,
     )
 
 

@@ -20,7 +20,7 @@ def build_flight_exports(report: FlightReport) -> FlightExports:
         FlightKind.TRANSVERSAL: "Transversal",
     }[report.flight_kind]
     document = ExportArtifact(
-        f"SODIF_{export_name}_Flight_Report.docx",
+        f"SODIF_{export_name}_Operational_Report.docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         render_docx_report(report),
     )
@@ -41,7 +41,7 @@ def build_flight_exports(report: FlightReport) -> FlightExports:
         _build_manifest(report, core_artifacts),
     )
     bundle = ExportArtifact(
-        f"SODIF_{export_name}_Evidence_Package.zip",
+        f"SODIF_{export_name}_Audit_Package.zip",
         "application/zip",
         _build_bundle((*core_artifacts, manifest)),
     )
@@ -65,6 +65,11 @@ def _build_manifest(report: FlightReport, artifacts: tuple[ExportArtifact, ...])
         "protocol": "sodif.evidence-manifest/v1",
         "report_id": report.report_id,
         "flight_kind": report.flight_kind.value,
+        "session_id": report.configuration.session_id,
+        "organization": report.configuration.organization_name,
+        "workspace": report.configuration.workspace_name,
+        "domain": report.configuration.domain_name,
+        "environment": report.configuration.environment,
         "release": report.release,
         "sealed_at": report.completed_at.isoformat().replace("+00:00", "Z"),
         "evidence_root": f"sha256:{evidence_root}",

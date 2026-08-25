@@ -43,7 +43,7 @@ def render_product_explainer(settings: AppSettings) -> None:
         <section class="sodif-platform-flow">
             <div><small>Aprobare</small><strong>Document semnat</strong></div><i></i>
             <div><small>Control</small><strong>Intenție + permis</strong></div><i></i>
-            <div><small>Dovadă</small><strong>Revizie verificabilă</strong></div><i></i>
+            <div><small>Trasabilitate</small><strong>Revizie verificabilă</strong></div><i></i>
             <div><small>Efect</small><strong>Acțiune API exactă</strong></div>
         </section>
         """,
@@ -60,7 +60,7 @@ def render_product_explainer(settings: AppSettings) -> None:
             """
             <article class="sodif-feature-panel">
                 <div class="sodif-card-caption">Contracte stabile</div>
-                <h2>Modulele schimbă dovezi verificabile, nu presupuneri.</h2>
+                <h2>Modulele schimbă artefacte verificabile, nu presupuneri.</h2>
                 <p>Permisul, amprentele documentelor și deciziile de enforcement au forme
                 explicite, versionabile și verificabile independent.</p>
             </article>

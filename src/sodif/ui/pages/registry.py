@@ -88,7 +88,7 @@ def _render_filters(summary: ArchiveSummary) -> ArchiveQuery:
     with search_column:
         text = st.text_input(
             "Document, fișier sau semnatar",
-            placeholder="Ex.: comandă, doc-ingestion sau flight-signer",
+            placeholder="Ex.: comandă, document sau semnatar",
         )
     with signer_column:
         signer_id = st.selectbox(
