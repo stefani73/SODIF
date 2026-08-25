@@ -245,6 +245,91 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
     display:grid; align-items:stretch; margin:1rem 0 0; padding:1.15rem;
     background:#fff; border:1px solid var(--line); border-radius:16px;
 }
+.sodif-gateway-route {
+    min-height:258px; padding:1.4rem; background:linear-gradient(150deg,#0d223c,#153d59);
+    border-radius:16px; box-shadow:0 16px 36px rgba(11,29,53,.14);
+}
+.sodif-gateway-route > small {
+    color:#70d1d1; font-size:.63rem; font-weight:850; letter-spacing:.11em;
+    text-transform:uppercase;
+}
+.sodif-gateway-route h2 {
+    color:#fff; font-size:1.25rem; line-height:1.35; margin:.7rem 0 1.2rem;
+}
+.sodif-gateway-route > div {
+    display:flex; justify-content:space-between; gap:1rem; padding:.72rem 0;
+    border-top:1px solid rgba(255,255,255,.1);
+}
+.sodif-gateway-route span { color:#8ea5ba; font-size:.69rem; }
+.sodif-gateway-route strong {
+    color:#d9e7ef; font-size:.69rem; font-weight:700; text-align:right;
+}
+.sodif-gateway-scenario {
+    min-height:52px; color:var(--muted); font-size:.79rem; line-height:1.55;
+    margin:.8rem 0 1rem;
+}
+.sodif-gateway-ready {
+    display:flex; align-items:center; gap:1rem; margin:1rem 0 0; padding:1.2rem 1.35rem;
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+}
+.sodif-gateway-ready > span {
+    width:11px; height:11px; flex:0 0 11px; border-radius:50%; background:var(--teal);
+    box-shadow:0 0 0 6px #e3f2f3;
+}
+.sodif-gateway-ready div { display:grid; gap:.15rem; }
+.sodif-gateway-ready small {
+    color:var(--teal-dark); font-size:.59rem; font-weight:850; letter-spacing:.1em;
+    text-transform:uppercase;
+}
+.sodif-gateway-ready h2 { color:var(--navy); font-size:.94rem; margin:0; }
+.sodif-gateway-ready p { color:var(--muted); font-size:.72rem; margin:0; }
+.sodif-gateway-decision {
+    margin:1.1rem 0 .75rem; overflow:hidden; background:#fff; border:1px solid var(--line);
+    border-radius:16px; box-shadow:0 10px 28px rgba(20,42,70,.045);
+}
+.sodif-gateway-decision.success { border-color:#b9ddd2; }
+.sodif-gateway-decision.danger { border-color:#efc9cd; }
+.sodif-gateway-decision-head { display:flex; gap:1rem; padding:1.35rem 1.45rem; }
+.sodif-gateway-decision-head > span {
+    width:12px; height:12px; flex:0 0 12px; margin-top:.35rem; border-radius:50%;
+    background:var(--success); box-shadow:0 0 0 6px #e2f2ed;
+}
+.sodif-gateway-decision.danger .sodif-gateway-decision-head > span {
+    background:var(--danger); box-shadow:0 0 0 6px #fae9eb;
+}
+.sodif-gateway-decision-head small {
+    color:#718197; font-size:.6rem; font-weight:850; letter-spacing:.1em; text-transform:uppercase;
+}
+.sodif-gateway-decision-head h2 {
+    color:var(--navy); font-size:1.2rem; margin:.24rem 0 .35rem;
+}
+.sodif-gateway-decision-head p { color:var(--muted); font-size:.79rem; margin:0; }
+.sodif-gateway-decision-meta {
+    display:grid; grid-template-columns:1fr 1fr .85fr 1.15fr; gap:1px;
+    background:#dce5eb; border-top:1px solid #dce5eb;
+}
+.sodif-gateway-decision-meta > div {
+    display:grid; gap:.25rem; padding:.85rem 1rem; background:#f7f9fb;
+}
+.sodif-gateway-decision-meta small {
+    color:#7b8999; font-size:.57rem; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase;
+}
+.sodif-gateway-decision-meta strong {
+    color:#29445e; font-size:.68rem; overflow-wrap:anywhere;
+}
+.sodif-gateway-check {
+    display:flex; align-items:flex-start; gap:.7rem; margin:.42rem 0; padding:.78rem 1rem;
+    background:#fff; border:1px solid var(--line); border-radius:11px;
+}
+.sodif-gateway-check > span {
+    width:9px; height:9px; flex:0 0 9px; margin-top:.3rem; border-radius:50%;
+    background:var(--success); box-shadow:0 0 0 4px #e5f3ef;
+}
+.sodif-gateway-check.failed > span { background:var(--danger); box-shadow:0 0 0 4px #faeaec; }
+.sodif-gateway-check p { display:grid; gap:.15rem; margin:0; }
+.sodif-gateway-check strong { color:var(--navy); font-size:.75rem; }
+.sodif-gateway-check small { color:var(--muted); font-size:.67rem; line-height:1.4; }
 .sodif-platform-flow { grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr; }
 .sodif-gateway-flow { grid-template-columns:1fr 42px 1.25fr 42px 1fr; margin-top:3.2rem; }
 .sodif-platform-flow > div, .sodif-gateway-flow > div {
@@ -602,6 +687,7 @@ div[data-testid="stSelectbox"] > div > div {
     .sodif-value-panel { grid-template-columns:1fr; gap:2rem; padding:2rem 1.4rem; }
     .sodif-module-contract { grid-template-columns:1fr; }
     .sodif-platform-flow, .sodif-gateway-flow { grid-template-columns:1fr; }
+    .sodif-gateway-decision-meta { grid-template-columns:1fr 1fr; }
     .sodif-platform-flow > i, .sodif-gateway-flow > i { min-height:24px; }
     .sodif-platform-flow > i::before, .sodif-gateway-flow > i::before {
         top:5px; bottom:5px; left:50%; width:1px; height:auto;

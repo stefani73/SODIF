@@ -80,8 +80,28 @@ def test_three_product_modules_have_distinct_workspaces() -> None:
     gateway = archive.switch_page("pages/gateway.py").run(timeout=15)
     assert not gateway.exception
     assert "Permite API-ului să execute numai tranzacția aprobată" in _copy(gateway)
+    assert "Gateway Policy Studio" in _copy(gateway)
     assert "Potrivire exactă" in _copy(gateway)
     assert "Un punct de control, fără rescrierea API-urilor protejate" in _copy(gateway)
+    assert gateway.selectbox[0].label == "Tranzacția evaluată"
+    evaluate = next(button for button in gateway.button if button.label == "Evaluează tranzacția")
+    evaluate.click().run(timeout=15)
+
+    assert not gateway.exception
+    assert "Tranzacție autorizată" in _copy(gateway)
+    assert "Rutată · HTTP 202" in _copy(gateway)
+    assert [getattr(item, "label", None) for item in gateway.get("download_button")] == [
+        "Exportă decizia JSON"
+    ]
+
+    gateway.selectbox[0].select("Parametri modificați după aprobare").run(timeout=15)
+    next(button for button in gateway.button if button.label == "Evaluează tranzacția").click().run(
+        timeout=15
+    )
+
+    assert not gateway.exception
+    assert "Tranzacție blocată" in _copy(gateway)
+    assert "Parametrii cererii diferă" in _copy(gateway)
 
 
 def test_document_ingestion_page_archives_the_signed_sample(

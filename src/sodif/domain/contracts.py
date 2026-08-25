@@ -5,6 +5,7 @@ from typing import Protocol, runtime_checkable
 
 from sodif.domain.enums import ViewKind
 from sodif.domain.execution import ExecutionReceipt
+from sodif.domain.gateway import GatewayDecision, GatewayRequest
 from sodif.domain.models import (
     ActionContext,
     ConsensusResult,
@@ -114,6 +115,11 @@ class ApiExecutor(Protocol):
         authorization: ExecutionAuthorization,
         plan: ExecutionPlan,
     ) -> ExecutionReceipt: ...
+
+
+@runtime_checkable
+class ExecutionGateway(Protocol):
+    def handle(self, request: GatewayRequest) -> GatewayDecision: ...
 
 
 @runtime_checkable

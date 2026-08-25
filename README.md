@@ -11,12 +11,17 @@ Aplicația este organizată în trei module de produs cu limite și contracte ex
   criptografic legat de acțiunea API autorizată;
 - **Verifiable Document Archive** — păstrează reviziile validate, istoricul criptografic și
   pachetele portabile de dovezi;
-- **Semantic Execution Gateway** — verifică permisul față de cererea API și aplică decizia
-  de rutare sau blocare la limita de execuție.
+- **Semantic Execution Gateway** — verifică permisul față de cererea API, aplică politicile
+  de rutare și produce decizia auditabilă `route/block` la limita de execuție.
 
 Interfața multipagină individualizează fiecare modul, operațiunile documentare, demonstrațiile
 și dovezile. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
 contractele modulelor sincronizate în întreaga aplicație.
+
+Pagina Gateway include un `Policy Studio` funcțional. Tranzacțiile conforme sunt autorizate
+și rutate prin adaptorul protejat, iar modificarea parametrilor sau reutilizarea permisului
+sunt blocate înainte de API. Fiecare evaluare produce o decizie JSON exportabilă cu verificările
+aplicate, amprenta requestului și efectul asupra serviciului destinație.
 
 Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură JSON înainte de
 arhivare. Exemplul inclus construiește două revizii succesive: a doua este acceptată numai
@@ -66,10 +71,15 @@ modificarea codului:
 SODIF_MODULE_SECURITY_ENABLED=true
 SODIF_MODULE_ARCHIVE_ENABLED=true
 SODIF_MODULE_GATEWAY_ENABLED=true
+SODIF_GATEWAY_ROUTE_ID=erp.purchase-orders
+SODIF_GATEWAY_AUDIENCE=erp-api
+SODIF_GATEWAY_PATH_PREFIX=/purchase-orders
+SODIF_GATEWAY_MAXIMUM_PARAMETERS=16
 ```
 
-Valorile acceptate sunt `true/false`, `yes/no`, `on/off` și `1/0`. Configurațiile ambigue sunt
-respinse la pornire.
+Pentru variabilele `*_ENABLED`, valorile acceptate sunt `true/false`, `yes/no`, `on/off` și
+`1/0`. Identificatorii și prefixul rutei sunt validați, iar limita parametrilor este numerică.
+Configurațiile ambigue sunt respinse la pornire.
 
 ## Pachet de dovezi
 
@@ -98,6 +108,7 @@ acoperire de 85%.
 
 - `src/sodif/` — codul aplicației;
 - `src/sodif/product/` — catalogul și limitele celor trei module de produs;
+- `src/sodif/gateway/` — politicile de rutare și motorul semantic `route/block`;
 - `src/sodif/domain/` — modele, stări, canonicalizare și contracte independente de UI;
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `src/sodif/archive/` — depozit documentar, index SQLite și verificarea integrității;

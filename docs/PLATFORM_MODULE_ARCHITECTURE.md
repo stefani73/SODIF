@@ -48,6 +48,8 @@ descrisă de permis.
 
 Gateway-ul completează autentificarea, rate limiting-ul și rutarea clasică. Diferențiatorul
 SODIF este verificarea relației dintre tranzacția cerută și intenția aprobată în document.
+Nucleul de enforcement produce o decizie versionată `route/block`, cu registrul controalelor
+și amprentele acțiunii observate și autorizate.
 
 ## Lanțul de încredere
 

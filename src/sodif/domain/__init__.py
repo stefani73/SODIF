@@ -15,6 +15,14 @@ from sodif.domain.enums import (
     VerificationOutcomeStatus,
 )
 from sodif.domain.execution import ExecutionReceipt
+from sodif.domain.gateway import (
+    GatewayCheckOutcome,
+    GatewayDecision,
+    GatewayDecisionStatus,
+    GatewayPolicyCheck,
+    GatewayRequest,
+    GatewayRoutePolicy,
+)
 from sodif.domain.models import (
     ActionContext,
     ActionParameter,
@@ -65,6 +73,12 @@ __all__ = [
     "ExecutionPlan",
     "ExecutionReceipt",
     "FieldProvenance",
+    "GatewayCheckOutcome",
+    "GatewayDecision",
+    "GatewayDecisionStatus",
+    "GatewayPolicyCheck",
+    "GatewayRequest",
+    "GatewayRoutePolicy",
     "HttpMethod",
     "IntentFieldDefinition",
     "IntentManifest",
