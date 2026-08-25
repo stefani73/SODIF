@@ -12,6 +12,7 @@ from sodif.archive import (
     ArchiveSummary,
     DocumentRegistryService,
     RegistrySelection,
+    build_document_evidence_package,
 )
 from sodif.ui.pages.shared import render_page_intro
 
@@ -161,7 +162,11 @@ def _render_selection(
             return
         record = selection.document.record
 
-    title_column, download_column = st.columns((0.7, 0.3), vertical_alignment="bottom")
+    evidence_package = build_document_evidence_package(selection)
+    title_column, download_column, package_column = st.columns(
+        (0.56, 0.22, 0.22),
+        vertical_alignment="bottom",
+    )
     with title_column:
         st.markdown(
             f"""
@@ -182,6 +187,15 @@ def _render_selection(
             icon=":material/download:",
             use_container_width=True,
         )
+    with package_column:
+        st.download_button(
+            "Pachet verificabil",
+            data=evidence_package.data,
+            file_name=evidence_package.filename,
+            mime="application/zip",
+            icon=":material/verified:",
+            use_container_width=True,
+        )
 
     _render_metadata(record)
     document_tab, traceability_tab = st.tabs(("Document", "Trasabilitate"))
@@ -192,7 +206,12 @@ def _render_selection(
         )
         st.pdf(selection.document.content, height=540, key=f"registry-pdf-{record.archive_id}")
     with traceability_tab:
-        _render_traceability(record, selection.history)
+        _render_traceability(
+            record,
+            selection.history,
+            evidence_package.package_id,
+            evidence_package.evidence_root,
+        )
 
 
 def _render_metadata(record: ArchiveRecord) -> None:
@@ -213,6 +232,8 @@ def _render_metadata(record: ArchiveRecord) -> None:
 def _render_traceability(
     selected: ArchiveRecord,
     history: tuple[ArchiveRecord, ...],
+    package_id: str,
+    evidence_root: str,
 ) -> None:
     revision_count = _count_label(len(history), "revizie", "revizii")
     items = "".join(
@@ -224,6 +245,13 @@ def _render_traceability(
         <span>{revision_count}, fără întreruperi sau ramificații</span></div>
         <section class="sodif-revision-history">{items}</section>
         """,
+        unsafe_allow_html=True,
+    )
+    compact_root = f"{evidence_root[:22]}…{evidence_root[-10:]}"
+    st.markdown(
+        f'<section class="sodif-package-proof"><div><small>Pachet documentar</small>'
+        f"<code>{escape(package_id)}</code></div><div><small>Rădăcină de integritate</small>"
+        f"<code>{escape(compact_root)}</code></div></section>",
         unsafe_allow_html=True,
     )
 

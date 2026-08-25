@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from docx import Document
 
 from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_default_flight
+from sodif.demo.runner import run_default_flight, run_integrated_memory_flight
 from sodif.reporting.cli import write_exports
 from sodif.reporting.serializers import serialize_report
 from sodif.reporting.service import build_flight_exports
@@ -35,6 +35,7 @@ def test_export_package_is_deterministic_and_self_verifying() -> None:
             assert record["digest"].startswith("sha256:")
     assert manifest["protocol"] == "sodif.evidence-manifest/v1"
     assert manifest["report_id"] == report.report_id
+    assert manifest["flight_kind"] == "security"
     assert manifest["evidence_root"].startswith("sha256:")
 
 
@@ -51,7 +52,18 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
     assert {event["scenario"] for event in decisions} == {
         result.scenario_id.value for result in report.results
     }
-    assert sum("archive_id" in event for event in decisions) == 5
+    assert sum("archive_id" in event for event in decisions) == 0
+
+    integrated_events = [
+        json.loads(line)
+        for line in build_flight_exports(run_integrated_memory_flight())
+        .audit_log.data.decode()
+        .splitlines()
+    ]
+    integrated_decisions = [
+        event for event in integrated_events if event["event_type"] == "scenario.decision"
+    ]
+    assert sum("archive_id" in event for event in integrated_decisions) == 5
 
 
 def test_word_report_contains_the_decision_register_and_scenario_evidence() -> None:
@@ -59,11 +71,11 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
     document = Document(BytesIO(exports.document.data))
     text = "\n".join(paragraph.text for paragraph in document.paragraphs)
 
-    assert "RAPORT ASSURANCE FLIGHT" in text
+    assert "RAPORT SECURITY FLIGHT" in text
     assert "Registrul deciziilor" in text
-    assert "0.12.0-dms3" not in text
+    assert "0.13.0-dms4" not in text
     assert "Comandă autentică și neambiguă" in text
-    assert "Arhivă: arc-" in text
+    assert "Arhivă: arc-" not in text
     assert "Document modificat după semnare" in text
     assert "Permis prezentat din nou" in text
     assert document.tables[0].rows[0].cells[0].text == "Situație"

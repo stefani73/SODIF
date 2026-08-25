@@ -23,6 +23,7 @@ from sodif.demo.fixtures import (
     purchase_order_schema,
 )
 from sodif.demo.models import (
+    FlightKind,
     FlightReport,
     FlightScenario,
     ScenarioObservation,
@@ -100,7 +101,7 @@ class _ScenarioContext:
     schema: IntentSchema
     document_signer: Ed25519RevisionSigner
     document_service: SignedRevisionService
-    archive_service: DocumentArchiveService
+    archive_service: DocumentArchiveService | None
     permit_issuer: Ed25519PermitIssuer
     permit_authorizer: ExecutionPermitAuthorizer
     api_executor: InMemoryApiExecutor
@@ -124,8 +125,16 @@ class _ScenarioContext:
 class FlightRunner:
     """Run the fixed minimal scenario catalog and return report-ready evidence."""
 
-    def __init__(self, archive_repository: ArchiveRepository | None = None) -> None:
-        self._archive_repository = archive_repository or InMemoryArchiveRepository()
+    def __init__(
+        self,
+        archive_repository: ArchiveRepository | None = None,
+        *,
+        flight_kind: FlightKind = FlightKind.SECURITY,
+    ) -> None:
+        if flight_kind is FlightKind.SECURITY and archive_repository is not None:
+            raise ValueError("security flight cannot use a document archive")
+        self._flight_kind = flight_kind
+        self._archive_repository = archive_repository
 
     def run(self) -> FlightReport:
         results = (
@@ -136,10 +145,11 @@ class FlightRunner:
             self._action_tampering(),
             self._replay_attack(),
         )
-        report_digest = sha256_digest(results)
+        report_digest = sha256_digest({"flight_kind": self._flight_kind, "results": results})
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
-            release="0.12.0-dms3",
+            flight_kind=self._flight_kind,
+            release="0.13.0-dms4",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -308,17 +318,18 @@ class FlightRunner:
             "Semnătura și digestul reviziei sunt valide.",
             acceptance.record.revision_digest,
         )
-        archived = context.archive_service.archive(
-            BASE_PDF,
-            acceptance,
-            "comanda-achizitie-demo.pdf",
-        )
-        context.archive_id = archived.archive_id
-        context.observe(
-            "document-archived",
-            "Revizia validată a fost înregistrată în arhiva documentară verificabilă.",
-            sha256_digest(archived),
-        )
+        if context.archive_service is not None:
+            archived = context.archive_service.archive(
+                BASE_PDF,
+                acceptance,
+                "comanda-achizitie-demo.pdf",
+            )
+            context.archive_id = archived.archive_id
+            context.observe(
+                "document-archived",
+                "Revizia validată a fost înregistrată în arhiva documentară verificabilă.",
+                sha256_digest(archived),
+            )
         adapters = (
             ScenarioSemanticAdapter(ViewKind.STRUCTURAL, 1, accepted_values()),
             ScenarioSemanticAdapter(ViewKind.VISUAL, 3, visual_values),
@@ -475,7 +486,11 @@ class FlightRunner:
             schema=purchase_order_schema(),
             document_signer=document_signer,
             document_service=document_service,
-            archive_service=DocumentArchiveService(self._archive_repository, clock),
+            archive_service=(
+                DocumentArchiveService(self._archive_repository, clock)
+                if self._archive_repository is not None
+                else None
+            ),
             permit_issuer=permit_issuer,
             permit_authorizer=permit_authorizer,
             api_executor=InMemoryApiExecutor(clock),
@@ -483,9 +498,31 @@ class FlightRunner:
 
 
 def run_default_flight() -> FlightReport:
-    return FlightRunner().run()
+    """Run the funding-core security flight without DMS side effects."""
+    return run_security_flight()
+
+
+def run_security_flight() -> FlightReport:
+    """Run signed-intent security controls without document archiving."""
+    return FlightRunner(flight_kind=FlightKind.SECURITY).run()
+
+
+def run_integrated_memory_flight() -> FlightReport:
+    """Run security and DMS integration against an ephemeral repository."""
+    return FlightRunner(
+        InMemoryArchiveRepository(),
+        flight_kind=FlightKind.INTEGRATED,
+    ).run()
+
+
+def run_integrated_flight(archive_root: Path) -> FlightReport:
+    """Run security and DMS integration against the persistent local archive."""
+    return FlightRunner(
+        SqliteArchiveRepository(archive_root),
+        flight_kind=FlightKind.INTEGRATED,
+    ).run()
 
 
 def run_archived_flight(archive_root: Path) -> FlightReport:
-    """Run the product flight against the persistent local document archive."""
-    return FlightRunner(SqliteArchiveRepository(archive_root)).run()
+    """Backward-compatible alias for the integrated product flight."""
+    return run_integrated_flight(archive_root)

@@ -1,13 +1,27 @@
 """Reproducible scenario flight for SODIF."""
 
-from sodif.demo.models import FlightReport, FlightScenario, ScenarioOutcome, ScenarioResult
-from sodif.demo.runner import FlightRunner, run_default_flight
+from sodif.demo.models import (
+    FlightKind,
+    FlightReport,
+    FlightScenario,
+    ScenarioOutcome,
+    ScenarioResult,
+)
+from sodif.demo.runner import (
+    FlightRunner,
+    run_default_flight,
+    run_integrated_flight,
+    run_security_flight,
+)
 
 __all__ = [
+    "FlightKind",
     "FlightReport",
     "FlightRunner",
     "FlightScenario",
     "ScenarioOutcome",
     "ScenarioResult",
     "run_default_flight",
+    "run_integrated_flight",
+    "run_security_flight",
 ]

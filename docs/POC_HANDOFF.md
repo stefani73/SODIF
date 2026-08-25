@@ -25,17 +25,24 @@ Verificarea este adaptivă. Câmpurile critice sunt reverificate independent, ia
 extinsă este activată numai când riscul, incertitudinea sau impactul o justifică. AI poate
 clasifica, extrage și explica, dar nu autorizează singur o acțiune.
 
-## Flight demo TRL 4
+## Flight-uri demonstrative TRL 4
 
 POC-ul folosește un singur tip de document controlat — o comandă de achiziție PDF — și o
 singură acțiune simulată: `POST /purchase-orders`.
 
-Scenariile obligatorii sunt:
+Aceleași situații sunt disponibile în două demonstrații: **Security Flight**, care izolează
+nucleul tehnic de semnătură și securitate fără scrieri DMS, și **Integrated Flight**, care
+adaugă arhivarea, registrul și pachetul documentar verificabil.
+
+Situațiile obligatorii sunt:
 
 - **S1 — execuție validă:** permis emis, exact o comandă creată;
 - **S2 — conflict semantic:** consens eșuat, zero execuții;
 - **S3 — payload modificat:** digest diferit, cerere blocată;
 - **S4 — replay:** a doua utilizare a permisului este respinsă.
+
+Registrul poate exporta documentul selectat împreună cu istoricul reviziilor, manifestul
+SHA-256 și instrucțiunile necesare verificării offline.
 
 ## Principii de implementare
 

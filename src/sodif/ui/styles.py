@@ -218,7 +218,7 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
     padding:1.35rem 1.5rem; background:white; border:1px solid var(--line); border-radius:15px;
 }
 .sodif-report-identity {
-    display:grid; grid-template-columns:1.1fr .9fr .8fr; gap:1rem; margin:1rem 0;
+    display:grid; grid-template-columns:1.15fr .8fr 1fr .75fr; gap:1rem; margin:1rem 0;
     padding:1rem 1.2rem; background:#eef4f7; border:1px solid #d6e2e9; border-radius:13px;
 }
 .sodif-report-identity > div { display:grid; gap:.25rem; }
@@ -425,6 +425,16 @@ div[class*="st-key-registry-open-"] button { margin-top:-.2rem; border-radius:0 
 .sodif-revision-item div { display:grid; gap:.15rem; }
 .sodif-revision-item strong { color:var(--navy); font-size:.78rem; }
 .sodif-revision-item small, .sodif-revision-item time { color:#748399; font-size:.65rem; }
+.sodif-package-proof {
+    display:grid; grid-template-columns:.8fr 1.2fr; gap:1rem; margin-top:.8rem; padding:.85rem 1rem;
+    background:#eef7f5; border:1px solid #d4eae5; border-radius:11px;
+}
+.sodif-package-proof > div { display:grid; gap:.25rem; }
+.sodif-package-proof small {
+    color:#6c7f8f; font-size:.59rem; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase;
+}
+.sodif-package-proof code { color:#145a50; font-size:.68rem; background:transparent; padding:0; }
 section[data-testid="stFileUploaderDropzone"] button div[data-testid="stMarkdownContainer"] p {
     display:none !important;
 }
@@ -482,6 +492,15 @@ div[data-testid="stSelectbox"] label {
 div[data-testid="stSelectbox"] > div > div {
     background:white; border-color:var(--line);
 }
+.sodif-flight-choice { min-height:8.4rem; padding:.25rem .2rem .1rem; }
+.sodif-flight-choice h2 { color:var(--navy); font-size:1.28rem; margin:.55rem 0 .35rem; }
+.sodif-flight-choice p { color:var(--muted); font-size:.78rem; line-height:1.55; margin:0; }
+.sodif-flight-active {
+    display:inline-flex; align-items:center; gap:.7rem; margin:1.8rem 0 .75rem;
+    padding:.45rem .72rem; background:#edf7f5; border:1px solid #d0e9e3; border-radius:999px;
+}
+.sodif-flight-active strong { color:#0c6e5b; font-size:.73rem; }
+.sodif-flight-active span { color:#5d7181; font-size:.67rem; }
 @media (max-width: 800px) {
     .block-container { padding:1.2rem 1.1rem 3rem; }
     .sodif-trust-chip { display:none; }

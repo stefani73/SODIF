@@ -98,7 +98,10 @@ def test_document_registry_searches_and_opens_the_verified_pdf(
     assert "doc-ingestion-demo-002" in copy
     assert "1 document" in copy
     assert "1 revizie găsită" in copy
-    assert [item.label for item in app.get("download_button")] == ["Descarcă revizia"]
+    assert [getattr(item, "label", None) for item in app.get("download_button")] == [
+        "Descarcă revizia",
+        "Pachet verificabil",
+    ]
     search = next(item for item in app.text_input if item.label == "Document, fișier sau semnatar")
     search.set_value("document-inexistent").run(timeout=15)
 
@@ -110,18 +113,34 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports() -> Non
     app = _application().run(timeout=15).switch_page("pages/control.py").run(timeout=15)
 
     assert not app.exception
-    assert app.button[0].label == "Rulează demonstrația"
+    assert [getattr(button, "label", None) for button in app.button[:2]] == [
+        "Rulează Security Flight",
+        "Rulează Integrated Flight",
+    ]
     assert len(app.selectbox) == 0
 
-    app.button[0].click().run(timeout=15)
+    security_button = next(
+        button for button in app.button if button.label == "Rulează Security Flight"
+    )
+    security_button.click().run(timeout=15)
 
     assert not app.exception
     assert app.selectbox[0].label == "Situația analizată"
     control_copy = _copy(app)
-    assert "Toate controalele au confirmat comportamentul așteptat" in control_copy
+    assert "Nucleul de securitate a confirmat comportamentul așteptat" in control_copy
     assert "Comandă autentică și neambiguă" in control_copy
     assert "Sens aprobat" not in control_copy
     assert len(app.get("download_button")) == 0
+    assert not any(
+        getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
+    )
+
+    integrated_button = next(
+        button for button in app.button if button.label == "Rulează Integrated Flight"
+    )
+    integrated_button.click().run(timeout=15)
+    assert not app.exception
+    assert "Fluxul integrat a confirmat securitatea" in _copy(app)
     assert any(
         getattr(item, "label", None) == "Deschide registrul" for item in app.get("page_link")
     )

@@ -16,7 +16,7 @@ from docx.table import Table, _Cell
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 
-from sodif.demo.models import FlightReport
+from sodif.demo.models import FlightKind, FlightReport
 from sodif.ui.presentation import FlightView, ScenarioView, present_flight
 
 _NAVY = "0B2545"
@@ -61,14 +61,14 @@ def _configure_document(document: WordDocument, report: FlightReport) -> None:
     section.footer_distance = Inches(0.492)
 
     properties = document.core_properties
-    properties.title = "Raport SODIF Assurance Flight"
+    properties.title = "Raport de demonstrație SODIF"
     properties.subject = "Dovezi privind execuția controlată a intenției semnate"
     properties.author = "SODIF"
     properties.last_modified_by = "SODIF"
     properties.created = report.started_at.replace(tzinfo=None)
     properties.modified = report.completed_at.replace(tzinfo=None)
     properties.revision = 1
-    properties.comments = "Generat determinist din dovezile SODIF Assurance Flight."
+    properties.comments = "Generat determinist din dovezile demonstrației SODIF."
 
     _configure_styles(document)
     _configure_numbering(document)
@@ -198,10 +198,14 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
     kicker.paragraph_format.space_after = Pt(6)
     _set_run_font(kicker.add_run("SIGNED INTENT CONTROL"), "Calibri", 9, _TEAL, bold=True)
 
+    flight_title = {
+        FlightKind.SECURITY: "RAPORT SECURITY FLIGHT",
+        FlightKind.INTEGRATED: "RAPORT INTEGRATED FLIGHT",
+    }[report.flight_kind]
     title = document.add_paragraph()
     title.paragraph_format.space_after = Pt(4)
     title.paragraph_format.keep_with_next = True
-    _set_run_font(title.add_run("RAPORT ASSURANCE FLIGHT"), "Calibri", 24, _NAVY, bold=True)
+    _set_run_font(title.add_run(flight_title), "Calibri", 24, _NAVY, bold=True)
 
     subtitle = document.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(18)
@@ -219,7 +223,12 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
         ("Raport", report.report_id),
         ("Rezultat", "CONFORM" if report.passed else "NECONFORM"),
         ("Sigilat la", report.completed_at.isoformat().replace("+00:00", "Z")),
-        ("Domeniu", "Comandă de achiziție / API operațional"),
+        (
+            "Domeniu",
+            "Comandă semnată / API operațional"
+            if report.flight_kind is FlightKind.SECURITY
+            else "Comandă semnată / API operațional / registru documentar",
+        ),
     )
     for label, value in metadata:
         paragraph = document.add_paragraph()

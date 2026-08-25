@@ -4,6 +4,7 @@ from html import escape
 
 import streamlit as st
 
+from sodif.demo.models import FlightKind
 from sodif.reporting import FlightExports
 from sodif.ui.pages.shared import render_flight_summary, render_page_intro
 from sodif.ui.presentation import present_flight
@@ -25,7 +26,11 @@ def render_evidence_hub(control_page: str) -> None:
 
     render_flight_summary(present_flight(report))
     exports = current_exports(report)
-    _render_report_identity(report.report_id, report.completed_at.isoformat())
+    _render_report_identity(
+        report.report_id,
+        report.completed_at.isoformat(),
+        report.flight_kind,
+    )
     _render_export_panel(exports)
     _render_package_contents()
 
@@ -36,8 +41,8 @@ def _render_empty_state(control_page: str) -> None:
         <section class="sodif-empty-panel">
             <div class="sodif-ready-mark" aria-hidden="true"><span></span></div>
             <div><h2>Nu există încă un raport</h2>
-            <p>Rulează demonstrația pentru a genera raportul Word, dovezile structurate,
-            jurnalul de audit și manifestul de integritate.</p></div>
+            <p>Rulează Security Flight sau Integrated Flight pentru a genera raportul Word,
+            dovezile structurate, jurnalul de audit și manifestul de integritate.</p></div>
         </section>
         """,
         unsafe_allow_html=True,
@@ -51,12 +56,21 @@ def _render_empty_state(control_page: str) -> None:
         )
 
 
-def _render_report_identity(report_id: str, completed_at: str) -> None:
+def _render_report_identity(
+    report_id: str,
+    completed_at: str,
+    kind: FlightKind,
+) -> None:
     sealed_at = escape(completed_at.replace("+00:00", "Z"))
+    flight_label = {
+        FlightKind.SECURITY: "Security Flight",
+        FlightKind.INTEGRATED: "Integrated Flight",
+    }[kind]
     st.markdown(
         f"""
         <section class="sodif-report-identity">
             <div><small>Raport curent</small><code>{escape(report_id)}</code></div>
+            <div><small>Demonstrație</small><strong>{escape(flight_label)}</strong></div>
             <div><small>Generat la</small><strong>{sealed_at}</strong></div>
             <div><small>Integritate</small><strong>Verificabilă SHA-256</strong></div>
         </section>

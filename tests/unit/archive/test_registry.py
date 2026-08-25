@@ -1,12 +1,16 @@
 """Document registry tests across summary, search and verified retrieval."""
 
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from sodif.archive import (
     ArchiveQuery,
     ArchiveRecord,
     DocumentRegistryService,
     InMemoryArchiveRepository,
+    build_document_evidence_package,
+    verify_document_evidence_package,
 )
 from sodif.domain.canonical import sha256_bytes
 from sodif.domain.enums import DocumentFormat
@@ -84,3 +88,53 @@ def test_empty_registry_has_a_consistent_zero_summary() -> None:
     assert summary.total_bytes == 0
     assert summary.signer_ids == ()
     assert summary.latest_archived_at is None
+
+
+def test_document_evidence_package_is_deterministic_and_verifiable_offline() -> None:
+    repository = InMemoryArchiveRepository()
+    content = b"%PDF-1.7\nportable evidence\n%%EOF"
+    record = _record(content, "doc-evidence", 1, "evidence.pdf")
+    repository.store(record, content)
+    selection = DocumentRegistryService(repository).open(record.archive_id)
+
+    first = build_document_evidence_package(selection)
+    second = build_document_evidence_package(selection)
+    verification = verify_document_evidence_package(first.data)
+
+    assert first == second
+    assert verification.valid is True
+    assert verification.package_id == first.package_id
+    assert verification.evidence_root == first.evidence_root
+    assert verification.errors == ()
+    with ZipFile(BytesIO(first.data)) as archive:
+        assert set(archive.namelist()) == {
+            "document/evidence.pdf",
+            "manifest.json",
+            "revision-history.json",
+            "VERIFY.txt",
+        }
+
+
+def test_offline_verifier_rejects_modified_document_content() -> None:
+    repository = InMemoryArchiveRepository()
+    content = b"%PDF-1.7\noriginal\n%%EOF"
+    record = _record(content, "doc-tamper", 1, "original.pdf")
+    repository.store(record, content)
+    package = build_document_evidence_package(
+        DocumentRegistryService(repository).open(record.archive_id)
+    )
+    modified = BytesIO()
+    with (
+        ZipFile(BytesIO(package.data), "r") as source,
+        ZipFile(modified, "w", compression=ZIP_DEFLATED) as target,
+    ):
+        for path in source.namelist():
+            data = source.read(path)
+            if path == "document/original.pdf":
+                data += b"modified"
+            target.writestr(path, data)
+
+    verification = verify_document_evidence_package(modified.getvalue())
+
+    assert verification.valid is False
+    assert any("integrity mismatch" in error for error in verification.errors)

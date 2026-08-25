@@ -1,7 +1,7 @@
 """Product-view tests for flight evidence."""
 
 from sodif.demo.models import FlightScenario
-from sodif.demo.runner import run_default_flight
+from sodif.demo.runner import run_default_flight, run_integrated_memory_flight
 from sodif.ui.presentation import present_flight
 
 
@@ -10,7 +10,7 @@ def test_flight_presentation_exposes_decisions_without_engine_vocabulary() -> No
     rendered = repr(view)
 
     assert view.tone == "success"
-    assert "Toate controalele au confirmat comportamentul așteptat" in view.title
+    assert "Nucleul de securitate a confirmat comportamentul așteptat" in view.title
     assert all(
         control.name != "Sens aprobat" for item in view.scenarios for control in item.controls
     )
@@ -30,9 +30,21 @@ def test_executed_scenario_presents_exact_api_evidence() -> None:
     assert scenario.verdict == "Autorizată"
     assert scenario.tone == "success"
     assert evidence["Acțiune"] == "POST /purchase-orders"
-    assert evidence["Arhivă"].startswith("arc-")
+    assert "Arhivă" not in evidence
     assert evidence["Destinație"] == "erp-purchase-api"
     assert evidence["Confirmare API"] == "202"
+    assert "Revizia validată a fost înregistrată în arhiva documentară." not in scenario.timeline
+
+
+def test_integrated_flight_presents_archive_evidence() -> None:
+    view = present_flight(run_integrated_memory_flight())
+    scenario = next(
+        item for item in view.scenarios if item.scenario_id is FlightScenario.HAPPY_PATH
+    )
+    evidence = {item.label: item.value for item in scenario.evidence}
+
+    assert "trasabilitatea documentară" in view.title
+    assert evidence["Arhivă"].startswith("arc-")
     assert "Revizia validată a fost înregistrată în arhiva documentară." in scenario.timeline
 
 

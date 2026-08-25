@@ -7,9 +7,9 @@ from html import escape
 import streamlit as st
 
 from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_archived_flight
+from sodif.demo.runner import run_integrated_flight, run_security_flight
 from sodif.settings import AppSettings
-from sodif.ui.state import register_flight_runner
+from sodif.ui.state import register_flight_runners
 from sodif.ui.styles import PRODUCT_STYLES
 
 
@@ -30,8 +30,8 @@ def render_product_shell(
 ) -> None:
     """Render the product navigation and execute the selected page."""
     st.markdown(PRODUCT_STYLES, unsafe_allow_html=True)
-    runner = flight_runner or partial(run_archived_flight, settings.archive_root)
-    register_flight_runner(runner)
+    integrated_runner = flight_runner or partial(run_integrated_flight, settings.archive_root)
+    register_flight_runners(run_security_flight, integrated_runner)
     _render_sidebar_brand(settings)
 
     overview_page = st.Page(

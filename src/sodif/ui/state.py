@@ -1,47 +1,77 @@
 """Session-scoped product state shared by Streamlit pages."""
 
 from collections.abc import Callable
+from typing import cast
 
 import streamlit as st
 
-from sodif.demo.models import FlightReport
-from sodif.demo.runner import run_default_flight
+from sodif.demo.models import FlightKind, FlightReport
+from sodif.demo.runner import run_integrated_memory_flight, run_security_flight
 from sodif.reporting import FlightExports, build_flight_exports
 
-_REPORT_KEY = "sodif_flight_report"
+_REPORTS_KEY = "sodif_flight_reports"
 _EXPORTS_KEY = "sodif_flight_exports"
-_RUNNER_KEY = "sodif_flight_runner"
+_RUNNERS_KEY = "sodif_flight_runners"
+_ACTIVE_KIND_KEY = "sodif_active_flight_kind"
 
 
-def register_flight_runner(runner: Callable[[], FlightReport]) -> None:
-    """Register the runner used by the control page in the current session."""
-    st.session_state[_RUNNER_KEY] = runner
+def register_flight_runners(
+    security: Callable[[], FlightReport],
+    integrated: Callable[[], FlightReport],
+) -> None:
+    """Register both product flights for the current session."""
+    st.session_state[_RUNNERS_KEY] = {
+        FlightKind.SECURITY.value: security,
+        FlightKind.INTEGRATED.value: integrated,
+    }
 
 
-def current_flight_runner() -> Callable[[], FlightReport]:
-    """Return the registered runner or the deterministic default."""
-    runner = st.session_state.get(_RUNNER_KEY)
-    return runner if callable(runner) else run_default_flight
+def current_flight_runner(kind: FlightKind) -> Callable[[], FlightReport]:
+    """Return the registered runner or a deterministic in-memory fallback."""
+    runners = st.session_state.get(_RUNNERS_KEY)
+    runner = runners.get(kind.value) if isinstance(runners, dict) else None
+    if callable(runner):
+        return cast(Callable[[], FlightReport], runner)
+    return run_security_flight if kind is FlightKind.SECURITY else run_integrated_memory_flight
 
 
-def run_assurance_demo(runner: Callable[[], FlightReport]) -> None:
+def run_assurance_demo(
+    kind: FlightKind,
+    runner: Callable[[], FlightReport],
+) -> None:
     """Run the deterministic demonstration and retain its evidence."""
     report = runner()
-    st.session_state[_REPORT_KEY] = report
-    st.session_state[_EXPORTS_KEY] = build_flight_exports(report)
+    if report.flight_kind is not kind:
+        raise ValueError("flight runner returned a report for a different product scope")
+    reports = dict(st.session_state.get(_REPORTS_KEY, {}))
+    reports[kind.value] = report
+    st.session_state[_REPORTS_KEY] = reports
+    exports = dict(st.session_state.get(_EXPORTS_KEY, {}))
+    exports[kind.value] = build_flight_exports(report)
+    st.session_state[_EXPORTS_KEY] = exports
+    st.session_state[_ACTIVE_KIND_KEY] = kind.value
 
 
-def current_report() -> FlightReport | None:
+def current_report(kind: FlightKind | None = None) -> FlightReport | None:
     """Return the current report when the session contains a valid result."""
-    report = st.session_state.get(_REPORT_KEY)
+    reports = st.session_state.get(_REPORTS_KEY)
+    if not isinstance(reports, dict):
+        return None
+    selected = kind.value if kind is not None else st.session_state.get(_ACTIVE_KIND_KEY)
+    report = reports.get(selected) if isinstance(selected, str) else None
     return report if isinstance(report, FlightReport) else None
 
 
 def current_exports(report: FlightReport) -> FlightExports:
     """Return cached exports or build them from the current report."""
-    exports = st.session_state.get(_EXPORTS_KEY)
-    if isinstance(exports, FlightExports):
-        return exports
+    cached = st.session_state.get(_EXPORTS_KEY)
+    if isinstance(cached, dict):
+        exports = cached.get(report.flight_kind.value)
+        if isinstance(exports, FlightExports):
+            return exports
+    else:
+        cached = {}
     exports = build_flight_exports(report)
-    st.session_state[_EXPORTS_KEY] = exports
+    cached[report.flight_kind.value] = exports
+    st.session_state[_EXPORTS_KEY] = cached
     return exports

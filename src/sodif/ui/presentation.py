@@ -2,7 +2,13 @@
 
 from dataclasses import dataclass
 
-from sodif.demo.models import FlightReport, FlightScenario, ScenarioOutcome, ScenarioResult
+from sodif.demo.models import (
+    FlightKind,
+    FlightReport,
+    FlightScenario,
+    ScenarioOutcome,
+    ScenarioResult,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,13 +144,21 @@ _TIMELINE_COPY = {
 
 def present_flight(report: FlightReport) -> FlightView:
     """Translate technical evidence into concise, user-facing decisions."""
-    return FlightView(
-        title="Toate controalele au confirmat comportamentul așteptat",
-        detail=(
-            "Acțiunile conforme au fost autorizate, iar tentativele de modificare, "
-            "ambiguitățile și reutilizările au fost oprite înainte de a ajunge la "
-            "sistemul operațional."
+    title, detail = {
+        FlightKind.SECURITY: (
+            "Nucleul de securitate a confirmat comportamentul așteptat",
+            "Acțiunile conforme au fost autorizate, iar modificările, ambiguitățile și "
+            "reutilizările au fost oprite înainte de sistemul operațional.",
         ),
+        FlightKind.INTEGRATED: (
+            "Fluxul integrat a confirmat securitatea și trasabilitatea documentară",
+            "Controalele de execuție au produs deciziile așteptate, iar reviziile valide "
+            "au fost legate de înregistrări documentare verificabile.",
+        ),
+    }[report.flight_kind]
+    return FlightView(
+        title=title,
+        detail=detail,
         tone="success" if report.passed else "danger",
         scenarios=tuple(present_scenario(result) for result in report.results),
     )

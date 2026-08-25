@@ -22,6 +22,13 @@ class FlightScenario(StrEnum):
     REPLAY_ATTACK = "replay-attack"
 
 
+class FlightKind(StrEnum):
+    """Product-level scope of a reproducible demonstration flight."""
+
+    SECURITY = "security"
+    INTEGRATED = "integrated"
+
+
 class ScenarioOutcome(StrEnum):
     EXECUTED = "executed"
     BLOCKED = "blocked"
@@ -73,6 +80,7 @@ class ScenarioResult(DomainModel):
 
 class FlightReport(DomainModel):
     report_id: Identifier
+    flight_kind: FlightKind
     release: Identifier
     started_at: AwareDatetime
     completed_at: AwareDatetime
@@ -92,4 +100,9 @@ class FlightReport(DomainModel):
             raise ValueError("flight passed_scenarios differs from scenario results")
         if self.passed != all(result.passed for result in self.results):
             raise ValueError("flight passed flag differs from scenario results")
+        archived = [result for result in self.results if result.archive_id is not None]
+        if self.flight_kind is FlightKind.SECURITY and archived:
+            raise ValueError("security flight cannot contain document archive evidence")
+        if self.flight_kind is FlightKind.INTEGRATED and not archived:
+            raise ValueError("integrated flight requires document archive evidence")
         return self

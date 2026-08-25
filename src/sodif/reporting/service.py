@@ -5,7 +5,7 @@ from hashlib import sha256
 from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-from sodif.demo.models import FlightReport
+from sodif.demo.models import FlightKind, FlightReport
 from sodif.reporting.docx import render_docx_report
 from sodif.reporting.models import ExportArtifact, FlightExports
 from sodif.reporting.serializers import serialize_audit_log, serialize_report
@@ -15,29 +15,33 @@ _ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
 def build_flight_exports(report: FlightReport) -> FlightExports:
     """Create human-readable and machine-readable evidence in memory."""
+    export_name = {
+        FlightKind.SECURITY: "Security",
+        FlightKind.INTEGRATED: "Integrated",
+    }[report.flight_kind]
     document = ExportArtifact(
-        "SODIF_Assurance_Flight_Report.docx",
+        f"SODIF_{export_name}_Flight_Report.docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         render_docx_report(report),
     )
     structured = ExportArtifact(
-        "sodif-flight-report.json",
+        f"sodif-{report.flight_kind.value}-flight-report.json",
         "application/json",
         serialize_report(report),
     )
     audit = ExportArtifact(
-        "sodif-audit-log.ndjson",
+        f"sodif-{report.flight_kind.value}-audit-log.ndjson",
         "application/x-ndjson",
         serialize_audit_log(report),
     )
     core_artifacts = (document, structured, audit)
     manifest = ExportArtifact(
-        "sodif-evidence-manifest.json",
+        f"sodif-{report.flight_kind.value}-evidence-manifest.json",
         "application/json",
         _build_manifest(report, core_artifacts),
     )
     bundle = ExportArtifact(
-        "SODIF_Evidence_Package.zip",
+        f"SODIF_{export_name}_Evidence_Package.zip",
         "application/zip",
         _build_bundle((*core_artifacts, manifest)),
     )
@@ -60,6 +64,7 @@ def _build_manifest(report: FlightReport, artifacts: tuple[ExportArtifact, ...])
     payload = {
         "protocol": "sodif.evidence-manifest/v1",
         "report_id": report.report_id,
+        "flight_kind": report.flight_kind.value,
         "release": report.release,
         "sealed_at": report.completed_at.isoformat().replace("+00:00", "Z"),
         "evidence_root": f"sha256:{evidence_root}",

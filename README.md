@@ -13,9 +13,10 @@ Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură
 arhivare. Un pachet demonstrativ semnat poate fi verificat direct sau descărcat pentru
 reîncărcare manuală.
 
-Pagina „Registru documente” oferă căutare, filtrare, previzualizare PDF și acces la istoricul
-verificabil al reviziilor. Conținutul este furnizat interfeței numai după ce arhiva îi
-reconfirmă dimensiunea și amprenta criptografică.
+Pagina „Registru documente” oferă căutare, filtrare, previzualizare PDF, istoricul verificabil
+al reviziilor și un pachet portabil cu document, istoric, manifest criptografic și instrucțiuni
+de verificare offline. Conținutul este furnizat interfeței numai după ce arhiva îi reconfirmă
+dimensiunea și amprenta criptografică.
 
 ## Pornire locală
 
@@ -36,11 +37,15 @@ Alternativ:
 .\scripts\flight.ps1
 ```
 
-Comanda rulează catalogul reproductibil de șase situații și afișează dovada structurată
-JSON, fără efecte asupra unui sistem extern.
+Comanda rulează Security Flight și afișează dovada structurată JSON, fără efecte asupra unui
+sistem extern și fără scrieri în DMS.
 
-Flight-ul pornit din aplicație arhivează revizia validă în `var\archive`, include
-identificatorul de arhivă în traseul deciziei și nu arhivează documentele respinse.
+Aplicația oferă două demonstrații distincte:
+
+- **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
+  permis unic, legarea acțiunii API și protecția anti-replay;
+- **Integrated Flight** — același nucleu, completat cu arhivarea reviziei valide, registrul
+  documentar și exportul verificabil. Documentele respinse nu sunt arhivate.
 
 ## Pachet de dovezi
 

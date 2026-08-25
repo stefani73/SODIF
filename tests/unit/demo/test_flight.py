@@ -8,8 +8,19 @@ from sodif.archive import ArchiveQuery, SqliteArchiveRepository
 from sodif.demo.adapters import ScenarioSemanticAdapter
 from sodif.demo.cli import main
 from sodif.demo.fixtures import accepted_values, purchase_order_schema
-from sodif.demo.models import FlightReport, FlightScenario, ScenarioOutcome, ScenarioResult
-from sodif.demo.runner import FlightRunner, run_archived_flight, run_default_flight
+from sodif.demo.models import (
+    FlightKind,
+    FlightReport,
+    FlightScenario,
+    ScenarioOutcome,
+    ScenarioResult,
+)
+from sodif.demo.runner import (
+    FlightRunner,
+    run_archived_flight,
+    run_default_flight,
+    run_integrated_memory_flight,
+)
 from sodif.domain.enums import ProcessingStage, VerificationLevel, ViewKind
 from sodif.domain.models import DocumentEnvelope
 
@@ -23,6 +34,7 @@ def test_default_flight_covers_the_minimal_security_catalog() -> None:
     scenarios = indexed(report)
 
     assert report.passed is True
+    assert report.flight_kind is FlightKind.SECURITY
     assert report.passed_scenarios == 6
     assert tuple(scenarios) == tuple(FlightScenario)
     assert scenarios[FlightScenario.HAPPY_PATH].observed_outcome is ScenarioOutcome.EXECUTED
@@ -31,15 +43,10 @@ def test_default_flight_covers_the_minimal_security_catalog() -> None:
     assert scenarios[FlightScenario.SEMANTIC_CONFLICT].rejection_code == "semantic-conflict"
     assert scenarios[FlightScenario.ACTION_TAMPERING].rejection_code == "action_mismatch"
     assert scenarios[FlightScenario.REPLAY_ATTACK].rejection_code == "permit_replayed"
-    archived = [
-        result
-        for result in report.results
-        if result.scenario_id is not FlightScenario.TAMPERED_DOCUMENT
-    ]
-    assert all(result.archive_id is not None for result in archived)
-    assert scenarios[FlightScenario.TAMPERED_DOCUMENT].archive_id is None
+    assert all(result.archive_id is None for result in report.results)
     assert all(
-        "document-archived" in {item.stage for item in result.observations} for result in archived
+        "document-archived" not in {item.stage for item in result.observations}
+        for result in report.results
     )
 
 
@@ -87,11 +94,30 @@ def test_product_flight_persists_one_deduplicated_archive_record(tmp_path: Path)
     page = SqliteArchiveRepository(archive_root).search(ArchiveQuery())
 
     assert report.passed is True
+    assert report.flight_kind is FlightKind.INTEGRATED
     assert page.total == 1
     assert page.records[0].document_id == "doc-flight-001"
     assert {result.archive_id for result in report.results if result.archive_id is not None} == {
         page.records[0].archive_id
     }
+
+
+def test_integrated_memory_flight_adds_archive_evidence_without_changing_decisions() -> None:
+    security = run_default_flight()
+    integrated = run_integrated_memory_flight()
+
+    assert [item.observed_outcome for item in integrated.results] == [
+        item.observed_outcome for item in security.results
+    ]
+    archived = [
+        result
+        for result in integrated.results
+        if result.scenario_id is not FlightScenario.TAMPERED_DOCUMENT
+    ]
+    assert all(result.archive_id is not None for result in archived)
+    assert all(
+        "document-archived" in {item.stage for item in result.observations} for result in archived
+    )
 
 
 def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
@@ -100,7 +126,8 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
     report = FlightReport.model_validate_json(output)
 
     assert report.passed is True
-    assert report.release == "0.12.0-dms3"
+    assert report.flight_kind is FlightKind.SECURITY
+    assert report.release == "0.13.0-dms4"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

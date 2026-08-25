@@ -20,6 +20,7 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "event_type": "flight.opened",
             "occurred_at": report.started_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
+            "flight_kind": report.flight_kind,
             "release": report.release,
         }
     ]
@@ -31,6 +32,7 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "event_type": "flight.sealed",
             "occurred_at": report.completed_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
+            "flight_kind": report.flight_kind,
             "outcome": "conform" if report.passed else "neconform",
         }
     )
