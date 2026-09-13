@@ -13,7 +13,7 @@ nu rezultate paralele fără legătură.
   semantică adaptivă, emiterea permisului legat de acțiune și protecția anti-replay. Nu scrie
   în arhivă și nu trece prin Gateway.
 - **Transversal Flight** păstrează aceleași controale și adaugă arhivarea reviziilor acceptate,
-  aplicarea permisului prin Semantic Execution Gateway și dovada efectului asupra API-ului.
+  aplicarea permisului prin SODIF Gateway și dovada efectului asupra API-ului.
 
 ## Traseul tranzacției conforme
 

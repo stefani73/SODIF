@@ -23,12 +23,12 @@ MODULES = (
     ProductModule(
         key="security",
         sequence="01",
-        name="Signed Intent Security",
-        navigation_label="Securitate tranzacțională",
-        promise="Transformă aprobarea semnată într-un drept de execuție precis și unic.",
+        name="SODIF Security",
+        navigation_label="Controlul execuției",
+        promise="Protejează trecerea de la revizia semnată la dreptul unic de execuție.",
         responsibility=(
-            "Verifică documentul, confirmă intenția critică și emite permisul criptografic "
-            "legat de acțiunea API autorizată."
+            "Confirmă valorile operaționale prin reprezentări independente, construiește "
+            "intenția tipizată și emite permisul criptografic legat de acțiunea API."
         ),
         input_contract="Document semnat, reprezentări independente și acțiunea solicitată",
         output_contract="Decizie explicabilă și permis de execuție cu utilizare unică",
@@ -38,12 +38,12 @@ MODULES = (
     ProductModule(
         key="archive",
         sequence="02",
-        name="Verifiable Document Archive",
+        name="SODIF Archive",
         navigation_label="Arhivă verificabilă",
-        promise="Păstrează documentul și reviziile într-un istoric verificabil și auditabil.",
+        promise="Păstrează reviziile validate într-un istoric verificabil și auditabil.",
         responsibility=(
-            "Preia numai revizii validate, menține lanțul criptografic și produce pachete "
-            "portabile pentru audit independent."
+            "Înregistrează reviziile validate, menține continuitatea criptografică și produce "
+            "pachete portabile pentru verificare independentă."
         ),
         input_contract="Document validat, metadate semnate și legătura cu revizia anterioară",
         output_contract="Înregistrare indexată, istoric de revizii și pachet de audit",
@@ -53,12 +53,12 @@ MODULES = (
     ProductModule(
         key="gateway",
         sequence="03",
-        name="Semantic Execution Gateway",
-        navigation_label="Gateway semantic",
-        promise="Permite API-ului să execute numai tranzacția aprobată în document.",
+        name="SODIF Gateway",
+        navigation_label="Control API",
+        promise="Aplică permisul SODIF asupra cererii API observate la execuție.",
         responsibility=(
-            "Validează permisul față de cererea API, aplică protecția anti-replay și decide "
-            "controlat dacă tranzacția poate fi rutată."
+            "Recanonicalizează cererea, verifică legarea de acțiunea autorizată și aplică "
+            "politica de rutare și protecția anti-replay."
         ),
         input_contract="Cerere API, permis criptografic și contextul destinației",
         output_contract="Rutare permisă sau blocare motivată, însoțită de jurnal de audit",

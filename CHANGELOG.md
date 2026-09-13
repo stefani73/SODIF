@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.0 — Cybersecurity product alignment
+
+- poziționare unitară ca platformă de securitate cibernetică pentru execuții autorizate prin documente semnate;
+- identitate canonică pentru modulele SODIF Security, SODIF Archive și SODIF Gateway;
+- configurarea de laborator documentată explicit în rapoartele operaționale;
+- generarea coordonată a ambelor Flight-uri și a tuturor artefactelor de audit;
+- interfață și texte tehnice armonizate cu lanțul revizie–intenție–permis–cerere API;
+- teste actualizate pentru contractele de produs și rapoartele extinse.
+
 ## 0.12.0 — DMS D3: registrul documentelor
 
 - registru de produs cu sumar, căutare și filtrare după semnatar;

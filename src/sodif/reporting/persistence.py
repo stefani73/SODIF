@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from sodif.demo.models import FlightReport
-from sodif.reporting.cli import write_exports
+from sodif.reporting.files import write_exports
 from sodif.reporting.ledger import (
     RunLedgerEntry,
     RunLedgerIntegrityError,

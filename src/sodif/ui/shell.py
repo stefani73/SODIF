@@ -17,7 +17,7 @@ from sodif.ui.styles import PRODUCT_STYLES
 def configure_page(settings: AppSettings) -> None:
     """Apply browser metadata before rendering any UI element."""
     st.set_page_config(
-        page_title=f"{settings.app_name} | Signed Intent Control",
+        page_title=f"{settings.app_name} | Controlul execuției",
         page_icon=":material/shield_lock:",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -62,13 +62,13 @@ def render_product_shell(
     )
     security_page = st.Page(
         "pages/security.py",
-        title="Signed Intent Security",
+        title="SODIF Security",
         icon=":material/shield_lock:",
         url_path="security",
     )
     archive_page = st.Page(
         "pages/archive.py",
-        title="Verifiable Document Archive",
+        title="SODIF Archive",
         icon=":material/folder_managed:",
         url_path="archive",
     )
@@ -86,7 +86,7 @@ def render_product_shell(
     )
     gateway_page = st.Page(
         "pages/gateway.py",
-        title="Semantic Execution Gateway",
+        title="SODIF Gateway",
         icon=":material/hub:",
         url_path="gateway",
     )
@@ -106,15 +106,15 @@ def render_product_shell(
         "Platformă": (overview_page, architecture_page, configuration_page)
     }
     if settings.modules.security_enabled:
-        sections["Signed Intent Security"] = (security_page,)
+        sections["SODIF Security"] = (security_page,)
     if settings.modules.archive_enabled:
-        sections["Verifiable Document Archive"] = (
+        sections["SODIF Archive"] = (
             archive_page,
             ingestion_page,
             registry_page,
         )
     if settings.modules.gateway_enabled:
-        sections["Semantic Execution Gateway"] = (gateway_page,)
+        sections["SODIF Gateway"] = (gateway_page,)
     if settings.modules.security_enabled:
         sections["Operațiuni și audit"] = (control_page, reports_page)
 
@@ -131,7 +131,8 @@ def _render_sidebar_brand(settings: AppSettings) -> None:
             f"""
             <div class="sodif-sidebar-brand">
                 <span class="sodif-mark" aria-hidden="true"><i></i></span>
-                <div><strong>{name}</strong><small>Signed Intent Infrastructure</small></div>
+                <div><strong>{name}</strong>
+                <small>Controlul execuției autorizate</small></div>
             </div>
             """,
             unsafe_allow_html=True,

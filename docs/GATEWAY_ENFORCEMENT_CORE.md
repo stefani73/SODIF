@@ -1,9 +1,9 @@
-# Semantic Execution Gateway — nucleul de enforcement
+# SODIF Gateway — controlul tranzacțional la limita API
 
 ## Rol
 
-Semantic Execution Gateway aplică la limita API dreptul tranzacțional emis de `Signed Intent
-Security`. Modulul nu reinterpretează documentul și nu repetă analiza semantică. El verifică
+SODIF Gateway aplică la limita API dreptul tranzacțional emis de `SODIF Security`. Modulul nu
+reinterpretează documentul și nu repetă analiza semantică. El verifică
 dacă cererea concretă păstrează exact acțiunea autorizată și decide fail-closed între rutare și
 blocare.
 

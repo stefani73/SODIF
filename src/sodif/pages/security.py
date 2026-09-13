@@ -1,4 +1,4 @@
-"""Signed Intent Security module entry point."""
+"""SODIF Security module entry point."""
 
 from sodif.ui.pages.security import render_security_module
 

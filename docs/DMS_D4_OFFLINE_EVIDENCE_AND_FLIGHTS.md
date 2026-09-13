@@ -7,8 +7,8 @@ SODIF separă explicit demonstrația nucleului de securitate de demonstrația tr
 - **Security Flight** validează documentul semnat, confirmă adaptiv intenția, leagă
   criptografic autorizarea de acțiunea API și blochează modificarea sau reutilizarea. Nu
   scrie în arhiva documentară.
-- **Transversal Flight** rulează aceleași controale, păstrează reviziile acceptate în DMS și
-  aplică permisul prin Gateway-ul semantic, cu toate deciziile incluse în dovezi.
+- **Transversal Flight** rulează aceleași controale, păstrează reviziile acceptate în SODIF
+  Archive și aplică permisul prin SODIF Gateway, cu toate deciziile incluse în dovezi.
 
 Separarea permite evaluarea directă a dezvoltării aflate în nucleul proiectului, fără ca
 extensia DMS să îi dilueze rezultatul, și demonstrează totodată integrarea ulterioară într-un

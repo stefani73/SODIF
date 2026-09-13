@@ -161,8 +161,8 @@ def present_flight(report: FlightReport) -> FlightView:
         ),
         FlightKind.TRANSVERSAL: (
             "Fluxul transversal a confirmat lanțul complet de încredere",
-            "Documentele valide au fost protejate și arhivate, iar Gateway-ul semantic a "
-            "rutat numai acțiunile legate de permisul unic și a blocat abaterile.",
+            "Documentele valide au fost protejate și arhivate, iar SODIF Gateway a rutat "
+            "acțiunile legate de permisul unic și a blocat abaterile.",
         ),
     }[report.flight_kind]
     return FlightView(

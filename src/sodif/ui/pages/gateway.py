@@ -1,4 +1,4 @@
-"""Semantic Execution Gateway product workspace."""
+"""SODIF Gateway product workspace."""
 
 from html import escape
 
@@ -21,7 +21,7 @@ _SCENARIO_DESCRIPTIONS = {
         "Cererea corespunde integral acțiunii aprobate și poate fi rutată o singură dată."
     ),
     GatewaySampleScenario.CHANGED_ACTION: (
-        "Valoarea totală din request diferă de valoarea legată criptografic de permis."
+        "Valoarea totală din cerere diferă de valoarea legată criptografic de permis."
     ),
     GatewaySampleScenario.REPLAYED: (
         "Aceeași autorizare este prezentată din nou după consumarea primei execuții."
@@ -87,8 +87,8 @@ def render_gateway_module(settings: GatewaySettings) -> None:
         (
             "policy_alert",
             "Blocare motivată",
-            "Orice abatere produce o decizie explicită și o urmă de audit "
-            "fără efect asupra API-ului.",
+            "Orice abatere produce o decizie explicită, o urmă de audit și oprirea "
+            "cererii înainte de API.",
         ),
     )
     columns = st.columns(4)
@@ -100,15 +100,15 @@ def render_gateway_module(settings: GatewaySettings) -> None:
     st.markdown(
         """
         <section class="sodif-gateway-flow">
-            <div><small>Cerere</small><strong>API call + permis</strong>
+            <div><small>Cerere</small><strong>Apel API + permis</strong>
             <span>Tranzacția pregătită pentru execuție</span></div>
             <i aria-hidden="true"></i>
-            <div class="active"><small>Enforcement</small>
-            <strong>Semantic Execution Gateway</strong>
+            <div class="active"><small>Control</small>
+            <strong>SODIF Gateway</strong>
             <span>Identitate, intenție, destinație și unicitate</span></div>
             <i aria-hidden="true"></i>
-            <div><small>Rezultat</small><strong>Route / Block</strong>
-            <span>O singură decizie, justificată și auditabilă</span></div>
+            <div><small>Rezultat</small><strong>Rutare / blocare</strong>
+            <span>Decizie justificată și auditabilă</span></div>
         </section>
         """,
         unsafe_allow_html=True,
@@ -118,9 +118,9 @@ def render_gateway_module(settings: GatewaySettings) -> None:
         """
         <section class="sodif-boundary-panel">
             <div><div class="sodif-section-label light">Integrare pragmatică</div>
-            <h2>Un punct de control, fără rescrierea API-urilor protejate.</h2></div>
-            <p>Gateway-ul păstrează funcțiile clasice de rutare și politici tehnice, iar SODIF
-            adaugă verificarea dreptului tranzacțional derivat din documentul semnat.</p>
+            <h2>Control integrabil în infrastructura API existentă.</h2></div>
+            <p>SODIF Gateway aplică politicile tehnice ale rutei și verifică dreptul
+            tranzacțional derivat din documentul semnat.</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -140,7 +140,7 @@ def _render_policy_workspace(settings: GatewaySettings) -> None:
                 <small>Rută protejată</small><h2>{escape(settings.route_id)}</h2>
                 <div><span>Serviciu</span><strong>{escape(settings.audience)}</strong></div>
                 <div><span>Resursă</span><strong>POST {escape(settings.path_prefix)}</strong></div>
-                <div><span>Politică</span><strong>Exact action · one time</strong></div>
+                <div><span>Politică</span><strong>Acțiune exactă · utilizare unică</strong></div>
             </section>
             """,
             unsafe_allow_html=True,

@@ -32,7 +32,7 @@ singură acțiune simulată: `POST /purchase-orders`.
 
 Aceleași situații sunt disponibile în două demonstrații: **Security Flight**, care izolează
 nucleul tehnic de semnătură și securitate fără scrieri DMS, și **Transversal Flight**, care
-traversează securitatea intenției, arhiva verificabilă și Gateway-ul semantic până la
+traversează SODIF Security, SODIF Archive și SODIF Gateway până la
 execuția sau blocarea API.
 
 Situațiile obligatorii sunt:

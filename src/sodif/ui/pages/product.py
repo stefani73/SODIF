@@ -13,9 +13,9 @@ def render_product_explainer(settings: AppSettings) -> None:
     """Explain product boundaries and the end-to-end trust chain."""
     render_page_intro(
         "Arhitectura produsului",
-        "Trei module. Un singur lanț de încredere.",
-        "Fiecare modul are o responsabilitate precisă și poate evolua independent; împreună, "
-        "controlează traseul complet de la aprobare la efectul produs de API.",
+        "Arhitectură modulară și lanț verificabil de execuție",
+        "SODIF Security, SODIF Archive și SODIF Gateway au responsabilități precise și "
+        "schimbă între ele artefacte criptografice verificabile.",
     )
 
     active_modules = [module for module in MODULES if settings.modules.is_enabled(module.key)]
@@ -41,17 +41,19 @@ def render_product_explainer(settings: AppSettings) -> None:
     st.markdown(
         """
         <section class="sodif-platform-flow">
-            <div><small>Aprobare</small><strong>Document semnat</strong></div><i></i>
-            <div><small>Control</small><strong>Intenție + permis</strong></div><i></i>
-            <div><small>Trasabilitate</small><strong>Revizie verificabilă</strong></div><i></i>
-            <div><small>Efect</small><strong>Acțiune API exactă</strong></div>
+            <div><small>Sursă</small><strong>Revizie semnată</strong></div><i></i>
+            <div><small>Înțelegere</small><strong>Consens + intenție</strong></div><i></i>
+            <div><small>Autorizare</small><strong>Permis + Gateway</strong></div><i></i>
+            <div><small>Efect</small><strong>Acțiune API controlată</strong></div>
         </section>
+        <p class="sodif-inline-note">SODIF Archive și registrul criptografic păstrează
+        proveniența, deciziile și artefactele de audit pe întregul traseu.</p>
         """,
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        '<div class="sodif-section-label">Separare fără fragmentarea încrederii</div>',
+        '<div class="sodif-section-label">Contracte și extensibilitate</div>',
         unsafe_allow_html=True,
     )
     left, right = st.columns(2)
@@ -60,7 +62,7 @@ def render_product_explainer(settings: AppSettings) -> None:
             """
             <article class="sodif-feature-panel">
                 <div class="sodif-card-caption">Contracte stabile</div>
-                <h2>Modulele schimbă artefacte verificabile, nu presupuneri.</h2>
+                <h2>Contractele dintre module sunt verificabile.</h2>
                 <p>Permisul, amprentele documentelor și deciziile de enforcement au forme
                 explicite, versionabile și verificabile independent.</p>
             </article>
@@ -72,7 +74,7 @@ def render_product_explainer(settings: AppSettings) -> None:
             """
             <article class="sodif-feature-panel accent">
                 <div class="sodif-card-caption">Extensibilitate controlată</div>
-                <h2>Domeniile noi adaugă politici, nu rescriu nucleul.</h2>
+                <h2>Pachetele de domeniu extind aceeași arhitectură.</h2>
                 <p>Schemele de intenție, regulile de risc și adaptoarele API pot fi extinse
                 separat, păstrând aceleași garanții criptografice și de audit.</p>
             </article>

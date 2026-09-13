@@ -25,7 +25,7 @@ poată fi confundate cu o altă politică operațională.
 Configurația nu este doar metadată de prezentare:
 
 1. audiența și resursa definesc planul API compilat;
-2. ruta, audiența și limitele configurează Semantic Execution Gateway;
+2. ruta, audiența și limitele configurează SODIF Gateway;
 3. organizația, domeniul, mediul și serviciul apar în raportul operațional;
 4. configurația integrală este inclusă în raportul JSON și în manifest;
 5. jurnalul NDJSON înregistrează contextul la deschiderea rulării;

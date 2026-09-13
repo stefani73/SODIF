@@ -1,18 +1,19 @@
 # SODIF
 
-**Signed Intent Infrastructure** — controlul tranzacțiilor digitale autorizate prin documente
-semnate.
+**Platformă de securitate cibernetică pentru controlul execuției digitale autorizate prin
+documente semnate.**
 
-Promisiunea produsului: **Exact ceea ce s-a semnat. O singură dată.**
+SODIF menține continuitatea verificabilă dintre revizia semnată, intenția operațională,
+permisul criptografic și cererea API observată la execuție.
 
 Aplicația este organizată în trei module de produs cu limite și contracte explicite:
 
-- **Signed Intent Security** — verifică documentul și intenția, apoi emite permisul
-  criptografic legat de acțiunea API autorizată;
-- **Verifiable Document Archive** — păstrează reviziile validate, istoricul criptografic și
-  pachetele portabile de dovezi;
-- **Semantic Execution Gateway** — verifică permisul față de cererea API, aplică politicile
-  de rutare și produce decizia auditabilă `route/block` la limita de execuție.
+- **SODIF Security** — confirmă valorile operaționale prin reprezentări independente,
+  construiește intenția tipizată și emite permisul criptografic cu utilizare unică;
+- **SODIF Archive** — păstrează reviziile validate, istoricul criptografic și pachetele
+  portabile pentru verificare independentă;
+- **SODIF Gateway** — recanonicalizează cererea API, verifică legarea de permis și aplică
+  politica de rutare și protecția anti-replay la limita de execuție.
 
 Interfața multipagină individualizează fiecare modul, operațiunile documentare, rulările
 controlate și auditul. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
@@ -60,7 +61,7 @@ Aplicația oferă două rulări distincte:
 - **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
   permis unic, legarea acțiunii API și protecția anti-replay;
 - **Transversal Flight** — traversează cele trei module: verifică și autorizează intenția,
-  arhivează reviziile acceptate, aplică permisul în Gateway și exportă deciziile corelate.
+  arhivează reviziile acceptate, aplică permisul în SODIF Gateway și exportă deciziile corelate.
   Documentele respinse nu sunt arhivate, iar cererile neconforme nu ajung la API.
 
 ## Configurarea modulelor
@@ -77,7 +78,7 @@ SODIF_GATEWAY_AUDIENCE=erp-purchase-api
 SODIF_GATEWAY_PATH_PREFIX=/purchase-orders
 SODIF_GATEWAY_MAXIMUM_PARAMETERS=16
 SODIF_ORGANIZATION_NAME=TECHSUITE
-SODIF_WORKSPACE_NAME=SODIF Transaction Control
+SODIF_WORKSPACE_NAME=SODIF Operations
 SODIF_DOMAIN_NAME=Achiziții
 SODIF_PROTECTED_SERVICE=ERP Purchase API
 SODIF_EXPORT_ROOT=var/exports
@@ -113,7 +114,8 @@ Export local:
 .\scripts\export-flight.ps1
 ```
 
-Fișierele sunt generate în `var\exports`.
+Comanda rulează ambele Flight-uri și generează în `var\exports` rapoartele DOCX, datele JSON,
+jurnalele NDJSON, manifestele SHA-256 și pachetele ZIP.
 
 ## Verificare integrală
 

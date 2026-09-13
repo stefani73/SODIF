@@ -1,4 +1,4 @@
-"""Verifiable Document Archive product module page."""
+"""SODIF Archive product module page."""
 
 import streamlit as st
 
@@ -37,7 +37,7 @@ def render_archive_module(ingestion_page: str, registry_page: str) -> None:
         )
 
     st.markdown(
-        '<div class="sodif-section-label">Încredere care poate fi mutată</div>',
+        '<div class="sodif-section-label">Integritate și portabilitate</div>',
         unsafe_allow_html=True,
     )
     capabilities = st.columns(3)
@@ -55,7 +55,7 @@ def render_archive_module(ingestion_page: str, registry_page: str) -> None:
         (
             "inventory_2",
             "Dovadă portabilă",
-            "Pachetul exportat permite verificarea independentă, fără acces la aplicație.",
+            "Pachetul exportat permite verificarea independentă în afara aplicației.",
         ),
     )
     for column, (icon, title, body) in zip(capabilities, content, strict=True):

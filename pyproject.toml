@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sodif"
-version = "0.19.0"
-description = "SODIF modular infrastructure for signed-intent execution control"
+version = "0.20.0"
+description = "SODIF cybersecurity platform for document-authorized execution control"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { text = "Proprietary — third-party dependencies remain under their OSS licenses" }

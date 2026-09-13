@@ -10,7 +10,7 @@ garanțiilor comune.
 
 ## Module de produs
 
-### Signed Intent Security
+### SODIF Security
 
 **Responsabilitate:** validează documentul și revizia, confirmă semantic valorile critice și
 emite un permis criptografic legat de acțiunea API exactă.
@@ -24,7 +24,7 @@ emite un permis criptografic legat de acțiunea API exactă.
 Modulul nu arhivează documente și nu rutează trafic. Contractul său stabil este decizia
 semnată împreună cu permisul de execuție.
 
-### Verifiable Document Archive
+### SODIF Archive
 
 **Responsabilitate:** păstrează documentele validate și relațiile dintre revizii într-o formă
 care poate fi verificată independent.
@@ -36,7 +36,7 @@ care poate fi verificată independent.
 Modulul nu interpretează intenția și nu autorizează execuții. El păstrează dovada exactă pe
 care celelalte componente o pot referi.
 
-### Semantic Execution Gateway
+### SODIF Gateway
 
 **Responsabilitate:** aplică dreptul tranzacțional la limita API și permite numai acțiunea
 descrisă de permis.

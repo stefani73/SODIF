@@ -40,6 +40,7 @@ def render_docx_report(report: FlightReport) -> bytes:
     _configure_document(document, report)
     view = present_flight(report)
     _add_masthead(document, report, view)
+    _add_lab_configuration(document, report)
     _add_decision_register(document, view)
     if report.flight_kind is FlightKind.TRANSVERSAL:
         _add_transversal_evidence(document, report)
@@ -64,13 +65,13 @@ def _configure_document(document: WordDocument, report: FlightReport) -> None:
 
     properties = document.core_properties
     properties.title = "Raport operațional SODIF"
-    properties.subject = "Auditul execuției controlate a intenției semnate"
+    properties.subject = "Validarea în laborator a controlului execuției document-to-API"
     properties.author = "SODIF"
     properties.last_modified_by = "SODIF"
     properties.created = report.started_at.replace(tzinfo=None)
     properties.modified = report.completed_at.replace(tzinfo=None)
     properties.revision = 1
-    properties.comments = "Generat automat din jurnalul operațional SODIF."
+    properties.comments = ""
 
     _configure_styles(document)
     _configure_numbering(document)
@@ -167,7 +168,7 @@ def _configure_numbering(document: WordDocument) -> None:
 def _configure_header(paragraph: Paragraph) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
     paragraph.paragraph_format.space_after = Pt(0)
-    run = paragraph.add_run("SODIF  |  CONTROL TRANZACȚIONAL")
+    run = paragraph.add_run("SODIF  |  SECURITATEA EXECUȚIEI")
     _set_run_font(run, "Calibri", 8, _MUTED, bold=True)
 
 
@@ -198,7 +199,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
 
     kicker = document.add_paragraph()
     kicker.paragraph_format.space_after = Pt(6)
-    _set_run_font(kicker.add_run("SIGNED INTENT CONTROL"), "Calibri", 9, _TEAL, bold=True)
+    _set_run_font(kicker.add_run("CYBERSECURITY EXECUTION CONTROL"), "Calibri", 9, _TEAL, bold=True)
 
     flight_title = {
         FlightKind.SECURITY: "RAPORT SECURITY FLIGHT",
@@ -213,9 +214,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
     subtitle.paragraph_format.space_after = Pt(18)
     subtitle.paragraph_format.keep_with_next = True
     _set_run_font(
-        subtitle.add_run(
-            "Raport Document-to-API pentru execuția controlată a unei comenzi de achiziție"
-        ),
+        subtitle.add_run("Validarea lanțului de securitate de la revizia semnată la efectul API"),
         "Calibri",
         12,
         _MUTED,
@@ -230,15 +229,16 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
         ("Rezultat", "CONFORM" if report.passed else "NECONFORM"),
         ("Sigilat la", report.completed_at.isoformat().replace("+00:00", "Z")),
         (
-            "Domeniu",
-            "Comandă semnată / API operațional"
+            "Acoperire",
+            "SODIF Security / API controlat"
             if report.flight_kind is FlightKind.SECURITY
-            else "Comandă semnată / arhivă verificabilă / Gateway semantic / API operațional",
+            else "SODIF Security / SODIF Archive / SODIF Gateway / API controlat",
         ),
         (
             "Serviciu protejat",
             f"{report.configuration.protected_service} · {report.configuration.route_id}",
         ),
+        ("Versiune", report.release),
     )
     for label, value in metadata:
         paragraph = document.add_paragraph()
@@ -248,6 +248,73 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
 
     document.add_paragraph().paragraph_format.space_after = Pt(4)
     _add_callout(document, view.title, view.detail, "success" if report.passed else "danger")
+
+
+def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None:
+    """Describe the reproducible laboratory boundary represented by the report."""
+    document.add_heading("Configurația validată în laborator", level=1)
+    introduction = document.add_paragraph(
+        "Rularea exercită implementarea modulară Python prin date controlate, chei de test "
+        "și un serviciu API local. Rezultatele sunt reproductibile și corelate cu artefactele "
+        "exportate."
+    )
+    introduction.paragraph_format.keep_with_next = True
+    rows = [
+        (
+            "Revizie semnată",
+            "Semnătură Ed25519 detașată peste metadate canonice și digestul SHA-256 al "
+            "conținutului.",
+        ),
+        (
+            "Reprezentări și consens",
+            "Reprezentări independente controlate, normalizare tipizată și consens "
+            "determinist la nivel de câmp.",
+        ),
+        (
+            "Verificare adaptivă",
+            "Niveluri V0-V3 selectate în funcție de risc, completitudinea valorilor și "
+            "divergențele cu efect operațional.",
+        ),
+        (
+            "Permis de execuție",
+            "Permis Ed25519 cu utilizare unică, legat de metodă, rută, parametri, "
+            "destinație și termen de valabilitate.",
+        ),
+        (
+            "Control API",
+            "Politică locală pentru ruta POST protejată, recanonicalizarea cererii și "
+            "blocarea reutilizării permisului.",
+        ),
+    ]
+    if report.flight_kind is FlightKind.TRANSVERSAL:
+        rows.append(
+            (
+                "Arhivă documentară",
+                "Index SQLite, obiecte locale, verificarea digestului la citire și "
+                "continuitatea criptografică a reviziilor.",
+            )
+        )
+    rows.append(
+        (
+            "Audit",
+            "Raport DOCX, date JSON, jurnal NDJSON, manifest SHA-256, pachet ZIP și "
+            "registru criptografic al rulărilor.",
+        )
+    )
+    table = document.add_table(rows=1, cols=2)
+    table.style = "Table Grid"
+    widths = (2450, 6910)
+    _set_table_geometry(table, widths)
+    headers = ("Componentă", "Implementare validată")
+    for cell, text in zip(table.rows[0].cells, headers, strict=True):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9.2)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    for label, value in rows:
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], label, bold=True, size=9)
+        _set_cell_text(cells[1], value, size=9)
 
 
 def _add_callout(
@@ -345,19 +412,19 @@ def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> N
     _repeat_table_header(table)
     module_rows = (
         (
-            "Signed Intent Control",
+            "SODIF Security",
             "Validează revizia semnată, confirmă semantic intenția și emite permisul unic.",
             f"{report.passed_scenarios}/{len(report.results)} scenarii conforme",
             "CONTROLAT",
         ),
         (
-            "Document Archive",
-            "Înregistrează numai reviziile validate și păstrează continuitatea versiunilor.",
+            "SODIF Archive",
+            "Înregistrează reviziile validate și păstrează continuitatea versiunilor.",
             f"{archive_records} referințe de arhivare în {len(archived_results)} scenarii",
             "VERIFICABIL",
         ),
         (
-            "Semantic API Gateway",
+            "SODIF Gateway",
             "Aplică permisul, politica rutei și legarea exactă de acțiunea solicitată.",
             f"{len(gateway_decisions)} decizii: {routed} rutate / {blocked} blocate",
             "APLICAT",
@@ -388,9 +455,9 @@ def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> N
 def _add_dms_evidence(document: WordDocument, report: FlightReport) -> None:
     _add_chapter_heading(
         document,
-        "DOCUMENT ARCHIVE",
+        "SODIF ARCHIVE",
         "Evidența arhivei documentare verificabile",
-        "Registrul de mai jos inventariază numai reviziile acceptate de controlul criptografic. "
+        "Registrul de mai jos inventariază reviziile acceptate de controlul criptografic. "
         "Documentul modificat după semnare este oprit înainte de arhivare.",
     )
     table = document.add_table(rows=1, cols=4)
@@ -426,7 +493,7 @@ def _add_dms_evidence(document: WordDocument, report: FlightReport) -> None:
 def _add_gateway_evidence(document: WordDocument, report: FlightReport) -> None:
     _add_chapter_heading(
         document,
-        "SEMANTIC API GATEWAY",
+        "SODIF GATEWAY",
         "Decizii de rutare și blocare",
         "Gateway-ul aplică politica rutei și verifică permisul criptografic direct față de "
         "acțiunea observată înainte ca cererea să ajungă la serviciul protejat.",

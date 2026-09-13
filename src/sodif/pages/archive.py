@@ -1,4 +1,4 @@
-"""Verifiable Document Archive module entry point."""
+"""SODIF Archive module entry point."""
 
 from sodif.ui.pages.archive import render_archive_module
 

@@ -13,10 +13,11 @@ def render_overview(settings: AppSettings, architecture_page: str) -> None:
     st.markdown(
         """
         <section class="sodif-hero">
-            <div class="sodif-eyebrow">Signed Intent Infrastructure</div>
-            <h1>Din document semnat în acțiune API controlată.</h1>
-            <p class="sodif-lead">SODIF leagă aprobarea formală de execuția digitală prin
-            securitate tranzacțională, arhivare verificabilă și enforcement la nivel de gateway.</p>
+            <div class="sodif-eyebrow">PLATFORMĂ DE SECURITATE CIBERNETICĂ</div>
+            <h1>Control verificabil de la aprobarea semnată la execuția API.</h1>
+            <p class="sodif-lead">SODIF protejează continuitatea dintre revizia semnată,
+            intenția operațională, permisul criptografic și cererea executată de sistemul
+            destinație.</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -67,9 +68,9 @@ def render_overview(settings: AppSettings, architecture_page: str) -> None:
         <section class="sodif-value-panel">
             <div>
                 <div class="sodif-section-label light">Control aplicat tranzacției</div>
-                <h2>API-ul execută intenția aprobată, nu o aproximare.</h2>
-                <p>Identitatea și semnătura răspund cine și ce a aprobat. SODIF adaugă
-                controlul asupra sensului tranzacției și asupra efectului digital exact.</p>
+                <h2>API-ul execută exact intenția aprobată.</h2>
+                <p>Identitatea, integritatea, semnificația operațională și efectul digital
+                rămân legate prin artefacte verificabile pe întregul traseu.</p>
             </div>
             <div class="sodif-protection-list">
                 <div><span></span><p><b>Verifică</b>

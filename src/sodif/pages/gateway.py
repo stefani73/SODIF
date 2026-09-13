@@ -1,4 +1,4 @@
-"""Semantic Execution Gateway module entry point."""
+"""SODIF Gateway module entry point."""
 
 from sodif.settings import GatewaySettings, load_settings
 from sodif.ui.pages.gateway import render_gateway_module

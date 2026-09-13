@@ -230,9 +230,7 @@ def _record(value: object, errors: list[str]) -> ArchiveRecord | None:
 
 
 def _parse_archive_record(value: object) -> ArchiveRecord:
-    return ArchiveRecord.model_validate_json(
-        json.dumps(value, ensure_ascii=False, sort_keys=True)
-    )
+    return ArchiveRecord.model_validate_json(json.dumps(value, ensure_ascii=False, sort_keys=True))
 
 
 def _object(data: bytes) -> dict[str, Any]:

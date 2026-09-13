@@ -30,9 +30,9 @@ def test_default_settings_are_product_safe(monkeypatch: MonkeyPatch) -> None:
 
     assert settings == AppSettings(
         app_name="SODIF",
-        tagline="Exact ceea ce s-a semnat. O singură dată.",
+        tagline="Control verificabil al execuției autorizate prin documente semnate.",
         environment="local",
-        release="0.19.0-product5",
+        release="0.20.0",
         archive_root=Path("var/archive"),
         export_root=Path("var/exports"),
         modules=ModuleSettings(),

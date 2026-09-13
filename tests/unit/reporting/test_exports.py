@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 import pytest
 from docx import Document
+from docx.document import Document as WordDocument
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
@@ -17,7 +18,8 @@ from sodif.reporting import (
     persist_flight_run,
     verify_run_ledger,
 )
-from sodif.reporting.cli import write_exports
+from sodif.reporting.cli import main as export_main
+from sodif.reporting.files import write_exports
 from sodif.reporting.serializers import serialize_report
 from sodif.reporting.service import build_flight_exports
 
@@ -94,15 +96,17 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
     text = "\n".join(paragraph.text for paragraph in document.paragraphs)
 
     assert "RAPORT SECURITY FLIGHT" in text
+    assert "Configurația validată în laborator" in text
+    assert "Semnătură Ed25519 detașată" in _table_text(document)
     assert "Registrul deciziilor" in text
     assert "0.14.0-dms5" not in text
     assert "Comandă autentică și neambiguă" in text
     assert "Arhivă: arc-" not in text
     assert "Document modificat după semnare" in text
     assert "Permis prezentat din nou" in text
-    assert document.tables[0].rows[0].cells[0].text == "Situație"
-    assert len(document.tables[0].rows) == 7
-    assert len(document.tables) == 1
+    assert document.tables[1].rows[0].cells[0].text == "Situație"
+    assert len(document.tables[1].rows) == 7
+    assert len(document.tables) == 2
 
 
 def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
@@ -115,6 +119,9 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Decizie Gateway: gateway-" in text
     assert "Politică rută: erp.purchase-orders" in text
     assert "Organizație: TECHSUITE" in text
+    assert "SODIF Security" in _table_text(document)
+    assert "SODIF Archive" in _table_text(document)
+    assert "SODIF Gateway" in _table_text(document)
     assert "Sinteza modulelor și a dovezilor" in text
     assert "Evidența arhivei documentare verificabile" in text
     assert "Decizii de rutare și blocare" in text
@@ -124,7 +131,7 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Neînregistrat" in "\n".join(
         cell.text for table in document.tables for row in table.rows for cell in row.cells
     )
-    assert len(document.tables) == 5
+    assert len(document.tables) == 6
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:
@@ -139,6 +146,34 @@ def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:
         exports.bundle.filename,
     }
     assert all(path.is_file() and path.stat().st_size > 0 for path in paths)
+
+
+def test_cli_exports_both_product_flights(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    output = tmp_path / "exports"
+    archive = tmp_path / "archive"
+
+    export_main(
+        [
+            "--kind",
+            "both",
+            "--output-dir",
+            str(output),
+            "--archive-root",
+            str(archive),
+        ]
+    )
+
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["status"] == "exported"
+    assert [flight["flight_kind"] for flight in summary["flights"]] == [
+        "security",
+        "transversal",
+    ]
+    assert len(summary["artifacts"]) == 10
+    assert len(tuple(output.glob("*.docx"))) == 2
 
 
 def test_completed_run_is_persisted_by_session_kind_and_report(tmp_path: Path) -> None:
@@ -226,3 +261,9 @@ def test_run_integrity_ledger_detects_a_modified_audit_package(tmp_path: Path) -
 
     assert not verification.valid
     assert "audit package digest does not match" in " ".join(verification.errors)
+
+
+def _table_text(document: WordDocument) -> str:
+    return "\n".join(
+        cell.text for table in document.tables for row in table.rows for cell in row.cells
+    )

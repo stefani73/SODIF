@@ -13,7 +13,7 @@ def test_catalog_defines_three_distinct_product_boundaries() -> None:
 
 
 def test_product_module_lookup_is_explicit() -> None:
-    assert product_module("gateway").name == "Semantic Execution Gateway"
+    assert product_module("gateway").name == "SODIF Gateway"
 
     with pytest.raises(ValueError, match="Unknown product module"):
         product_module("missing")

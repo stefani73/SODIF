@@ -23,7 +23,7 @@ def render_control_center(
         "Operațiuni",
         "Centru de control",
         "Execută separat validarea nucleului de securitate sau întregul lanț de încredere "
-        "prin securitatea intenției, arhiva verificabilă și Gateway-ul semantic.",
+        "prin SODIF Security, SODIF Archive și SODIF Gateway.",
     )
     security, transversal = st.columns(2, gap="large")
     with security, st.container(border=True, key="security_flight_card"):
@@ -32,8 +32,8 @@ def render_control_center(
             <section class="sodif-flight-choice">
                 <div class="sodif-assurance-label"><span></span>Nucleul de securitate</div>
                 <h2>Security Flight</h2>
-                <p>Semnătură, verificare adaptivă a intenției, permis unic și protecția
-                acțiunii API — fără componenta DMS.</p>
+                <p>Acoperă SODIF Security: semnătură, verificare adaptivă, consens,
+                permis unic și controlul acțiunii API.</p>
             </section>
             """,
             unsafe_allow_html=True,
@@ -52,8 +52,8 @@ def render_control_center(
             <section class="sodif-flight-choice">
                 <div class="sodif-assurance-label"><span></span>Lanț end-to-end</div>
                 <h2>Transversal Flight</h2>
-                <p>Securitatea intenției, arhiva documentară verificabilă și Gateway-ul
-                semantic funcționează împreună până la decizia API.</p>
+                <p>SODIF Security, SODIF Archive și SODIF Gateway funcționează împreună
+                până la decizia și efectul API.</p>
             </section>
             """,
             unsafe_allow_html=True,
@@ -129,9 +129,9 @@ def _render_ready_state() -> None:
     )
     columns = st.columns(3)
     capabilities = (
-        ("Securitate", "Validarea semnăturii, intenției și permisului unic"),
-        ("Trasabilitate", "Păstrarea reviziilor și a istoricului verificabil"),
-        ("Control API", "Rutare semantică exactă și blocare fail-closed"),
+        ("SODIF Security", "Semnătură, consens, intenție și permis unic"),
+        ("SODIF Archive", "Revizii și istoric verificabil"),
+        ("SODIF Gateway", "Legare exactă, rutare și blocare controlată"),
     )
     for column, (title, body) in zip(columns, capabilities, strict=True):
         with column:
@@ -150,7 +150,7 @@ def _render_active_flight(kind: FlightKind) -> None:
         ),
         FlightKind.TRANSVERSAL: (
             "Transversal Flight",
-            "Securitate, arhivă verificabilă și Gateway semantic",
+            "SODIF Security, SODIF Archive și SODIF Gateway",
         ),
     }[kind]
     st.markdown(

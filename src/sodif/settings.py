@@ -49,7 +49,7 @@ class ProductProfileSettings:
     """Preconfigured operational identity used to initialize a user session."""
 
     organization_name: str = "TECHSUITE"
-    workspace_name: str = "SODIF Transaction Control"
+    workspace_name: str = "SODIF Operations"
     domain_name: str = "Achiziții"
     protected_service: str = "ERP Purchase API"
 
@@ -83,9 +83,12 @@ def load_settings() -> AppSettings:
     """Load non-secret settings from the environment."""
     return AppSettings(
         app_name=getenv("SODIF_APP_NAME", "SODIF"),
-        tagline=getenv("SODIF_TAGLINE", "Exact ceea ce s-a semnat. O singură dată."),
+        tagline=getenv(
+            "SODIF_TAGLINE",
+            "Control verificabil al execuției autorizate prin documente semnate.",
+        ),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.19.0-product5"),
+        release=getenv("SODIF_RELEASE", "0.20.0"),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
         export_root=Path(getenv("SODIF_EXPORT_ROOT", "var/exports")),
         modules=ModuleSettings(
@@ -104,7 +107,7 @@ def load_settings() -> AppSettings:
         ),
         profile=ProductProfileSettings(
             organization_name=getenv("SODIF_ORGANIZATION_NAME", "TECHSUITE"),
-            workspace_name=getenv("SODIF_WORKSPACE_NAME", "SODIF Transaction Control"),
+            workspace_name=getenv("SODIF_WORKSPACE_NAME", "SODIF Operations"),
             domain_name=getenv("SODIF_DOMAIN_NAME", "Achiziții"),
             protected_service=getenv("SODIF_PROTECTED_SERVICE", "ERP Purchase API"),
         ),

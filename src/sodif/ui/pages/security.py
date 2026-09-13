@@ -1,4 +1,4 @@
-"""Signed Intent Security product module page."""
+"""SODIF Security product module page."""
 
 import streamlit as st
 
@@ -50,14 +50,14 @@ def render_security_module(control_page: str) -> None:
         """
         <section class="sodif-value-panel sodif-module-value">
             <div><div class="sodif-section-label light">Decizie explicabilă</div>
-            <h2>Controlul crește numai când tranzacția o cere.</h2>
+            <h2>Verificarea se adaptează riscului tranzacției.</h2>
             <p>Cazurile coerente folosesc traseul scurt. Valorile divergente, lipsa confirmărilor
             sau abaterea acțiunii API declanșează verificări suplimentare ori blocarea.</p></div>
             <div class="sodif-protection-list">
                 <div><span></span><p><b>Pragmatism</b>
-                <small>Fără procesare redundantă pentru tranzacțiile clare</small></p></div>
+                <small>Procesare proporțională cu riscul observat</small></p></div>
                 <div><span></span><p><b>Siguranță</b>
-                <small>Fail-closed când sensul critic nu poate fi confirmat</small></p></div>
+                <small>Blocare controlată când sensul critic rămâne neconfirmat</small></p></div>
                 <div><span></span><p><b>Trasabilitate</b>
                 <small>Motiv și trasabilitate pentru fiecare decizie</small></p></div>
             </div>

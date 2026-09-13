@@ -1,4 +1,4 @@
-"""Pure domain core for Signed Intent Execution."""
+"""Pure domain core for document-authorized execution control."""
 
 from sodif.domain.canonical import canonical_bytes, sha256_bytes, sha256_digest
 from sodif.domain.enums import (
