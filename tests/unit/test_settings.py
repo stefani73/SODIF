@@ -51,7 +51,7 @@ def test_settings_accept_non_secret_environment_overrides(monkeypatch: MonkeyPat
     monkeypatch.setenv("SODIF_GATEWAY_AUDIENCE", "finance-api")
     monkeypatch.setenv("SODIF_GATEWAY_PATH_PREFIX", "/approvals")
     monkeypatch.setenv("SODIF_GATEWAY_MAXIMUM_PARAMETERS", "24")
-    monkeypatch.setenv("SODIF_ORGANIZATION_NAME", "TECHSUITE Labs")
+    monkeypatch.setenv("SODIF_ORGANIZATION_NAME", "Operator Test SRL")
     monkeypatch.setenv("SODIF_DOMAIN_NAME", "Plăți aprobate")
 
     settings = load_settings()
@@ -60,7 +60,7 @@ def test_settings_accept_non_secret_environment_overrides(monkeypatch: MonkeyPat
     assert settings.release == "quality-gate"
     assert settings.archive_root == Path("var/test-archive")
     assert settings.export_root == Path("var/test-exports")
-    assert settings.profile.organization_name == "TECHSUITE Labs"
+    assert settings.profile.organization_name == "Operator Test SRL"
     assert settings.profile.domain_name == "Plăți aprobate"
     assert settings.modules.archive_enabled is False
     assert settings.modules.gateway_enabled is True

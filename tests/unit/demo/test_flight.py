@@ -139,7 +139,7 @@ def test_transversal_memory_flight_connects_all_three_modules_without_changing_o
 def test_operational_configuration_drives_report_and_gateway_boundary() -> None:
     configuration = FlightConfiguration(
         session_id="session-customer-a",
-        organization_name="TECHSUITE Labs",
+        organization_name="Operator Test SRL",
         workspace_name="Regulated Operations",
         domain_name="Aprobări operaționale",
         environment="validation",

@@ -673,7 +673,7 @@ def default_flight_configuration() -> FlightConfiguration:
     """Return a deterministic operational profile for CLI and automated tests."""
     return FlightConfiguration(
         session_id="session-local-default",
-        organization_name="TECHSUITE",
+        organization_name="TECHSUITE SRL",
         workspace_name="SODIF Operations",
         domain_name="Achiziții",
         environment="local",
