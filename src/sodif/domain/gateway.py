@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, Field, model_validator
 from sodif.domain.base import DomainModel
 from sodif.domain.enums import HttpMethod
 from sodif.domain.execution import ExecutionReceipt
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import ExecutionPlan
 from sodif.domain.permits import ExecutionAuthorization, ExecutionPermit
 from sodif.domain.types import Digest, Identifier
@@ -50,10 +51,11 @@ class GatewayRoutePolicy(DomainModel):
 
 
 class GatewayRequest(DomainModel):
-    protocol: Literal["sodif.gateway-request/v1"] = "sodif.gateway-request/v1"
+    protocol: Literal["sodif.gateway-request/v2"] = "sodif.gateway-request/v2"
     request_id: Identifier
     route_id: Identifier
     plan: ExecutionPlan
+    execution_proof: ExecutionProofBundle
     permit: ExecutionPermit
 
 

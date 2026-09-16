@@ -11,7 +11,7 @@ from sodif.domain.types import Digest, Identifier
 
 
 class ExecutionPermitClaims(DomainModel):
-    protocol: Literal["sodif.execution-permit/v1"] = "sodif.execution-permit/v1"
+    protocol: Literal["sodif.execution-permit/v2"] = "sodif.execution-permit/v2"
     permit_id: Identifier
     issuer_id: Identifier
     key_id: Identifier
@@ -22,6 +22,9 @@ class ExecutionPermitClaims(DomainModel):
     consensus_digest: Digest
     intent_digest: Digest
     action_digest: Digest
+    execution_proof_digest: Digest
+    field_root: Digest
+    challenge_digest: Digest
     policy_digest: Digest
     audience: Identifier
     issued_at: AwareDatetime
@@ -68,6 +71,8 @@ class ExecutionAuthorization(DomainModel):
     document_id: Identifier
     revision_digest: Digest
     action_digest: Digest
+    execution_proof_digest: Digest
+    field_root: Digest
     audience: Identifier
     authorized_at: AwareDatetime
     expires_at: AwareDatetime

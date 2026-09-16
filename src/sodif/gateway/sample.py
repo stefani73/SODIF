@@ -10,10 +10,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from sodif.domain.canonical import canonical_bytes, sha256_digest
 from sodif.domain.enums import HttpMethod, ParameterLocation, SignatureAlgorithm
 from sodif.domain.gateway import GatewayDecision, GatewayRequest, GatewayRoutePolicy
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import ActionParameter, ExecutionPlan
 from sodif.domain.permits import ExecutionPermit, ExecutionPermitClaims, TrustedPermitKey
 from sodif.execution import InMemoryApiExecutor
 from sodif.gateway.service import SemanticExecutionGateway
+from sodif.invariance.sample import sample_execution_proof
 from sodif.permits import (
     ExecutionPermitAuthorizer,
     InMemoryPermitConsumptionStore,
@@ -43,7 +45,8 @@ def run_gateway_sample(
     """Evaluate one representative transaction through the real gateway core."""
     service = _build_gateway(settings)
     approved_plan = _approved_plan(settings)
-    execution_permit = _signed_permit(approved_plan)
+    execution_proof = _execution_proof(approved_plan)
+    execution_permit = _signed_permit(approved_plan, execution_proof)
     transaction_plan = approved_plan
     if scenario is GatewaySampleScenario.CHANGED_ACTION:
         transaction_plan = approved_plan.model_copy(
@@ -60,6 +63,7 @@ def run_gateway_sample(
         request_id=f"request-{scenario.value}",
         route_id=settings.route_id,
         plan=transaction_plan,
+        execution_proof=execution_proof,
         permit=execution_permit,
     )
     if scenario is GatewaySampleScenario.REPLAYED:
@@ -123,7 +127,19 @@ def _approved_plan(settings: GatewaySettings) -> ExecutionPlan:
     )
 
 
-def _signed_permit(plan: ExecutionPlan) -> ExecutionPermit:
+def _execution_proof(plan: ExecutionPlan) -> ExecutionProofBundle:
+    return sample_execution_proof(
+        plan,
+        document_id="po-2026-0084",
+        revision_digest=_digest("a"),
+        policy_digest=_digest("e"),
+    )
+
+
+def _signed_permit(
+    plan: ExecutionPlan,
+    execution_proof: ExecutionProofBundle,
+) -> ExecutionPermit:
     claims = ExecutionPermitClaims(
         permit_id="permit-purchase-order-001",
         issuer_id="sodif-security",
@@ -135,6 +151,9 @@ def _signed_permit(plan: ExecutionPlan) -> ExecutionPermit:
         consensus_digest=_digest("c"),
         intent_digest=plan.intent_digest,
         action_digest=sha256_digest(plan),
+        execution_proof_digest=sha256_digest(execution_proof),
+        field_root=execution_proof.invariance.field_root,
+        challenge_digest=execution_proof.invariance.challenge.challenge_digest,
         policy_digest=_digest("e"),
         audience=plan.audience,
         issued_at=SAMPLE_TIME - timedelta(seconds=5),

@@ -11,11 +11,12 @@ să autorizeze acțiunea.
 1. O politică explicabilă evaluează semnătura, acțiunea solicitată și contextul politicii.
 2. Nivelul V0 blochează, V1 pornește verificarea țintită, V2 folosește traseul extins, iar
    V3 produce obligatoriu revizuire umană.
-3. Fluxul V1 compară două reprezentări independente: structurală și vizuală.
+3. Fluxul V1 compară extragerea structurală `pypdf` cu o randare vizuală citită prin
+   Tesseract OCR.
 4. Valorile sunt normalizate determinist conform tipului semantic, fără rescriere liberă
    sau decizie generativă.
-5. A treia reprezentare, orientată spre ținta API, este activată numai dacă nivelul inițial
-   este V2/V3 ori primele dovezi sunt insuficiente sau contradictorii.
+5. Al doilea profil vizual folosește o randare Poppler, alt DPI și alt mod de segmentare
+   Tesseract; el este activat dacă primele dovezi sunt insuficiente ori contradictorii.
 6. Consensul păstrează valoarea, încrederea, adaptorul și digestul provenienței pentru
    fiecare candidat.
 
@@ -23,6 +24,7 @@ să autorizeze acțiunea.
 
 - sunt necesare minimum două reprezentări cu adaptoare și tipuri de vedere distincte;
 - câmpurile critice nu sunt aprobate prin vot majoritar dacă există un dezacord calificat;
+- fiecare câmp critic acceptat are simultan dovadă structurală și dovadă vizuală;
 - câmpurile lipsă, tipurile incompatibile și valorile ne-normalizabile nu sunt inventate;
 - o revizie, un document sau un adaptor inconsecvent este respins înainte de consens;
 - un rezultat V3 rămâne escaladat chiar dacă reprezentările automate concordă.
@@ -35,9 +37,9 @@ cale nu rulează; pentru ambiguități, costul suplimentar este limitat și just
 
 ## Extensibilitate AI
 
-Un extractor AI/OCR poate implementa același contract ca un parser structural sau un
-validator orientat spre API. Niciun model AI nu primește drept de autorizare unilaterală:
-rezultatul său rămâne o reprezentare cu proveniență, comparată cu dovezi independente.
+Un extractor AI poate implementa același contract ca adaptoarele actuale. Rezultatul său
+rămâne o reprezentare cu proveniență, comparată cu dovezi independente înainte de emiterea
+dreptului de execuție.
 
 ## Criterii de acceptare
 

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from hashlib import sha256
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -13,12 +13,12 @@ from sodif.archive import (
     InMemoryArchiveRepository,
     SqliteArchiveRepository,
 )
-from sodif.demo.adapters import ScenarioSemanticAdapter, ScenarioValue
+from sodif.demo.adapters import FieldMaskingAdapter
 from sodif.demo.fixtures import (
     BASE_PDF,
     REVISED_PDF,
+    SEMANTIC_SPLIT_PDF,
     TAMPERED_PDF,
-    accepted_values,
     flight_policy,
     purchase_order_action,
     purchase_order_schema,
@@ -42,13 +42,13 @@ from sodif.documents import (
     demo_trusted_signer,
 )
 from sodif.domain.canonical import sha256_bytes, sha256_digest
+from sodif.domain.contracts import SemanticAdapter
 from sodif.domain.enums import (
     DocumentFormat,
     HttpMethod,
     ProcessingStage,
     SignatureAlgorithm,
     VerificationOutcomeStatus,
-    ViewKind,
 )
 from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.gateway import (
@@ -57,6 +57,7 @@ from sodif.domain.gateway import (
     GatewayRequest,
     GatewayRoutePolicy,
 )
+from sodif.domain.invariance import ExecutionProofBundle, SemanticChallenge
 from sodif.domain.models import DocumentEnvelope, ExecutionPlan, PolicyReference
 from sodif.domain.permits import ExecutionPermit, TrustedPermitKey
 from sodif.domain.revisions import SignedRevision, SignedRevisionMetadata
@@ -68,7 +69,13 @@ from sodif.execution import (
     DeterministicActionCompiler,
     InMemoryApiExecutor,
 )
+from sodif.extraction import challenged_pdf_adapters
 from sodif.gateway import SemanticExecutionGateway
+from sodif.invariance import (
+    ExecutionProofService,
+    SemanticChallengeGenerator,
+    SemanticInvarianceProver,
+)
 from sodif.permits import (
     Ed25519PermitIssuer,
     ExecutionPermitAuthorizer,
@@ -81,6 +88,12 @@ from sodif.verification import AdaptiveRiskPolicy, AdaptiveVerificationService
 from sodif.verification.consensus import DeterministicConsensusEngine
 
 FLIGHT_START = datetime(2026, 8, 24, 14, 0, tzinfo=UTC)
+FLIGHT_DOCUMENT_ID = (
+    f"doc-flight-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
+)
+SEMANTIC_SPLIT_DOCUMENT_ID = (
+    f"doc-flight-split-{sha256_bytes(SEMANTIC_SPLIT_PDF).removeprefix('sha256:')[:12]}"
+)
 
 
 @dataclass
@@ -169,7 +182,7 @@ class FlightRunner:
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
             configuration=self._configuration,
-            release="0.20.0",
+            release="0.21.0",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -178,39 +191,44 @@ class FlightRunner:
         )
 
     def _happy_path(self) -> ScenarioResult:
-        context, document, verification = self._verify(
-            FlightScenario.HAPPY_PATH,
-            accepted_values(),
-            accepted_values(),
+        context, document, verification, challenge = self._verify(FlightScenario.HAPPY_PATH)
+        plan, proof, permit = self._compile_and_issue(
+            context,
+            document,
+            verification,
+            challenge,
         )
-        plan, permit = self._compile_and_issue(context, document, verification)
-        receipt, gateway_decisions = self._execute(context, plan, permit)
+        receipt, gateway_decisions = self._execute(context, plan, proof, permit)
         self._archive_follow_up_revision(context)
         return self._result(
             context,
             "Flux valid cu oprire adaptivă timpurie",
             ScenarioOutcome.EXECUTED,
             verification=verification,
+            execution_proof=proof,
             permit=permit,
             gateway_decisions=gateway_decisions,
             receipt=receipt,
         )
 
     def _adaptive_recovery(self) -> ScenarioResult:
-        visual_values = accepted_values()
-        visual_values.pop("total_amount")
-        context, document, verification = self._verify(
+        context, document, verification, challenge = self._verify(
             FlightScenario.ADAPTIVE_RECOVERY,
-            visual_values,
-            accepted_values(),
+            mask_primary_field="total_amount",
         )
-        plan, permit = self._compile_and_issue(context, document, verification)
-        receipt, gateway_decisions = self._execute(context, plan, permit)
+        plan, proof, permit = self._compile_and_issue(
+            context,
+            document,
+            verification,
+            challenge,
+        )
+        receipt, gateway_decisions = self._execute(context, plan, proof, permit)
         return self._result(
             context,
             "Dovadă lipsă rezolvată prin extensie adaptivă",
             ScenarioOutcome.EXECUTED,
             verification=verification,
+            execution_proof=proof,
             permit=permit,
             gateway_decisions=gateway_decisions,
             receipt=receipt,
@@ -237,11 +255,9 @@ class FlightRunner:
         raise AssertionError("tampered document was unexpectedly accepted")
 
     def _semantic_conflict(self) -> ScenarioResult:
-        conflicting = accepted_values(Decimal("9250.00"))
-        context, _document, verification = self._verify(
+        context, _document, verification, _challenge = self._verify(
             FlightScenario.SEMANTIC_CONFLICT,
-            conflicting,
-            accepted_values(),
+            content=SEMANTIC_SPLIT_PDF,
         )
         if verification.status is not VerificationOutcomeStatus.ESCALATED:
             raise AssertionError("critical semantic conflict was unexpectedly accepted")
@@ -254,18 +270,21 @@ class FlightRunner:
         )
 
     def _action_tampering(self) -> ScenarioResult:
-        context, document, verification = self._verify(
-            FlightScenario.ACTION_TAMPERING,
-            accepted_values(),
-            accepted_values(),
+        context, document, verification, challenge = self._verify(
+            FlightScenario.ACTION_TAMPERING
         )
-        plan, permit = self._compile_and_issue(context, document, verification)
+        plan, proof, permit = self._compile_and_issue(
+            context,
+            document,
+            verification,
+            challenge,
+        )
         changed_plan = plan.model_copy(
             update={"path": f"{self._configuration.path_prefix}/privileged"}
         )
         if context.gateway is not None:
             decision = context.gateway.handle(
-                self._gateway_request(context, changed_plan, permit, "changed-action")
+                self._gateway_request(context, changed_plan, proof, permit, "changed-action")
             )
             if decision.status is not GatewayDecisionStatus.BLOCKED:
                 raise AssertionError("changed action was unexpectedly routed")
@@ -280,12 +299,18 @@ class FlightRunner:
                 "Modificarea acțiunii după emiterea permisului",
                 ScenarioOutcome.BLOCKED,
                 verification=verification,
+                execution_proof=proof,
                 permit=permit,
                 gateway_decisions=(decision,),
                 rejection_code=decision.code,
             )
         try:
-            context.permit_authorizer.authorize(permit, changed_plan, plan.audience)
+            context.permit_authorizer.authorize(
+                permit,
+                changed_plan,
+                plan.audience,
+                proof,
+            )
         except PermitRejected as exc:
             context.move(ProcessingStage.BLOCKED, exc.code.value)
             context.observe(
@@ -298,20 +323,24 @@ class FlightRunner:
                 "Modificarea acțiunii după emiterea permisului",
                 ScenarioOutcome.BLOCKED,
                 verification=verification,
+                execution_proof=proof,
                 permit=permit,
                 rejection_code=exc.code.value,
             )
         raise AssertionError("changed action was unexpectedly authorized")
 
     def _replay_attack(self) -> ScenarioResult:
-        context, document, verification = self._verify(
-            FlightScenario.REPLAY_ATTACK,
-            accepted_values(),
-            accepted_values(),
+        context, document, verification, challenge = self._verify(
+            FlightScenario.REPLAY_ATTACK
         )
-        plan, permit = self._compile_and_issue(context, document, verification)
+        plan, proof, permit = self._compile_and_issue(
+            context,
+            document,
+            verification,
+            challenge,
+        )
         if context.gateway is not None:
-            request = self._gateway_request(context, plan, permit, "replay")
+            request = self._gateway_request(context, plan, proof, permit, "replay")
             first_decision = context.gateway.handle(request)
             if first_decision.status is not GatewayDecisionStatus.ROUTED:
                 raise AssertionError("first permit presentation was unexpectedly blocked")
@@ -334,18 +363,19 @@ class FlightRunner:
                 "Reutilizarea permisului consumat",
                 ScenarioOutcome.BLOCKED,
                 verification=verification,
+                execution_proof=proof,
                 permit=permit,
                 gateway_decisions=(first_decision, second_decision),
                 rejection_code=second_decision.code,
             )
-        context.permit_authorizer.authorize(permit, plan, plan.audience)
+        context.permit_authorizer.authorize(permit, plan, plan.audience, proof)
         context.observe(
             "permit-consumed",
             "Prima prezentare validă a consumat atomic permisul.",
             permit.claims.action_digest,
         )
         try:
-            context.permit_authorizer.authorize(permit, plan, plan.audience)
+            context.permit_authorizer.authorize(permit, plan, plan.audience, proof)
         except PermitRejected as exc:
             context.move(ProcessingStage.BLOCKED, exc.code.value)
             context.observe(
@@ -358,6 +388,7 @@ class FlightRunner:
                 "Reutilizarea permisului consumat",
                 ScenarioOutcome.BLOCKED,
                 verification=verification,
+                execution_proof=proof,
                 permit=permit,
                 rejection_code=exc.code.value,
             )
@@ -366,12 +397,18 @@ class FlightRunner:
     def _verify(
         self,
         scenario_id: FlightScenario,
-        visual_values: dict[str, ScenarioValue],
-        target_values: dict[str, ScenarioValue],
-    ) -> tuple[_ScenarioContext, DocumentEnvelope, AdaptiveVerificationOutcome]:
+        *,
+        content: bytes = BASE_PDF,
+        mask_primary_field: str | None = None,
+    ) -> tuple[
+        _ScenarioContext,
+        DocumentEnvelope,
+        AdaptiveVerificationOutcome,
+        SemanticChallenge,
+    ]:
         context = self._context(scenario_id)
-        signed_revision = self._signed_revision(context, BASE_PDF)
-        acceptance = context.document_service.validate(BASE_PDF, signed_revision, context.policy)
+        signed_revision = self._signed_revision(context, content)
+        acceptance = context.document_service.validate(content, signed_revision, context.policy)
         context.move(ProcessingStage.REVISION_VALIDATED, "signed revision validated")
         context.observe(
             "revision-validated",
@@ -380,9 +417,13 @@ class FlightRunner:
         )
         if context.archive_service is not None:
             archived = context.archive_service.archive(
-                BASE_PDF,
+                content,
                 acceptance,
-                "comanda-achizitie-demo.pdf",
+                (
+                    "comanda-achizitie-reprezentari-divergente.pdf"
+                    if scenario_id is FlightScenario.SEMANTIC_CONFLICT
+                    else "comanda-achizitie-demo.pdf"
+                ),
             )
             context.archive_ids.append(archived.archive_id)
             context.observe(
@@ -390,11 +431,23 @@ class FlightRunner:
                 "Revizia validată a fost înregistrată în arhiva documentară verificabilă.",
                 sha256_digest(archived),
             )
-        adapters = (
-            ScenarioSemanticAdapter(ViewKind.STRUCTURAL, 1, accepted_values()),
-            ScenarioSemanticAdapter(ViewKind.VISUAL, 3, visual_values),
-            ScenarioSemanticAdapter(ViewKind.TARGET, 2, target_values),
+        challenge = SemanticChallengeGenerator().generate(
+            acceptance.envelope,
+            sha256(f"sodif:{scenario_id.value}".encode()).digest(),
         )
+        context.observe(
+            "semantic-challenge",
+            "Profilurile independente au fost selectate după validarea semnăturii.",
+            challenge.challenge_digest,
+        )
+        structural, primary, secondary = challenged_pdf_adapters(challenge)
+        adapter_list: list[SemanticAdapter] = [structural, primary, secondary]
+        if mask_primary_field is not None:
+            adapter_list[1] = FieldMaskingAdapter(
+                adapter_list[1],
+                frozenset({mask_primary_field}),
+            )
+        adapters = tuple(adapter_list)
         verifier = AdaptiveVerificationService(
             AdaptiveRiskPolicy(context.policy),
             DeterministicConsensusEngine(),
@@ -402,7 +455,7 @@ class FlightRunner:
         )
         verification = verifier.verify(
             acceptance.envelope,
-            BASE_PDF,
+            content,
             context.schema,
             purchase_order_action(
                 audience=self._configuration.audience,
@@ -438,14 +491,15 @@ class FlightRunner:
                 "Conflictul critic rămâne deschis; permisul nu poate fi emis.",
                 sha256_digest(verification.final_consensus),
             )
-        return context, acceptance.envelope, verification
+        return context, acceptance.envelope, verification, challenge
 
     def _compile_and_issue(
         self,
         context: _ScenarioContext,
         document: DocumentEnvelope,
         verification: AdaptiveVerificationOutcome,
-    ) -> tuple[ExecutionPlan, ExecutionPermit]:
+        challenge: SemanticChallenge,
+    ) -> tuple[ExecutionPlan, ExecutionProofBundle, ExecutionPermit]:
         if verification.final_consensus is None:
             raise AssertionError("accepted verification lacks consensus")
         manifest = ConsensusIntentAssembler().assemble(
@@ -467,14 +521,31 @@ class FlightRunner:
             "Manifestul acceptat a fost compilat într-un plan API determinist.",
             sha256_digest(plan),
         )
-        permit = context.permit_issuer.issue(verification, manifest, plan)
+        invariance = SemanticInvarianceProver().prove(
+            document,
+            verification,
+            context.schema,
+            challenge,
+        )
+        execution_proof = ExecutionProofService().bind(invariance, plan)
+        context.observe(
+            "invariance-proved",
+            "Fiecare parametru executabil este acoperit de o valoare stabilă și proveniență.",
+            sha256_digest(execution_proof),
+        )
+        permit = context.permit_issuer.issue(
+            verification,
+            manifest,
+            plan,
+            execution_proof,
+        )
         context.move(ProcessingStage.PERMIT_ISSUED, "one-time execution permit issued")
         context.observe(
             "permit-issued",
-            "Permisul Ed25519 leagă verificarea de plan și audiență.",
+            "Permisul Ed25519 leagă dovada semantică de plan, destinație și utilizarea unică.",
             sha256_digest(permit),
         )
-        return plan, permit
+        return plan, execution_proof, permit
 
     @staticmethod
     def _signed_revision(
@@ -486,7 +557,11 @@ class FlightRunner:
         signed_at: datetime | None = None,
     ) -> SignedRevision:
         metadata = SignedRevisionMetadata(
-            document_id="doc-flight-001",
+            document_id=(
+                SEMANTIC_SPLIT_DOCUMENT_ID
+                if context.scenario_id is FlightScenario.SEMANTIC_CONFLICT
+                else FLIGHT_DOCUMENT_ID
+            ),
             revision_number=revision_number,
             format=DocumentFormat.PDF,
             content_digest=sha256_bytes(content),
@@ -505,6 +580,7 @@ class FlightRunner:
         outcome: ScenarioOutcome,
         *,
         verification: AdaptiveVerificationOutcome | None = None,
+        execution_proof: ExecutionProofBundle | None = None,
         permit: ExecutionPermit | None = None,
         gateway_decisions: tuple[GatewayDecision, ...] = (),
         receipt: ExecutionReceipt | None = None,
@@ -522,6 +598,15 @@ class FlightRunner:
             archive_id=context.archive_ids[-1] if context.archive_ids else None,
             archive_ids=tuple(context.archive_ids),
             permit_id=permit.claims.permit_id if permit is not None else None,
+            challenge_digest=(
+                execution_proof.invariance.challenge.challenge_digest
+                if execution_proof is not None
+                else None
+            ),
+            field_root=(execution_proof.invariance.field_root if execution_proof else None),
+            execution_proof_digest=(
+                sha256_digest(execution_proof) if execution_proof is not None else None
+            ),
             gateway_decisions=gateway_decisions,
             receipt=receipt,
             rejection_code=rejection_code,
@@ -601,6 +686,7 @@ class FlightRunner:
         self,
         context: _ScenarioContext,
         plan: ExecutionPlan,
+        execution_proof: ExecutionProofBundle,
         permit: ExecutionPermit,
         purpose: str,
     ) -> GatewayRequest:
@@ -608,6 +694,7 @@ class FlightRunner:
             request_id=f"request-{context.scenario_id.value}-{purpose}",
             route_id=self._configuration.route_id,
             plan=plan,
+            execution_proof=execution_proof,
             permit=permit,
         )
 
@@ -615,10 +702,16 @@ class FlightRunner:
         self,
         context: _ScenarioContext,
         plan: ExecutionPlan,
+        execution_proof: ExecutionProofBundle,
         permit: ExecutionPermit,
     ) -> tuple[ExecutionReceipt, tuple[GatewayDecision, ...]]:
         if context.gateway is None:
-            authorization = context.permit_authorizer.authorize(permit, plan, plan.audience)
+            authorization = context.permit_authorizer.authorize(
+                permit,
+                plan,
+                plan.audience,
+                execution_proof,
+            )
             receipt = context.api_executor.execute(authorization, plan)
             context.move(ProcessingStage.EXECUTED, "authorized action executed")
             context.observe(
@@ -628,7 +721,13 @@ class FlightRunner:
             )
             return receipt, ()
         decision = context.gateway.handle(
-            self._gateway_request(context, plan, permit, "authorized-transaction")
+            self._gateway_request(
+                context,
+                plan,
+                execution_proof,
+                permit,
+                "authorized-transaction",
+            )
         )
         if decision.status is not GatewayDecisionStatus.ROUTED or decision.receipt is None:
             raise AssertionError("conform transaction was unexpectedly blocked by the gateway")

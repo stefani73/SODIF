@@ -62,7 +62,7 @@ def test_three_product_modules_have_distinct_workspaces() -> None:
     security = application.switch_page("pages/security.py").run(timeout=15)
     assert not security.exception
     assert "Protejează trecerea de la revizia semnată" in _copy(security)
-    assert "Consens semantic adaptiv" in _copy(security)
+    assert "Invariabilitate semantică" in _copy(security)
     assert any(
         getattr(item, "label", None) == "Deschide Security Flight"
         for item in security.get("page_link")
@@ -81,7 +81,7 @@ def test_three_product_modules_have_distinct_workspaces() -> None:
     assert not gateway.exception
     assert "Aplică permisul SODIF asupra cererii API" in _copy(gateway)
     assert "Gateway Policy Studio" in _copy(gateway)
-    assert "Potrivire exactă" in _copy(gateway)
+    assert "Legare integrală" in _copy(gateway)
     assert "Control integrabil în infrastructura API existentă" in _copy(gateway)
     assert gateway.selectbox[0].label == "Tranzacția evaluată"
     evaluate = next(button for button in gateway.button if button.label == "Evaluează tranzacția")

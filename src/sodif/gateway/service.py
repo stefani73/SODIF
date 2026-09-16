@@ -105,6 +105,7 @@ class SemanticExecutionGateway:
                 request.permit,
                 request.plan,
                 route.audience,
+                request.execution_proof,
             )
         except PermitRejected as error:
             checks.append(_failed("permit.authorization", error.detail))
@@ -118,7 +119,8 @@ class SemanticExecutionGateway:
         checks.append(
             _passed(
                 "permit.authorization",
-                "Signature, validity, action binding, audience and one-time use are valid.",
+                "Signature, semantic field proofs, action binding, audience and one-time use "
+                "are valid.",
             )
         )
 

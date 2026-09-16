@@ -20,6 +20,7 @@ from sodif.domain.gateway import (
     GatewayRequest,
     GatewayRoutePolicy,
 )
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import ActionParameter, ExecutionPlan
 from sodif.domain.permits import (
     ExecutionAuthorization,
@@ -29,6 +30,7 @@ from sodif.domain.permits import (
 )
 from sodif.execution import ExecutionRejected, InMemoryApiExecutor
 from sodif.gateway import SemanticExecutionGateway
+from sodif.invariance.sample import sample_execution_proof
 from sodif.permits import (
     ExecutionPermitAuthorizer,
     InMemoryPermitConsumptionStore,
@@ -85,7 +87,16 @@ def private_key() -> Ed25519PrivateKey:
     return Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
 
 
-def permit(execution_plan: ExecutionPlan) -> ExecutionPermit:
+def permit(
+    execution_plan: ExecutionPlan,
+    execution_proof: ExecutionProofBundle | None = None,
+) -> ExecutionPermit:
+    proof = execution_proof or sample_execution_proof(
+        execution_plan,
+        document_id="doc-gateway-001",
+        revision_digest=digest("a"),
+        policy_digest=digest("e"),
+    )
     claims = ExecutionPermitClaims(
         permit_id="permit-gateway-001",
         issuer_id="sodif-issuer",
@@ -97,6 +108,9 @@ def permit(execution_plan: ExecutionPlan) -> ExecutionPermit:
         consensus_digest=digest("c"),
         intent_digest=execution_plan.intent_digest,
         action_digest=sha256_digest(execution_plan),
+        execution_proof_digest=sha256_digest(proof),
+        field_root=proof.invariance.field_root,
+        challenge_digest=proof.invariance.challenge.challenge_digest,
         policy_digest=digest("e"),
         audience=execution_plan.audience,
         issued_at=NOW - timedelta(seconds=5),
@@ -120,15 +134,23 @@ def route(**updates: object) -> GatewayRoutePolicy:
 def request(
     execution_plan: ExecutionPlan | None = None,
     execution_permit: ExecutionPermit | None = None,
+    execution_proof: ExecutionProofBundle | None = None,
     *,
     route_id: str = "erp.purchase-orders",
 ) -> GatewayRequest:
     selected_plan = execution_plan or plan()
+    proof = execution_proof or sample_execution_proof(
+        selected_plan,
+        document_id="doc-gateway-001",
+        revision_digest=digest("a"),
+        policy_digest=digest("e"),
+    )
     return GatewayRequest(
         request_id="request-gateway-001",
         route_id=route_id,
         plan=selected_plan,
-        permit=execution_permit or permit(selected_plan),
+        execution_proof=proof,
+        permit=execution_permit or permit(selected_plan, proof),
     )
 
 
@@ -177,7 +199,13 @@ def test_valid_transaction_is_authorized_routed_and_auditable() -> None:
 
 def test_changed_action_is_blocked_without_consuming_the_permit() -> None:
     approved_plan = plan()
-    execution_permit = permit(approved_plan)
+    proof = sample_execution_proof(
+        approved_plan,
+        document_id="doc-gateway-001",
+        revision_digest=digest("a"),
+        policy_digest=digest("e"),
+    )
+    execution_permit = permit(approved_plan, proof)
     changed = approved_plan.model_copy(
         update={
             "parameters": (
@@ -191,7 +219,7 @@ def test_changed_action_is_blocked_without_consuming_the_permit() -> None:
     )
     store = InMemoryPermitConsumptionStore()
 
-    decision = gateway(store).handle(request(changed, execution_permit))
+    decision = gateway(store).handle(request(changed, execution_permit, proof))
 
     assert decision.status is GatewayDecisionStatus.BLOCKED
     assert decision.code == "permit.action_mismatch"
@@ -264,7 +292,9 @@ def test_invalid_signature_and_upstream_rejection_are_fail_closed() -> None:
     transaction = request()
     invalid_permit = transaction.permit.model_copy(update={"signature": "A" * 86})
 
-    invalid = gateway().handle(request(transaction.plan, invalid_permit))
+    invalid = gateway().handle(
+        request(transaction.plan, invalid_permit, transaction.execution_proof)
+    )
     unavailable = gateway(executor=RejectingExecutor()).handle(transaction)
 
     assert invalid.status is GatewayDecisionStatus.BLOCKED

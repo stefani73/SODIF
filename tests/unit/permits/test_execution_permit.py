@@ -21,6 +21,7 @@ from sodif.domain.enums import (
     VerificationOutcomeStatus,
     ViewKind,
 )
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import (
     ActionParameter,
     ConsensusField,
@@ -36,6 +37,7 @@ from sodif.domain.models import (
 )
 from sodif.domain.permits import ExecutionPermit, ExecutionPermitClaims, TrustedPermitKey
 from sodif.domain.verification import AdaptiveVerificationOutcome, VerificationAttempt
+from sodif.invariance.sample import sample_execution_proof
 from sodif.permits import (
     Ed25519PermitIssuer,
     ExecutionPermitAuthorizer,
@@ -186,6 +188,19 @@ def plan(source_manifest: IntentManifest, path: str = "/purchase-orders") -> Exe
     )
 
 
+def proof(
+    execution_plan: ExecutionPlan,
+    source_manifest: IntentManifest | None = None,
+) -> ExecutionProofBundle:
+    selected_manifest = source_manifest or manifest()
+    return sample_execution_proof(
+        execution_plan,
+        document_id=selected_manifest.document_id,
+        revision_digest=selected_manifest.revision_digest,
+        policy_digest=selected_manifest.policy.digest,
+    )
+
+
 def private_key() -> Ed25519PrivateKey:
     return Ed25519PrivateKey.from_private_bytes(bytes(range(65, 97)))
 
@@ -218,16 +233,18 @@ def trusted_key(**updates: object) -> TrustedPermitKey:
 
 def issued_permit(
     clock: MutableClock, ttl: timedelta | None = None
-) -> tuple[ExecutionPermit, ExecutionPlan]:
+) -> tuple[ExecutionPermit, ExecutionPlan, ExecutionProofBundle]:
     source_manifest = manifest()
     execution_plan = plan(source_manifest)
+    execution_proof = proof(execution_plan, source_manifest)
     permit = issuer(clock).issue(
         accepted_verification(),
         source_manifest,
         execution_plan,
+        execution_proof,
         ttl,
     )
-    return permit, execution_plan
+    return permit, execution_plan, execution_proof
 
 
 def authorizer(
@@ -251,14 +268,19 @@ def test_issuer_binds_all_approved_artifacts_into_signed_claims() -> None:
     verification = accepted_verification()
     permit_issuer = issuer(clock)
 
-    permit = permit_issuer.issue(verification, source_manifest, execution_plan)
+    execution_proof = proof(execution_plan, source_manifest)
+    permit = permit_issuer.issue(
+        verification, source_manifest, execution_plan, execution_proof
+    )
 
     assert isinstance(permit_issuer, PermitIssuer)
-    assert permit.claims.protocol == "sodif.execution-permit/v1"
+    assert permit.claims.protocol == "sodif.execution-permit/v2"
     assert permit.claims.verification_digest == sha256_digest(verification)
     assert permit.claims.consensus_digest == sha256_digest(verification.final_consensus)
     assert permit.claims.intent_digest == sha256_digest(source_manifest)
     assert permit.claims.action_digest == sha256_digest(execution_plan)
+    assert permit.claims.execution_proof_digest == sha256_digest(execution_proof)
+    assert permit.claims.field_root == execution_proof.invariance.field_root
     assert permit.claims.expires_at - permit.claims.issued_at == timedelta(seconds=60)
 
 
@@ -291,7 +313,12 @@ def test_issuer_rejects_nonaccepted_or_mismatched_inputs() -> None:
     )
     for current_verification, current_manifest, current_plan, expected_code in invalid_cases:
         with pytest.raises(PermitRejected) as captured:
-            permit_issuer.issue(current_verification, current_manifest, current_plan)
+            permit_issuer.issue(
+                current_verification,
+                current_manifest,
+                current_plan,
+                proof(current_plan, current_manifest),
+            )
         assert captured.value.code is expected_code
 
 
@@ -305,12 +332,14 @@ def test_issuer_rejects_policy_mismatch_and_unsafe_ttl() -> None:
             accepted_verification(),
             mismatched_manifest,
             plan(mismatched_manifest),
+            proof(plan(mismatched_manifest), mismatched_manifest),
         )
     with pytest.raises(PermitRejected) as ttl:
         permit_issuer.issue(
             accepted_verification(),
             manifest(),
             plan(manifest()),
+            proof(plan(manifest()), manifest()),
             timedelta(minutes=3),
         )
 
@@ -320,13 +349,15 @@ def test_issuer_rejects_policy_mismatch_and_unsafe_ttl() -> None:
 
 def test_authorization_consumes_valid_permit_exactly_once() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock)
+    permit, execution_plan, execution_proof = issued_permit(clock)
     store = InMemoryPermitConsumptionStore()
     permit_authorizer = authorizer(clock, store)
 
-    authorization = permit_authorizer.authorize(permit, execution_plan, "erp-api")
+    authorization = permit_authorizer.authorize(
+        permit, execution_plan, "erp-api", execution_proof
+    )
     with pytest.raises(PermitRejected) as replay:
-        permit_authorizer.authorize(permit, execution_plan, "erp-api")
+        permit_authorizer.authorize(permit, execution_plan, "erp-api", execution_proof)
 
     assert isinstance(permit_authorizer, PermitAuthorizer)
     assert authorization.permit_id == permit.claims.permit_id
@@ -336,7 +367,7 @@ def test_authorization_consumes_valid_permit_exactly_once() -> None:
 
 def test_authorizer_rejects_other_action_or_audience_without_consuming() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock)
+    permit, execution_plan, execution_proof = issued_permit(clock)
     store = InMemoryPermitConsumptionStore()
     permit_authorizer = authorizer(clock, store)
 
@@ -345,9 +376,12 @@ def test_authorizer_rejects_other_action_or_audience_without_consuming() -> None
             permit,
             execution_plan.model_copy(update={"path": "/other-orders"}),
             "erp-api",
+            execution_proof,
         )
     with pytest.raises(PermitRejected) as audience:
-        permit_authorizer.authorize(permit, execution_plan, "other-api")
+        permit_authorizer.authorize(
+            permit, execution_plan, "other-api", execution_proof
+        )
 
     assert changed_action.value.code is PermitRejectionCode.ACTION_MISMATCH
     assert audience.value.code is PermitRejectionCode.AUDIENCE_MISMATCH
@@ -356,20 +390,22 @@ def test_authorizer_rejects_other_action_or_audience_without_consuming() -> None
 
 def test_tampered_or_untrusted_permit_is_rejected() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock)
+    permit, execution_plan, execution_proof = issued_permit(clock)
     tampered = ExecutionPermit(
         claims=permit.claims.model_copy(update={"audience": "other-api"}),
         signature=permit.signature,
     )
 
     with pytest.raises(PermitRejected) as changed:
-        authorizer(clock).authorize(tampered, execution_plan, "other-api")
+        authorizer(clock).authorize(
+            tampered, execution_plan, "other-api", execution_proof
+        )
     with pytest.raises(PermitRejected) as unknown:
         ExecutionPermitAuthorizer(
             InMemoryPermitTrustStore(()),
             InMemoryPermitConsumptionStore(),
             clock,
-        ).authorize(permit, execution_plan, "erp-api")
+        ).authorize(permit, execution_plan, "erp-api", execution_proof)
 
     assert changed.value.code is PermitRejectionCode.SIGNATURE_INVALID
     assert unknown.value.code is PermitRejectionCode.UNTRUSTED_ISSUER_KEY
@@ -388,13 +424,14 @@ def test_issuer_key_lifecycle_is_enforced(
     code: PermitRejectionCode,
 ) -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock)
+    permit, execution_plan, execution_proof = issued_permit(clock)
 
     with pytest.raises(PermitRejected) as captured:
         authorizer(clock, key=trusted_key(**key_updates)).authorize(
             permit,
             execution_plan,
             "erp-api",
+            execution_proof,
         )
 
     assert captured.value.code is code
@@ -402,20 +439,22 @@ def test_issuer_key_lifecycle_is_enforced(
 
 def test_permit_time_window_and_verifier_ttl_are_enforced() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock, timedelta(seconds=90))
+    permit, execution_plan, execution_proof = issued_permit(
+        clock, timedelta(seconds=90)
+    )
 
     clock.current = NOW - timedelta(seconds=1)
     with pytest.raises(PermitRejected) as future:
-        authorizer(clock).authorize(permit, execution_plan, "erp-api")
+        authorizer(clock).authorize(permit, execution_plan, "erp-api", execution_proof)
     clock.current = permit.claims.expires_at
     with pytest.raises(PermitRejected) as expired:
-        authorizer(clock).authorize(permit, execution_plan, "erp-api")
+        authorizer(clock).authorize(permit, execution_plan, "erp-api", execution_proof)
     clock.current = NOW
     with pytest.raises(PermitRejected) as ttl:
         authorizer(
             clock,
             verification_policy=PermitVerificationPolicy(maximum_ttl=timedelta(seconds=60)),
-        ).authorize(permit, execution_plan, "erp-api")
+        ).authorize(permit, execution_plan, "erp-api", execution_proof)
 
     assert future.value.code is PermitRejectionCode.PERMIT_NOT_YET_VALID
     assert expired.value.code is PermitRejectionCode.PERMIT_EXPIRED
@@ -424,13 +463,15 @@ def test_permit_time_window_and_verifier_ttl_are_enforced() -> None:
 
 def test_atomic_consumption_allows_exactly_one_concurrent_authorization() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan = issued_permit(clock)
+    permit, execution_plan, execution_proof = issued_permit(clock)
     store = InMemoryPermitConsumptionStore()
     permit_authorizer = authorizer(clock, store)
 
     def attempt() -> str:
         try:
-            permit_authorizer.authorize(permit, execution_plan, "erp-api")
+            permit_authorizer.authorize(
+                permit, execution_plan, "erp-api", execution_proof
+            )
             return "authorized"
         except PermitRejected as exc:
             return exc.code.value
@@ -454,6 +495,9 @@ def test_permit_model_and_policy_invariants_fail_early() -> None:
         "consensus_digest": digest("c"),
         "intent_digest": digest("d"),
         "action_digest": digest("e"),
+        "execution_proof_digest": digest("1"),
+        "field_root": digest("2"),
+        "challenge_digest": digest("3"),
         "policy_digest": digest("f"),
         "audience": "erp-api",
         "issued_at": NOW,

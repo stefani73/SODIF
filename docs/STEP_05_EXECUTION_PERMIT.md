@@ -13,7 +13,10 @@ Permisul include digesturi SHA-256 pentru:
 2. consensul semantic final;
 3. manifestul de intenție rezultat din document;
 4. planul de execuție, incluzând metoda, ruta, audiența și parametrii;
-5. politica sub care a fost autorizată interpretarea.
+5. politica sub care a fost autorizată interpretarea;
+6. provocarea care a selectat profilurile de extragere după validarea semnăturii;
+7. rădăcina Merkle a angajamentelor pe câmp;
+8. dovada care leagă fiecare parametru API de câmpul său aprobat.
 
 Digesturile, documentul, revizia, emitentul, audiența și intervalul de valabilitate formează
 un obiect canonic RFC 8785 semnat Ed25519. Orice schimbare a acțiunii sau a contextului
@@ -26,6 +29,8 @@ invalidează legătura ori semnătura.
 - documentul și revizia trebuie să coincidă în verificare și manifest;
 - digestul manifestului trebuie să coincidă cu cel folosit de planul de execuție;
 - politica manifestului trebuie să coincidă cu politica verificării;
+- fiecare parametru al planului trebuie să fie acoperit de un câmp stabil, cu aceeași valoare
+  canonică și cu proveniență structurală plus vizuală pentru câmpurile critice;
 - durata cerută trebuie să se încadreze în limita emitentului.
 
 ## Condiții de autorizare
@@ -34,6 +39,8 @@ invalidează legătura ori semnătura.
 - semnătura acoperă integral revendicările permisului;
 - permisul este în fereastra temporală acceptată de verificator;
 - audiența și digestul planului coincid cu acțiunea prezentată;
+- digestul dovezii, provocarea, rădăcina câmpurilor și legăturile parametrilor coincid cu
+  revendicările semnate;
 - identificatorul permisului nu a fost consumat anterior.
 
 ## Consum unic

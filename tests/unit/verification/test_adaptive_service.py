@@ -129,6 +129,7 @@ class FakeAdapter:
         digest_character = {
             ViewKind.STRUCTURAL: "a",
             ViewKind.VISUAL: "b",
+            ViewKind.VISUAL_SECONDARY: "c",
             ViewKind.TARGET: "c",
         }[self.view_kind]
         fields = tuple(
@@ -173,7 +174,7 @@ def adapters(
     return (
         FakeAdapter(ViewKind.STRUCTURAL, 1, structural_values or values()),
         FakeAdapter(ViewKind.VISUAL, 3, visual_values or values()),
-        FakeAdapter(ViewKind.TARGET, 2, target_values or values()),
+        FakeAdapter(ViewKind.VISUAL_SECONDARY, 2, target_values or values()),
     )
 
 

@@ -77,6 +77,9 @@ class ScenarioResult(DomainModel):
     archive_id: Identifier | None = None
     archive_ids: tuple[Identifier, ...] = ()
     permit_id: Identifier | None = None
+    challenge_digest: Digest | None = None
+    field_root: Digest | None = None
+    execution_proof_digest: Digest | None = None
     gateway_decisions: tuple[GatewayDecision, ...] = ()
     receipt: ExecutionReceipt | None = None
     rejection_code: Identifier | None = None
@@ -123,6 +126,15 @@ class ScenarioResult(DomainModel):
                 raise ValueError("final gateway decision differs from the scenario outcome")
             if self.receipt is not None and final_decision.receipt != self.receipt:
                 raise ValueError("gateway and scenario execution receipts must match")
+        proof_values = (
+            self.challenge_digest,
+            self.field_root,
+            self.execution_proof_digest,
+        )
+        if self.permit_id is not None and any(value is None for value in proof_values):
+            raise ValueError("issued permits require complete semantic execution proof evidence")
+        if self.permit_id is None and any(value is not None for value in proof_values):
+            raise ValueError("semantic execution proof evidence requires an issued permit")
         return self
 
 

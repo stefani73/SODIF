@@ -6,6 +6,7 @@ from typing import Protocol, runtime_checkable
 from sodif.domain.enums import ViewKind
 from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.gateway import GatewayDecision, GatewayRequest
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import (
     ActionContext,
     ConsensusResult,
@@ -94,6 +95,7 @@ class PermitIssuer(Protocol):
         verification: AdaptiveVerificationOutcome,
         manifest: IntentManifest,
         plan: ExecutionPlan,
+        execution_proof: ExecutionProofBundle,
         ttl: timedelta | None = None,
     ) -> ExecutionPermit: ...
 
@@ -105,6 +107,7 @@ class PermitAuthorizer(Protocol):
         permit: ExecutionPermit,
         plan: ExecutionPlan,
         expected_audience: Identifier,
+        execution_proof: ExecutionProofBundle,
     ) -> ExecutionAuthorization: ...
 
 

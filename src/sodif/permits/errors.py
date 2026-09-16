@@ -18,6 +18,8 @@ class PermitRejectionCode(StrEnum):
     PERMIT_EXPIRED = "permit_expired"
     AUDIENCE_MISMATCH = "audience_mismatch"
     ACTION_MISMATCH = "action_mismatch"
+    EXECUTION_PROOF_INVALID = "execution_proof_invalid"
+    EXECUTION_PROOF_MISMATCH = "execution_proof_mismatch"
     PERMIT_REPLAYED = "permit_replayed"
 
 

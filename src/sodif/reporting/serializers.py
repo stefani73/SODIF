@@ -105,6 +105,12 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
     }
     if result.permit_id is not None:
         decision["permit_id"] = result.permit_id
+    if result.challenge_digest is not None:
+        decision["challenge_digest"] = result.challenge_digest
+    if result.field_root is not None:
+        decision["field_root"] = result.field_root
+    if result.execution_proof_digest is not None:
+        decision["execution_proof_digest"] = result.execution_proof_digest
     if result.gateway_decisions:
         decision["gateway_decision_ids"] = [item.decision_id for item in result.gateway_decisions]
         decision["gateway_status"] = result.gateway_decisions[-1].status

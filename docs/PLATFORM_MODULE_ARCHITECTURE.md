@@ -12,14 +12,14 @@ garanțiilor comune.
 
 ### SODIF Security
 
-**Responsabilitate:** validează documentul și revizia, confirmă semantic valorile critice și
-emite un permis criptografic legat de acțiunea API exactă.
+**Responsabilitate:** validează documentul și revizia, confruntă structura PDF cu forma
+vizibilă, dovedește stabilitatea valorilor critice și emite un permis criptografic legat de
+acțiunea API exactă.
 
-- intrare: document semnat, dovada semnăturii, reprezentări independente ale intenției și
-  acțiunea solicitată;
-- control: integritate, consens semantic adaptiv, evaluare explicabilă a riscului, legarea
-  metodei/rutei/parametrilor/destinației și protecție anti-replay;
-- ieșire: decizie justificată și permis cu utilizare unică sau refuz fără efect extern.
+- intrare: document semnat, dovada semnăturii, schema câmpurilor și acțiunea solicitată;
+- control: integritate, provocare post-semnătură, extrageri independente, invariabilitate pe
+  câmp, legarea metodei/rutei/parametrilor/destinației și protecție anti-replay;
+- ieșire: dovadă semantică verificabilă, decizie justificată și permis cu utilizare unică.
 
 Modulul nu arhivează documente și nu rutează trafic. Contractul său stabil este decizia
 semnată împreună cu permisul de execuție.
@@ -41,7 +41,7 @@ care celelalte componente o pot referi.
 **Responsabilitate:** aplică dreptul tranzacțional la limita API și permite numai acțiunea
 descrisă de permis.
 
-- intrare: cerere API, permis criptografic și contextul serviciului destinație;
+- intrare: cerere API, dovadă semantică, permis criptografic și contextul destinației;
 - control: autenticitatea și expirarea permisului, potrivirea exactă a metodei/rutei/
   parametrilor, audiența, mediul și consumul unic;
 - ieșire: rutare permisă sau blocare motivată, însoțită de jurnalul deciziei.
@@ -55,8 +55,9 @@ Nucleul de enforcement produce o decizie versionată `route/block`, cu registrul
 
 ```text
 Document semnat
-    -> verificare și consens semantic
-    -> permis criptografic legat de acțiune
+    -> provocare post-semnătură și extrageri independente
+    -> angajamente pe câmp și rădăcină Merkle
+    -> dovadă parametru-câmp și permis legat de acțiune
     -> arhivarea reviziei și a dovezilor
     -> enforcement asupra cererii API
     -> rutare sau blocare auditabilă

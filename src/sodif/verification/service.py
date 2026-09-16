@@ -21,7 +21,7 @@ class AdaptiveRoutePolicy:
     extended_kinds: tuple[ViewKind, ...] = (
         ViewKind.STRUCTURAL,
         ViewKind.VISUAL,
-        ViewKind.TARGET,
+        ViewKind.VISUAL_SECONDARY,
     )
 
     def __post_init__(self) -> None:

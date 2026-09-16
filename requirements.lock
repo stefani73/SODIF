@@ -36,10 +36,12 @@ pluggy==1.6.0
 protobuf==7.36.0
 pyarrow==25.0.1
 pycparser==3.0
+pymupdf==1.28.2
 pydantic==2.13.4
 pydantic_core==2.46.4
 pydeck==0.9.3
 Pygments==2.21.0
+pypdf==6.19.0
 pytest==8.4.2
 pytest-cov==7.1.0
 python-docx==1.2.0

@@ -95,13 +95,13 @@ _SCENARIO_COPY = {
     ),
     FlightScenario.SEMANTIC_CONFLICT: _ScenarioCopy(
         "Protecție semantică",
-        "Valoare critică divergentă",
-        "Reprezentările independente indică valori diferite pentru totalul aprobat.",
+        "Conținut intern diferit de documentul vizibil",
+        "PDF-ul afișează totalul de 1.250 EUR, iar structura sa internă expune 9.250 EUR.",
         "Revizuire necesară",
-        "SODIF refuză să transforme o intenție ambiguă într-o acțiune executabilă.",
+        "Divergența dintre dovada structurală și cea vizuală oprește autorizarea.",
         "Execuție suspendată",
-        "Niciun permis nu este emis până la clarificarea valorii critice.",
-        "Escaladarea este limitată la conflictul care poate schimba efectul tranzacției.",
+        "Valoarea ascunsă în structura PDF nu poate deveni parametru API autorizat.",
+        "Controlul suplimentar este concentrat asupra câmpului care schimbă efectul tranzacției.",
     ),
     FlightScenario.ACTION_TAMPERING: _ScenarioCopy(
         "Protecție a execuției",
@@ -132,8 +132,14 @@ _TIMELINE_COPY = {
         "Revizia următoare a continuat istoricul documentar fără întreruperi."
     ),
     "risk-triaged": "Nivelul de verificare a fost adaptat profilului tranzacției.",
+    "semantic-challenge": (
+        "După validarea semnăturii au fost selectate profilurile independente de extragere."
+    ),
     "semantic-views": "Reprezentările independente ale documentului au fost confruntate.",
     "consensus-accepted": "Valorile critice au fost confirmate prin consens verificabil.",
+    "invariance-proved": (
+        "Valorile stabile au fost angajate criptografic și legate de parametrii execuției."
+    ),
     "action-compiled": "Intenția aprobată a fost legată de acțiunea API exactă.",
     "permit-issued": "A fost emisă o autorizare criptografică de unică folosință.",
     "api-executed": "Sistemul operațional a acceptat acțiunea autorizată.",
@@ -274,6 +280,19 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
         evidence.append(EvidenceView("Document observat", _compact_digest(digests[0])))
     if result.permit_id is not None:
         evidence.append(EvidenceView("Permis", result.permit_id))
+    if result.challenge_digest is not None:
+        evidence.append(
+            EvidenceView("Selecție verificări", _compact_digest(result.challenge_digest))
+        )
+    if result.field_root is not None:
+        evidence.append(EvidenceView("Rădăcină valori", _compact_digest(result.field_root)))
+    if result.execution_proof_digest is not None:
+        evidence.append(
+            EvidenceView(
+                "Dovadă de execuție",
+                _compact_digest(result.execution_proof_digest),
+            )
+        )
     if result.archive_id is not None:
         evidence.append(EvidenceView("Arhivă", result.archive_id))
     if len(result.archive_ids) > 1:

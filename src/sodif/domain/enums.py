@@ -33,6 +33,7 @@ class VerificationOutcomeStatus(StrEnum):
 class ViewKind(StrEnum):
     STRUCTURAL = "structural"
     VISUAL = "visual"
+    VISUAL_SECONDARY = "visual_secondary"
     TARGET = "target"
 
 

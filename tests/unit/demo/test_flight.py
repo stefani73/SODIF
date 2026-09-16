@@ -17,6 +17,8 @@ from sodif.demo.models import (
     ScenarioResult,
 )
 from sodif.demo.runner import (
+    FLIGHT_DOCUMENT_ID,
+    SEMANTIC_SPLIT_DOCUMENT_ID,
     FlightRunner,
     run_archived_flight,
     run_default_flight,
@@ -60,10 +62,10 @@ def test_flight_proves_optimization_and_bounded_escalation() -> None:
     assert happy.verification is not None
     assert happy.verification.final_level is VerificationLevel.V1_TARGETED
     assert happy.verification.total_cost_units == 4
-    assert happy.verification.saved_cost_units == 2
+    assert happy.verification.saved_cost_units == 3
     assert recovery.verification is not None
     assert recovery.verification.final_level is VerificationLevel.V2_EXTENDED
-    assert recovery.verification.total_cost_units == 6
+    assert recovery.verification.total_cost_units == 7
     assert recovery.receipt is not None
 
 
@@ -97,9 +99,16 @@ def test_product_flight_persists_a_deduplicated_revision_chain(tmp_path: Path) -
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.TRANSVERSAL
-    assert page.total == 2
-    assert {record.document_id for record in page.records} == {"doc-flight-001"}
-    assert {record.revision_number for record in page.records} == {1, 2}
+    assert page.total == 3
+    assert {record.document_id for record in page.records} == {
+        FLIGHT_DOCUMENT_ID,
+        SEMANTIC_SPLIT_DOCUMENT_ID,
+    }
+    assert {
+        record.revision_number
+        for record in page.records
+        if record.document_id == FLIGHT_DOCUMENT_ID
+    } == {1, 2}
     assert {result.archive_id for result in report.results if result.archive_id is not None} == {
         record.archive_id for record in page.records
     }
@@ -169,7 +178,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.20.0"
+    assert report.release == "0.21.0"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

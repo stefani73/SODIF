@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 from sodif.domain.canonical import sha256_digest
+from sodif.domain.contracts import SemanticAdapter
 from sodif.domain.enums import SemanticDataType, ViewKind
 from sodif.domain.models import DocumentEnvelope, FieldProvenance, SemanticField, SemanticView
 from sodif.domain.schemas import IntentSchema
@@ -82,4 +83,39 @@ class ScenarioSemanticAdapter:
             adapter_id=self.adapter_id,
             adapter_version="v1",
             fields=fields,
+        )
+
+
+class FieldMaskingAdapter:
+    """Represent an incomplete extraction path without fabricating replacement values."""
+
+    def __init__(self, delegate: SemanticAdapter, omitted_fields: frozenset[str]) -> None:
+        self._delegate = delegate
+        self._omitted_fields = omitted_fields
+
+    @property
+    def adapter_id(self) -> str:
+        return self._delegate.adapter_id
+
+    @property
+    def view_kind(self) -> ViewKind:
+        return self._delegate.view_kind
+
+    @property
+    def cost_units(self) -> int:
+        return self._delegate.cost_units
+
+    def extract(
+        self,
+        document: DocumentEnvelope,
+        content: bytes,
+        schema: IntentSchema,
+    ) -> SemanticView:
+        view = self._delegate.extract(document, content, schema)
+        return view.model_copy(
+            update={
+                "fields": tuple(
+                    field for field in view.fields if field.name not in self._omitted_fields
+                )
+            }
         )

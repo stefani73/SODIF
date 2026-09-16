@@ -8,12 +8,12 @@ permisul criptografic și cererea API observată la execuție.
 
 Aplicația este organizată în trei module de produs cu limite și contracte explicite:
 
-- **SODIF Security** — confirmă valorile operaționale prin reprezentări independente,
-  construiește intenția tipizată și emite permisul criptografic cu utilizare unică;
+- **SODIF Security** — confruntă structura PDF cu forma randată și citită OCR, construiește
+  dovada criptografică pe câmp și emite permisul cu utilizare unică legat de acțiunea API;
 - **SODIF Archive** — păstrează reviziile validate, istoricul criptografic și pachetele
   portabile pentru verificare independentă;
-- **SODIF Gateway** — recanonicalizează cererea API, verifică legarea de permis și aplică
-  politica de rutare și protecția anti-replay la limita de execuție.
+- **SODIF Gateway** — recanonicalizează cererea API, verifică proveniența fiecărui parametru,
+  legarea de permis și protecția anti-replay la limita de execuție.
 
 Interfața multipagină individualizează fiecare modul, operațiunile documentare, rulările
 controlate și auditul. Catalogul comun din `src/sodif/product/` păstrează identitatea, promisiunea și
@@ -58,8 +58,9 @@ sistem extern și fără scrieri în DMS.
 
 Aplicația oferă două rulări distincte:
 
-- **Security Flight** — nucleul de semnătură și securitate: integritate, consens adaptiv,
-  permis unic, legarea acțiunii API și protecția anti-replay;
+- **Security Flight** — nucleul de semnătură și securitate: integritate, extragere PDF reală
+  prin pypdf și două profiluri Tesseract, invariabilitate pe câmp, permis unic, legarea
+  acțiunii API și protecția anti-replay;
 - **Transversal Flight** — traversează cele trei module: verifică și autorizează intenția,
   arhivează reviziile acceptate, aplică permisul în SODIF Gateway și exportă deciziile corelate.
   Documentele respinse nu sunt arhivate, iar cererile neconforme nu ajung la API.
@@ -82,11 +83,17 @@ SODIF_WORKSPACE_NAME=SODIF Operations
 SODIF_DOMAIN_NAME=Achiziții
 SODIF_PROTECTED_SERVICE=ERP Purchase API
 SODIF_EXPORT_ROOT=var/exports
+SODIF_TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+SODIF_PDFTOPPM_CMD=C:\path\to\pdftoppm.exe
 ```
 
 Pentru variabilele `*_ENABLED`, valorile acceptate sunt `true/false`, `yes/no`, `on/off` și
 `1/0`. Identificatorii și prefixul rutei sunt validați, iar limita parametrilor este numerică.
 Configurațiile ambigue sunt respinse la pornire.
+
+Extragerea vizuală necesită Tesseract cu limbile `ron` și `eng`; al doilea profil de randare
+folosește `pdftoppm` din Poppler. Căile sunt detectate automat când executabilele sunt în
+`PATH` și pot fi fixate explicit prin variabilele de mai sus.
 
 Valorile sunt preconfigurate din mediu și pot fi ajustate în pagina „Configurare
 operațională”. Modificările sunt validate, păstrate în sesiunea activă și utilizate efectiv
@@ -135,6 +142,9 @@ acoperire de 85%.
 - `src/sodif/documents/` — verificarea semnăturii, a conținutului și a lanțului de revizii;
 - `src/sodif/archive/` — depozit documentar, index SQLite și verificarea integrității;
 - `src/sodif/verification/` — risc explicabil, normalizare, consens și rutare adaptivă;
+- `src/sodif/extraction/` — extragere structurală pypdf și randare OCR MuPDF/Poppler;
+- `src/sodif/invariance/` — provocare post-semnătură, angajamente pe câmp și dovada legării
+  parametrilor API;
 - `src/sodif/permits/` — emiterea, verificarea și consumul unic al permiselor de execuție;
 - `src/sodif/execution/` — manifest, compilare și adaptor API controlat;
 - `src/sodif/demo/` — catalogul și motorul flight-ului reproductibil;

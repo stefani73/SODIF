@@ -24,15 +24,15 @@ def render_security_module(control_page: str) -> None:
         ),
         (
             "neurology",
-            "Consens semantic adaptiv",
-            "Confruntă independent valorile cu efect tranzacțional și extinde analiza "
-            "numai la risc.",
+            "Invariabilitate semantică",
+            "Compară extragerea structurală cu randări OCR independente și fixează "
+            "proveniența fiecărui câmp critic.",
         ),
         (
             "key_vertical",
             "Permis legat de execuție",
-            "Fixează metoda, ruta, parametrii, destinația și termenul autorizării "
-            "într-un permis unic.",
+            "Leagă rădăcina valorilor aprobate de metodă, rută, parametri, destinație "
+            "și termen într-un permis unic.",
         ),
         (
             "replay",
@@ -50,16 +50,19 @@ def render_security_module(control_page: str) -> None:
         """
         <section class="sodif-value-panel sodif-module-value">
             <div><div class="sodif-section-label light">Decizie explicabilă</div>
-            <h2>Verificarea se adaptează riscului tranzacției.</h2>
-            <p>Cazurile coerente folosesc traseul scurt. Valorile divergente, lipsa confirmărilor
-            sau abaterea acțiunii API declanșează verificări suplimentare ori blocarea.</p></div>
+            <h2>Aceleași valori trebuie să rămână stabile până la execuția API.</h2>
+            <p>Profilurile de extragere sunt selectate după validarea semnăturii. Valorile
+            critice confirmate sunt angajate criptografic, iar gateway-ul verifică legătura
+            fiecărui parametru cu documentul înainte de rutare.</p></div>
             <div class="sodif-protection-list">
                 <div><span></span><p><b>Pragmatism</b>
-                <small>Procesare proporțională cu riscul observat</small></p></div>
+                <small>Traseu scurt pentru cazurile coerente,
+                extindere numai la nevoie</small></p></div>
                 <div><span></span><p><b>Siguranță</b>
-                <small>Blocare controlată când sensul critic rămâne neconfirmat</small></p></div>
+                <small>Blocare când structura PDF și forma vizibilă nu coincid</small></p></div>
                 <div><span></span><p><b>Trasabilitate</b>
-                <small>Motiv și trasabilitate pentru fiecare decizie</small></p></div>
+                <small>Proveniență pe câmp, rădăcină criptografică
+                și dovadă de execuție</small></p></div>
             </div>
         </section>
         """,

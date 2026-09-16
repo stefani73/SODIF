@@ -2,10 +2,9 @@
 
 ## Rol
 
-SODIF Gateway aplică la limita API dreptul tranzacțional emis de `SODIF Security`. Modulul nu
-reinterpretează documentul și nu repetă analiza semantică. El verifică
-dacă cererea concretă păstrează exact acțiunea autorizată și decide fail-closed între rutare și
-blocare.
+SODIF Gateway aplică la limita API dreptul tranzacțional emis de `SODIF Security`. Modulul
+verifică dovada semantică deja calculată, legătura fiecărui parametru cu un câmp stabil și
+corespondența exactă dintre cererea concretă și acțiunea autorizată. Decizia este fail-closed.
 
 Diferența față de un API Gateway clasic este obiectul autorizării:
 
@@ -15,11 +14,12 @@ Diferența față de un API Gateway clasic este obiectul autorizării:
 
 ## Contract de intrare
 
-`GatewayRequest` folosește protocolul versionat `sodif.gateway-request/v1` și conține:
+`GatewayRequest` folosește protocolul versionat `sodif.gateway-request/v2` și conține:
 
 - identificatorul requestului;
 - ruta de gateway selectată;
 - planul exact al acțiunii API;
+- dovada invariabilității semantice și legăturile parametrilor;
 - permisul criptografic emis de modulul de securitate.
 
 Planul include metoda HTTP, calea, audiența, parametrii canonici și amprenta intenției. Permisul
@@ -49,9 +49,10 @@ Motorul aplică verificările într-o ordine care evită consumarea inutilă a p
 5. complexitatea requestului;
 6. emitentul și cheia de încredere a permisului;
 7. semnătura și fereastra de valabilitate;
-8. potrivirea exactă dintre amprenta acțiunii autorizate și request;
-9. consumarea atomică, o singură dată, a permisului;
-10. transmiterea către adaptorul serviciului protejat.
+8. verificarea angajamentelor pe câmp, a rădăcinii Merkle și a acoperirii parametrilor;
+9. potrivirea exactă dintre amprenta acțiunii autorizate și request;
+10. consumarea atomică, o singură dată, a permisului;
+11. transmiterea către adaptorul serviciului protejat.
 
 Orice control eșuat oprește procesarea și nu produce efect asupra API-ului. Consumul unic este
 atomic, astfel încât prezentările concurente ale aceluiași permis pot produce cel mult o rutare.
@@ -80,6 +81,8 @@ acțiunii observate și autorizate și dovada efectului asupra API-ului.
 | Destinație schimbată | audiență legată de permis și rută | `route.audience_mismatch` |
 | Metodă ori cale nepermisă | politica rutei | blocare înaintea permisului |
 | Parametri modificați | amprenta canonică a planului | `permit.action_mismatch` |
+| Parametru fără câmp stabil | acoperire integrală prin dovada de execuție | blocare fail-closed |
+| Dovadă semantică modificată | angajamente pe câmp și rădăcină Merkle | blocare fail-closed |
 | Permis expirat sau emis în viitor | fereastra criptografică | blocare fail-closed |
 | Emitent ori semnătură nevalidă | trust store și Ed25519 | blocare fail-closed |
 | Reutilizare sau concurență | consum atomic | `permit.permit_replayed` |

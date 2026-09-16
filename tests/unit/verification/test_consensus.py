@@ -50,7 +50,12 @@ def view(
     document_id: str = "doc-001",
 ) -> SemanticView:
     adapter_id = f"adapter-{kind.value}"
-    character = {ViewKind.STRUCTURAL: "a", ViewKind.VISUAL: "b", ViewKind.TARGET: "c"}[kind]
+    character = {
+        ViewKind.STRUCTURAL: "a",
+        ViewKind.VISUAL: "b",
+        ViewKind.VISUAL_SECONDARY: "c",
+        ViewKind.TARGET: "d",
+    }[kind]
     fields = tuple(
         SemanticField(
             name=name,

@@ -27,11 +27,12 @@ MODULES = (
         navigation_label="Controlul execuției",
         promise="Protejează trecerea de la revizia semnată la dreptul unic de execuție.",
         responsibility=(
-            "Confirmă valorile operaționale prin reprezentări independente, construiește "
-            "intenția tipizată și emite permisul criptografic legat de acțiunea API."
+            "Confirmă invariabilitatea valorilor operaționale prin extragere structurală și "
+            "vizuală, construiește dovada pe câmp și emite permisul criptografic legat de "
+            "acțiunea API."
         ),
-        input_contract="Document semnat, reprezentări independente și acțiunea solicitată",
-        output_contract="Decizie explicabilă și permis de execuție cu utilizare unică",
+        input_contract="Document semnat, schemă de câmpuri și acțiunea solicitată",
+        output_contract="Dovadă semantică verificabilă și permis de execuție cu utilizare unică",
         icon=":material/shield_lock:",
         page="pages/security.py",
     ),
@@ -57,10 +58,10 @@ MODULES = (
         navigation_label="Control API",
         promise="Aplică permisul SODIF asupra cererii API observate la execuție.",
         responsibility=(
-            "Recanonicalizează cererea, verifică legarea de acțiunea autorizată și aplică "
-            "politica de rutare și protecția anti-replay."
+            "Recanonicalizează cererea, verifică dovada fiecărui parametru și legarea de "
+            "acțiunea autorizată, apoi aplică politica de rutare și protecția anti-replay."
         ),
-        input_contract="Cerere API, permis criptografic și contextul destinației",
+        input_contract="Cerere API, dovadă semantică, permis criptografic și destinație",
         output_contract="Rutare permisă sau blocare motivată, însoțită de jurnal de audit",
         icon=":material/hub:",
         page="pages/gateway.py",

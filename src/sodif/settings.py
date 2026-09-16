@@ -88,7 +88,7 @@ def load_settings() -> AppSettings:
             "Control verificabil al execuției autorizate prin documente semnate.",
         ),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.20.0"),
+        release=getenv("SODIF_RELEASE", "0.21.0"),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
         export_root=Path(getenv("SODIF_EXPORT_ROOT", "var/exports")),
         modules=ModuleSettings(

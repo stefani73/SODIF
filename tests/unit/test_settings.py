@@ -32,7 +32,7 @@ def test_default_settings_are_product_safe(monkeypatch: MonkeyPatch) -> None:
         app_name="SODIF",
         tagline="Control verificabil al execuției autorizate prin documente semnate.",
         environment="local",
-        release="0.20.0",
+        release="0.21.0",
         archive_root=Path("var/archive"),
         export_root=Path("var/exports"),
         modules=ModuleSettings(),

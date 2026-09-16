@@ -10,39 +10,41 @@ efecte într-un sistem extern.
 
 | Scenariu | Control demonstrat | Rezultat așteptat |
 |---|---|---|
-| Flux valid | două reprezentări concordă; a treia nu rulează | executat |
-| Recuperare adaptivă | o dovadă lipsește; a treia cale o confirmă | executat |
+| Flux valid | extragerea structurală și prima cale OCR concordă | executat |
+| Recuperare adaptivă | o dovadă lipsește; al doilea profil OCR o confirmă | executat |
 | Document modificat | octeții diferă de digestul semnat | blocat |
-| Conflict semantic | valoarea critică diferă între reprezentări | escaladat |
+| Conflict semantic | stratul structural ascuns diferă de pagina randată | escaladat |
 | Acțiune modificată | ruta API diferă după emiterea permisului | blocat |
 | Replay | permisul este prezentat a doua oară | blocat |
 
 ## Traseul integrat
 
 1. revizia PDF este amprentată și verificată Ed25519;
-2. riscul selectează nivelul inițial de verificare;
-3. adaptoarele flight-ului produc reprezentări controlate și complet trasabile;
+2. provocarea post-semnătură selectează profilurile independente de extragere;
+3. pypdf citește structura internă, iar MuPDF/Poppler cu Tesseract citesc paginile randate;
 4. motorul de consens acceptă, extinde sau escaladează;
-5. consensul acceptat este asamblat într-un manifest tipizat;
-6. manifestul este compilat într-un plan API determinist;
-7. permisul unic leagă criptografic verificarea de plan;
-8. autorizarea este verificată față de acțiunea exactă;
-9. adaptorul API local emite o chitanță fără efect extern.
+5. valorile stabile produc angajamente pe câmp și o rădăcină Merkle;
+6. consensul acceptat este asamblat într-un manifest tipizat;
+7. manifestul este compilat într-un plan API determinist;
+8. dovada leagă fiecare parametru de câmpul aprobat, iar permisul semnează întregul context;
+9. autorizarea este reverificată față de acțiunea exactă;
+10. adaptorul API local emite o chitanță fără efect extern.
 
 ## Natura adaptoarelor semantice
 
-Flight-ul folosește adaptoare controlate cu rezultate explicite, astfel încât evaluarea să
-fie reproductibilă și să nu depindă de un model extern. Aceste adaptoare reprezintă ieșirile
-unui parser structural, ale unei căi vizuale și ale validării orientate spre API. Mecanismul
-de consens, costul adaptiv, criptografia și protecțiile sunt executate real; conectarea unui
-OCR/model AI OSS se poate face ulterior prin același contract.
+Flight-ul procesează PDF-uri reale prin biblioteci OSS instalate local. Calea structurală
+folosește pypdf. Căile vizuale randază documentul cu MuPDF și Poppler, apoi execută Tesseract
+cu profiluri diferite. Fixture-ul de recuperare maschează numai disponibilitatea unui câmp pe
+prima cale, păstrând valoarea extrasă real. Cazul de conflict conține simultan text structural
+invizibil și o pagină vizibilă cu altă valoare, astfel încât blocarea rezultă din procesarea
+efectivă a documentului.
 
 ## Dovada produsă
 
 Fiecare scenariu conține rezultatul așteptat și observat, cronologia workflow-ului, observații
-ordonate, digesturi de artefacte, nivelul și costul verificării, identificatorul permisului,
-codul de respingere sau chitanța execuției. Flight-ul agregă cele șase rezultate într-un model
-JSON versionat; exportul în fișiere și raportul prezentabil apar în Pasul 8.
+ordonate, digesturi de artefacte, nivelul și costul verificării, digestul provocării, rădăcina
+câmpurilor, digestul dovezii de execuție, identificatorul permisului, codul de respingere sau
+chitanța execuției. Flight-ul agregă cele șase rezultate într-un model JSON versionat.
 
 ## Rulare
 

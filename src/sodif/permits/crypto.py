@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from sodif.domain.canonical import canonical_bytes, sha256_digest
 from sodif.domain.contracts import Clock
 from sodif.domain.enums import ConsensusStatus, SignatureAlgorithm, VerificationOutcomeStatus
+from sodif.domain.invariance import ExecutionProofBundle
 from sodif.domain.models import ExecutionPlan, IntentManifest
 from sodif.domain.permits import (
     ExecutionAuthorization,
@@ -25,6 +26,7 @@ from sodif.domain.permits import (
 )
 from sodif.domain.types import Identifier
 from sodif.domain.verification import AdaptiveVerificationOutcome
+from sodif.invariance import ExecutionProofService, InvarianceRejected
 from sodif.permits.errors import PermitRejected, PermitRejectionCode
 from sodif.permits.identifiers import PermitIdSource
 from sodif.permits.repository import PermitConsumptionStore
@@ -92,6 +94,7 @@ class Ed25519PermitIssuer:
         verification: AdaptiveVerificationOutcome,
         manifest: IntentManifest,
         plan: ExecutionPlan,
+        execution_proof: ExecutionProofBundle,
         ttl: timedelta | None = None,
     ) -> ExecutionPermit:
         if (
@@ -122,6 +125,23 @@ class Ed25519PermitIssuer:
                 PermitRejectionCode.POLICY_MISMATCH,
                 "intent and verification policies differ",
             )
+        try:
+            ExecutionProofService().verify(execution_proof, plan)
+        except InvarianceRejected as exc:
+            raise PermitRejected(
+                PermitRejectionCode.EXECUTION_PROOF_INVALID,
+                exc.detail,
+            ) from exc
+        invariance = execution_proof.invariance
+        if (
+            invariance.document_id != manifest.document_id
+            or invariance.revision_digest != manifest.revision_digest
+            or invariance.policy_digest != manifest.policy.digest
+        ):
+            raise PermitRejected(
+                PermitRejectionCode.EXECUTION_PROOF_MISMATCH,
+                "execution proof and intent manifest describe different authorization contexts",
+            )
         effective_ttl = ttl or self._policy.default_ttl
         if effective_ttl <= timedelta(0) or effective_ttl > self._policy.maximum_ttl:
             raise PermitRejected(
@@ -140,6 +160,9 @@ class Ed25519PermitIssuer:
             consensus_digest=sha256_digest(verification.final_consensus),
             intent_digest=intent_digest,
             action_digest=sha256_digest(plan),
+            execution_proof_digest=sha256_digest(execution_proof),
+            field_root=invariance.field_root,
+            challenge_digest=invariance.challenge.challenge_digest,
             policy_digest=manifest.policy.digest,
             audience=plan.audience,
             issued_at=issued_at,
@@ -193,6 +216,7 @@ class ExecutionPermitAuthorizer:
         permit: ExecutionPermit,
         plan: ExecutionPlan,
         expected_audience: Identifier,
+        execution_proof: ExecutionProofBundle,
     ) -> ExecutionAuthorization:
         claims = permit.claims
         key = self._trust_store.resolve(claims.key_id)
@@ -255,6 +279,25 @@ class ExecutionPermitAuthorizer:
                 PermitRejectionCode.ACTION_MISMATCH,
                 "permit is not bound to the supplied execution plan",
             )
+        try:
+            ExecutionProofService().verify(execution_proof, plan)
+        except InvarianceRejected as exc:
+            raise PermitRejected(
+                PermitRejectionCode.EXECUTION_PROOF_INVALID,
+                exc.detail,
+            ) from exc
+        if (
+            claims.execution_proof_digest != sha256_digest(execution_proof)
+            or claims.field_root != execution_proof.invariance.field_root
+            or claims.challenge_digest
+            != execution_proof.invariance.challenge.challenge_digest
+            or claims.document_id != execution_proof.invariance.document_id
+            or claims.revision_digest != execution_proof.invariance.revision_digest
+        ):
+            raise PermitRejected(
+                PermitRejectionCode.EXECUTION_PROOF_MISMATCH,
+                "permit is not bound to the supplied semantic execution proof",
+            )
         consumption = PermitConsumption(
             permit_id=claims.permit_id,
             action_digest=claims.action_digest,
@@ -266,6 +309,8 @@ class ExecutionPermitAuthorizer:
             document_id=claims.document_id,
             revision_digest=claims.revision_digest,
             action_digest=claims.action_digest,
+            execution_proof_digest=claims.execution_proof_digest,
+            field_root=claims.field_root,
             audience=claims.audience,
             authorized_at=authorized_at,
             expires_at=claims.expires_at,

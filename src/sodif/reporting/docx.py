@@ -44,8 +44,9 @@ def render_docx_report(report: FlightReport) -> bytes:
     _add_decision_register(document, view)
     if report.flight_kind is FlightKind.TRANSVERSAL:
         _add_transversal_evidence(document, report)
+    compact_scenarios = report.flight_kind is FlightKind.TRANSVERSAL
     for scenario in view.scenarios:
-        _add_scenario(document, scenario)
+        _add_scenario(document, scenario, compact=compact_scenarios)
     buffer = BytesIO()
     document.save(buffer)
     return _normalize_docx(buffer.getvalue())
@@ -266,9 +267,9 @@ def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None
             "conținutului.",
         ),
         (
-            "Reprezentări și consens",
-            "Reprezentări independente controlate, normalizare tipizată și consens "
-            "determinist la nivel de câmp.",
+            "Extragere independentă",
+            "Citire structurală cu pypdf și două profiluri de randare OCR cu Tesseract, "
+            "selectate printr-o provocare emisă după validarea semnăturii.",
         ),
         (
             "Verificare adaptivă",
@@ -276,9 +277,9 @@ def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None
             "divergențele cu efect operațional.",
         ),
         (
-            "Permis de execuție",
-            "Permis Ed25519 cu utilizare unică, legat de metodă, rută, parametri, "
-            "destinație și termen de valabilitate.",
+            "Dovadă și permis",
+            "Angajamente SHA-256 pe câmp, rădăcină Merkle și permis Ed25519 cu utilizare "
+            "unică, legate de metoda, ruta, destinația și parametrii API.",
         ),
         (
             "Control API",
@@ -322,6 +323,8 @@ def _add_callout(
     title: str,
     detail: str,
     tone: str,
+    *,
+    compact: bool = False,
 ) -> None:
     fill, accent = {
         "success": (_SUCCESS_FILL, _SUCCESS),
@@ -331,8 +334,8 @@ def _add_callout(
     paragraph = document.add_paragraph()
     paragraph.paragraph_format.left_indent = Inches(0.12)
     paragraph.paragraph_format.right_indent = Inches(0.08)
-    paragraph.paragraph_format.space_before = Pt(5)
-    paragraph.paragraph_format.space_after = Pt(10)
+    paragraph.paragraph_format.space_before = Pt(3 if compact else 5)
+    paragraph.paragraph_format.space_after = Pt(6 if compact else 10)
     paragraph.paragraph_format.keep_together = True
     properties = paragraph._p.get_or_add_pPr()
     shading = OxmlElement("w:shd")
@@ -346,8 +349,19 @@ def _add_callout(
     left.set(qn("w:color"), accent)
     borders.append(left)
     properties.append(borders)
-    _set_run_font(paragraph.add_run(f"{title}\n"), "Calibri", 11, accent, bold=True)
-    _set_run_font(paragraph.add_run(detail), "Calibri", 10.5, _NAVY)
+    _set_run_font(
+        paragraph.add_run(f"{title}\n"),
+        "Calibri",
+        10.5 if compact else 11,
+        accent,
+        bold=True,
+    )
+    _set_run_font(
+        paragraph.add_run(detail),
+        "Calibri",
+        10 if compact else 10.5,
+        _NAVY,
+    )
 
 
 def _add_decision_register(document: WordDocument, view: FlightView) -> None:
@@ -413,7 +427,8 @@ def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> N
     module_rows = (
         (
             "SODIF Security",
-            "Validează revizia semnată, confirmă semantic intenția și emite permisul unic.",
+            "Confruntă structura PDF cu forma vizibilă, dovedește valorile stabile și emite "
+            "permisul unic legat de execuție.",
             f"{report.passed_scenarios}/{len(report.results)} scenarii conforme",
             "CONTROLAT",
         ),
@@ -425,7 +440,8 @@ def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> N
         ),
         (
             "SODIF Gateway",
-            "Aplică permisul, politica rutei și legarea exactă de acțiunea solicitată.",
+            "Verifică proveniența fiecărui parametru, permisul și legarea exactă de acțiunea "
+            "solicitată.",
             f"{len(gateway_decisions)} decizii: {routed} rutate / {blocked} blocate",
             "APLICAT",
         ),
@@ -441,7 +457,8 @@ def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> N
     document.add_heading("Flux operațional demonstrat", level=2)
     for item in (
         "Documentul este acceptat numai dacă revizia și semnătura corespund conținutului primit.",
-        "Intenția confirmată este compilată într-o acțiune exactă și legată de un permis unic.",
+        "Valorile confirmate sunt angajate pe câmp, compilate într-o acțiune exactă și "
+        "legate de un permis unic.",
         "Arhiva păstrează reviziile validate, iar Gateway-ul decide dacă acțiunea poate fi rutată.",
         "Fiecare rezultat rămâne corelat cu identificatorii tehnici incluși în pachetul de audit.",
     ):
@@ -496,7 +513,8 @@ def _add_gateway_evidence(document: WordDocument, report: FlightReport) -> None:
         "SODIF GATEWAY",
         "Decizii de rutare și blocare",
         "Gateway-ul aplică politica rutei și verifică permisul criptografic direct față de "
-        "acțiunea observată înainte ca cererea să ajungă la serviciul protejat.",
+        "acțiunea observată și dovada valorilor înainte ca cererea să ajungă la serviciul "
+        "protejat.",
     )
     table = document.add_table(rows=1, cols=4)
     table.style = "Table Grid"
@@ -524,6 +542,8 @@ def _add_gateway_evidence(document: WordDocument, report: FlightReport) -> None:
 
     document.add_heading("Limita de execuție demonstrată", level=2)
     for item in (
+        "Fiecare parametru transmis este acoperit de un angajament al câmpului aprobat și "
+        "de rădăcina criptografică a setului de valori.",
         "O rută modificată după emiterea permisului este blocată înainte de serviciul protejat.",
         "Prima prezentare conformă poate fi rutată, iar reutilizarea aceluiași permis "
         "este respinsă.",
@@ -593,6 +613,12 @@ def _add_end_to_end_traceability(document: WordDocument, report: FlightReport) -
         f"Document: {_compact_report_digest(reference.verification.revision_digest)}",
         f"Arhivă: {', '.join(reference.archive_ids)}",
         f"Permis: {reference.permit_id}",
+        f"Provocare semantică: {_compact_report_digest(reference.challenge_digest or '')}",
+        f"Rădăcină valori: {_compact_report_digest(reference.field_root or '')}",
+        (
+            "Dovadă execuție: "
+            f"{_compact_report_digest(reference.execution_proof_digest or '')}"
+        ),
         f"Decizie Gateway: {reference.gateway_decisions[-1].decision_id}",
         (
             f"Execuție API: {reference.receipt.execution_id} · "
@@ -622,51 +648,113 @@ def _compact_report_digest(value: str) -> str:
     return f"{value[:18]}…{value[-8:]}"
 
 
-def _add_scenario(document: WordDocument, scenario: ScenarioView) -> None:
+def _add_scenario(
+    document: WordDocument,
+    scenario: ScenarioView,
+    *,
+    compact: bool = False,
+) -> None:
+    body_size = 10 if compact else 11
+    evidence_size = 8.5 if compact else 9
+
     kicker = document.add_paragraph()
     kicker.paragraph_format.page_break_before = True
-    kicker.paragraph_format.space_after = Pt(3)
+    kicker.paragraph_format.space_after = Pt(2 if compact else 3)
     _set_run_font(kicker.add_run(scenario.kicker.upper()), "Calibri", 8.5, _TEAL, bold=True)
-    document.add_heading(scenario.title, level=1)
-    document.add_paragraph(scenario.summary)
-    _add_callout(document, f"Decizie: {scenario.verdict}", scenario.verdict_detail, scenario.tone)
+    title = document.add_heading(scenario.title, level=1)
+    if compact:
+        title.paragraph_format.space_before = Pt(10)
+        title.paragraph_format.space_after = Pt(4)
+    summary = document.add_paragraph(scenario.summary)
+    if compact:
+        summary.paragraph_format.space_after = Pt(4)
+        summary.paragraph_format.line_spacing = 1
+        for run in summary.runs:
+            _set_run_font(run, "Calibri", body_size, _NAVY)
+    _add_callout(
+        document,
+        f"Decizie: {scenario.verdict}",
+        scenario.verdict_detail,
+        scenario.tone,
+        compact=compact,
+    )
 
-    document.add_heading("Rezultatul controalelor", level=2)
+    heading = document.add_heading("Rezultatul controalelor", level=2)
+    if compact:
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
     for control in scenario.controls:
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.keep_together = True
+        if compact:
+            paragraph.paragraph_format.space_after = Pt(3)
+            paragraph.paragraph_format.line_spacing = 1
         _set_run_font(
             paragraph.add_run(f"{control.name} — {control.state}. "),
             "Calibri",
-            11,
+            body_size,
             _tone_color(control.tone),
             bold=True,
         )
-        _set_run_font(paragraph.add_run(control.detail), "Calibri", 11, _NAVY)
+        _set_run_font(paragraph.add_run(control.detail), "Calibri", body_size, _NAVY)
 
-    document.add_heading("Rațiunea deciziei și efectul asupra API", level=2)
+    heading = document.add_heading("Rațiunea deciziei și efectul asupra API", level=2)
+    if compact:
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
     paragraph = document.add_paragraph()
-    _set_run_font(paragraph.add_run("Rațiune. "), "Calibri", 11, _NAVY, bold=True)
-    _set_run_font(paragraph.add_run(scenario.optimization_note), "Calibri", 11, _NAVY)
+    if compact:
+        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.line_spacing = 1
+    _set_run_font(paragraph.add_run("Rațiune. "), "Calibri", body_size, _NAVY, bold=True)
+    _set_run_font(paragraph.add_run(scenario.optimization_note), "Calibri", body_size, _NAVY)
     paragraph = document.add_paragraph()
-    _set_run_font(paragraph.add_run(f"{scenario.api_effect}. "), "Calibri", 11, _NAVY, bold=True)
-    _set_run_font(paragraph.add_run(scenario.api_detail), "Calibri", 11, _NAVY)
+    if compact:
+        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.line_spacing = 1
+    _set_run_font(
+        paragraph.add_run(f"{scenario.api_effect}. "),
+        "Calibri",
+        body_size,
+        _NAVY,
+        bold=True,
+    )
+    _set_run_font(paragraph.add_run(scenario.api_detail), "Calibri", body_size, _NAVY)
 
-    document.add_heading("Traseul deciziei", level=2)
+    heading = document.add_heading("Traseul deciziei", level=2)
+    if compact:
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
     for timeline_item in scenario.timeline:
-        document.add_paragraph(timeline_item, style="List Bullet")
+        paragraph = document.add_paragraph(timeline_item, style="List Bullet")
+        if compact:
+            paragraph.paragraph_format.space_after = Pt(2)
+            paragraph.paragraph_format.line_spacing = 1
+            for run in paragraph.runs:
+                _set_run_font(run, "Calibri", 9.5, _NAVY)
 
-    document.add_heading("Identificatori și trasabilitate", level=2)
+    heading = document.add_heading("Identificatori și trasabilitate", level=2)
+    if compact:
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
     for evidence in scenario.evidence:
         paragraph = document.add_paragraph(style="SODIF Evidence")
+        if compact:
+            paragraph.paragraph_format.space_after = Pt(1)
+            paragraph.paragraph_format.line_spacing = 1
         _set_run_font(
             paragraph.add_run(f"{evidence.label}: "),
             "Consolas",
-            9,
+            evidence_size,
             _MUTED,
             bold=True,
         )
-        _set_run_font(paragraph.add_run(evidence.value), "Consolas", 9, _DARK_BLUE)
+        _set_run_font(
+            paragraph.add_run(evidence.value),
+            "Consolas",
+            evidence_size,
+            _DARK_BLUE,
+        )
 
 
 def _set_run_font(

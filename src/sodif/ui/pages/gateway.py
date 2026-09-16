@@ -43,7 +43,7 @@ _PASSED_CHECK_DETAILS = {
     "route.path": "Resursa solicitată se află în limita protejată.",
     "request.size": "Cererea respectă limita de complexitate configurată.",
     "permit.authorization": (
-        "Semnătura, valabilitatea, acțiunea, destinația și utilizarea unică sunt valide."
+        "Dovada câmpurilor, semnătura, acțiunea, destinația și utilizarea unică sunt valide."
     ),
     "upstream.execution": "Serviciul protejat a acceptat tranzacția autorizată.",
 }
@@ -71,8 +71,9 @@ def render_gateway_module(settings: GatewaySettings) -> None:
     policies = (
         (
             "route",
-            "Potrivire exactă",
-            "Metoda, ruta și parametrii cererii trebuie să coincidă cu acțiunea autorizată.",
+            "Legare integrală",
+            "Fiecare parametru trebuie să provină dintr-un câmp stabil, iar metoda și ruta "
+            "să coincidă cu acțiunea autorizată.",
         ),
         (
             "domain_verification",
@@ -100,8 +101,8 @@ def render_gateway_module(settings: GatewaySettings) -> None:
     st.markdown(
         """
         <section class="sodif-gateway-flow">
-            <div><small>Cerere</small><strong>Apel API + permis</strong>
-            <span>Tranzacția pregătită pentru execuție</span></div>
+            <div><small>Cerere</small><strong>Apel API + dovadă + permis</strong>
+            <span>Parametri legați de valorile aprobate</span></div>
             <i aria-hidden="true"></i>
             <div class="active"><small>Control</small>
             <strong>SODIF Gateway</strong>
