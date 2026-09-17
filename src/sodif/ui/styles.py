@@ -396,7 +396,7 @@ div[data-testid="stButton"] button[kind="primary"]:hover {
     padding:1.35rem 1.5rem; background:white; border:1px solid var(--line); border-radius:15px;
 }
 .sodif-report-identity {
-    display:grid; grid-template-columns:1.15fr .8fr 1fr .75fr; gap:1rem; margin:1rem 0;
+    display:grid; grid-template-columns:1.15fr .8fr .95fr 1fr .75fr; gap:1rem; margin:1rem 0;
     padding:1rem 1.2rem; background:#eef4f7; border:1px solid #d6e2e9; border-radius:13px;
 }
 .sodif-report-identity > div { display:grid; gap:.25rem; }

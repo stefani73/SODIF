@@ -19,6 +19,7 @@ from sodif.demo.fixtures import (
     REVISED_PDF,
     SEMANTIC_SPLIT_PDF,
     TAMPERED_PDF,
+    accepted_values,
     flight_policy,
     purchase_order_action,
     purchase_order_schema,
@@ -45,7 +46,9 @@ from sodif.domain.canonical import sha256_bytes, sha256_digest
 from sodif.domain.contracts import SemanticAdapter
 from sodif.domain.enums import (
     DocumentFormat,
+    DocumentSecurityMode,
     HttpMethod,
+    ParameterLocation,
     ProcessingStage,
     SignatureAlgorithm,
     VerificationOutcomeStatus,
@@ -58,7 +61,7 @@ from sodif.domain.gateway import (
     GatewayRoutePolicy,
 )
 from sodif.domain.invariance import ExecutionProofBundle, SemanticChallenge
-from sodif.domain.models import DocumentEnvelope, ExecutionPlan, PolicyReference
+from sodif.domain.models import ActionParameter, DocumentEnvelope, ExecutionPlan, PolicyReference
 from sodif.domain.permits import ExecutionPermit, TrustedPermitKey
 from sodif.domain.revisions import SignedRevision, SignedRevisionMetadata
 from sodif.domain.schemas import IntentSchema
@@ -68,6 +71,7 @@ from sodif.execution import (
     ConsensusIntentAssembler,
     DeterministicActionCompiler,
     InMemoryApiExecutor,
+    InMemoryDirectApiAdapter,
 )
 from sodif.extraction import challenged_pdf_adapters
 from sodif.gateway import SemanticExecutionGateway
@@ -89,6 +93,9 @@ from sodif.verification.consensus import DeterministicConsensusEngine
 
 FLIGHT_START = datetime(2026, 8, 24, 14, 0, tzinfo=UTC)
 FLIGHT_DOCUMENT_ID = f"doc-flight-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
+STANDARD_FLIGHT_DOCUMENT_ID = (
+    f"doc-flight-standard-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
+)
 SEMANTIC_SPLIT_DOCUMENT_ID = (
     f"doc-flight-split-{sha256_bytes(SEMANTIC_SPLIT_PDF).removeprefix('sha256:')[:12]}"
 )
@@ -126,6 +133,7 @@ class _ScenarioContext:
     permit_issuer: Ed25519PermitIssuer
     permit_authorizer: ExecutionPermitAuthorizer
     api_executor: InMemoryApiExecutor
+    direct_api_adapter: InMemoryDirectApiAdapter
     gateway: SemanticExecutionGateway | None
     archive_ids: list[str]
 
@@ -153,25 +161,37 @@ class FlightRunner:
         *,
         flight_kind: FlightKind = FlightKind.SECURITY,
         configuration: FlightConfiguration | None = None,
+        security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
     ) -> None:
         if flight_kind is FlightKind.SECURITY and archive_repository is not None:
             raise ValueError("security flight cannot use a document archive")
+        if (
+            flight_kind is FlightKind.SECURITY
+            and security_mode is not DocumentSecurityMode.ADVANCED
+        ):
+            raise ValueError("security flight requires advanced security mode")
         self._flight_kind = flight_kind
         self._archive_repository = archive_repository
         self._configuration = configuration or default_flight_configuration()
+        self._security_mode = security_mode
 
     def run(self) -> FlightReport:
-        results = (
-            self._happy_path(),
-            self._adaptive_recovery(),
-            self._tampered_document(),
-            self._semantic_conflict(),
-            self._action_tampering(),
-            self._replay_attack(),
-        )
+        results: tuple[ScenarioResult, ...]
+        if self._security_mode is DocumentSecurityMode.STANDARD:
+            results = (self._standard_direct_transfer(),)
+        else:
+            results = (
+                self._happy_path(),
+                self._adaptive_recovery(),
+                self._tampered_document(),
+                self._semantic_conflict(),
+                self._action_tampering(),
+                self._replay_attack(),
+            )
         report_digest = sha256_digest(
             {
                 "flight_kind": self._flight_kind,
+                "security_mode": self._security_mode,
                 "configuration": self._configuration,
                 "results": results,
             }
@@ -179,13 +199,102 @@ class FlightRunner:
         return FlightReport(
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
+            security_mode=self._security_mode,
             configuration=self._configuration,
-            release="0.23.0",
+            release="0.24.0",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
             passed=all(result.passed for result in results),
             passed_scenarios=sum(result.passed for result in results),
+        )
+
+    def _standard_direct_transfer(self) -> ScenarioResult:
+        context = self._context(FlightScenario.HAPPY_PATH)
+        signed_revision = self._signed_revision(context, BASE_PDF)
+        acceptance = context.document_service.validate(BASE_PDF, signed_revision, context.policy)
+        context.move(ProcessingStage.REVISION_VALIDATED, "signed revision validated")
+        context.observe(
+            "revision-validated",
+            "Semnătura și digestul reviziei sunt valide.",
+            acceptance.record.revision_digest,
+        )
+        if context.archive_service is not None:
+            archived = context.archive_service.archive(
+                BASE_PDF,
+                acceptance,
+                "comanda-achizitie-standard.pdf",
+                DocumentSecurityMode.STANDARD,
+            )
+            context.archive_ids.append(archived.archive_id)
+            context.observe(
+                "document-archived",
+                "Revizia validată a fost înregistrată cu regim standard în arhivă.",
+                sha256_digest(archived),
+            )
+
+        plan = self._standard_plan(acceptance.envelope)
+        context.move(
+            ProcessingStage.STANDARD_INPUT_READY,
+            "standard integration data mapped directly to the target API",
+        )
+        context.observe(
+            "standard-input-ready",
+            "Valorile configurate au fost mapate direct în cererea API standard.",
+            sha256_digest(plan),
+        )
+        receipt = context.direct_api_adapter.execute(
+            f"{context.scenario_id.value}-standard",
+            plan,
+        )
+        context.move(ProcessingStage.EXECUTED, "standard request transferred directly")
+        context.observe(
+            "direct-api-transfer",
+            "Adaptorul API local a primit cererea direct, fără verificarea avansată SODIF.",
+            receipt.response_digest,
+        )
+        self._archive_follow_up_revision(context)
+        return self._result(
+            context,
+            "Transfer standard direct către API",
+            ScenarioOutcome.EXECUTED,
+            receipt=receipt,
+        )
+
+    def _standard_plan(self, document: DocumentEnvelope) -> ExecutionPlan:
+        values = accepted_values()
+        parameters = tuple(
+            ActionParameter(
+                name=name,
+                location=ParameterLocation.BODY,
+                value=value,
+            )
+            for name, (_, value) in sorted(values.items())
+        )
+        source_digest = sha256_digest(
+            {
+                "protocol": "sodif.standard-input/v1",
+                "document_id": document.document_id,
+                "revision_digest": document.revision_digest,
+                "parameters": parameters,
+            }
+        )
+        identity = sha256_digest(
+            {
+                "source_digest": source_digest,
+                "method": HttpMethod.POST,
+                "path": self._configuration.path_prefix,
+                "audience": self._configuration.audience,
+                "parameters": parameters,
+            }
+        )
+        return ExecutionPlan(
+            plan_id=f"plan-standard-{identity[7:23]}",
+            intent_digest=source_digest,
+            method=HttpMethod.POST,
+            path=self._configuration.path_prefix,
+            audience=self._configuration.audience,
+            parameters=parameters,
         )
 
     def _happy_path(self) -> ScenarioResult:
@@ -418,6 +527,7 @@ class FlightRunner:
                     if scenario_id is FlightScenario.SEMANTIC_CONFLICT
                     else "comanda-achizitie-demo.pdf"
                 ),
+                self._security_mode,
             )
             context.archive_ids.append(archived.archive_id)
             context.observe(
@@ -542,8 +652,8 @@ class FlightRunner:
         )
         return plan, execution_proof, permit
 
-    @staticmethod
     def _signed_revision(
+        self,
         context: _ScenarioContext,
         content: bytes,
         *,
@@ -551,12 +661,14 @@ class FlightRunner:
         previous_revision_digest: str | None = None,
         signed_at: datetime | None = None,
     ) -> SignedRevision:
+        if self._security_mode is DocumentSecurityMode.STANDARD:
+            document_id = STANDARD_FLIGHT_DOCUMENT_ID
+        elif context.scenario_id is FlightScenario.SEMANTIC_CONFLICT:
+            document_id = SEMANTIC_SPLIT_DOCUMENT_ID
+        else:
+            document_id = FLIGHT_DOCUMENT_ID
         metadata = SignedRevisionMetadata(
-            document_id=(
-                SEMANTIC_SPLIT_DOCUMENT_ID
-                if context.scenario_id is FlightScenario.SEMANTIC_CONFLICT
-                else FLIGHT_DOCUMENT_ID
-            ),
+            document_id=document_id,
             revision_number=revision_number,
             format=DocumentFormat.PDF,
             content_digest=sha256_bytes(content),
@@ -638,6 +750,7 @@ class FlightRunner:
             clock,
         )
         api_executor = InMemoryApiExecutor(clock)
+        direct_api_adapter = InMemoryDirectApiAdapter(clock)
         gateway = (
             SemanticExecutionGateway(
                 (
@@ -654,12 +767,18 @@ class FlightRunner:
                 clock,
             )
             if self._flight_kind is FlightKind.TRANSVERSAL
+            and self._security_mode is DocumentSecurityMode.ADVANCED
             else None
+        )
+        correlation_id = (
+            f"flight-standard-{scenario_id.value}"
+            if self._security_mode is DocumentSecurityMode.STANDARD
+            else f"flight-{scenario_id.value}"
         )
         return _ScenarioContext(
             scenario_id=scenario_id,
             clock=clock,
-            workflow=WorkflowState(correlation_id=f"flight-{scenario_id.value}"),
+            workflow=WorkflowState(correlation_id=correlation_id),
             observations=[],
             policy=policy,
             schema=purchase_order_schema(),
@@ -674,6 +793,7 @@ class FlightRunner:
             permit_issuer=permit_issuer,
             permit_authorizer=permit_authorizer,
             api_executor=api_executor,
+            direct_api_adapter=direct_api_adapter,
             gateway=gateway,
         )
 
@@ -753,7 +873,12 @@ class FlightRunner:
         archived = context.archive_service.archive(
             REVISED_PDF,
             acceptance,
-            "comanda-achizitie-demo-r2.pdf",
+            (
+                "comanda-achizitie-standard-r2.pdf"
+                if self._security_mode is DocumentSecurityMode.STANDARD
+                else "comanda-achizitie-demo-r2.pdf"
+            ),
+            self._security_mode,
         )
         context.archive_ids.append(archived.archive_id)
         context.observe(
@@ -784,34 +909,42 @@ def run_default_flight() -> FlightReport:
     return run_security_flight()
 
 
-def run_security_flight(configuration: FlightConfiguration | None = None) -> FlightReport:
+def run_security_flight(
+    configuration: FlightConfiguration | None = None,
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+) -> FlightReport:
     """Run signed-intent security controls without document archiving."""
     return FlightRunner(
         flight_kind=FlightKind.SECURITY,
         configuration=configuration,
+        security_mode=security_mode,
     ).run()
 
 
 def run_transversal_memory_flight(
     configuration: FlightConfiguration | None = None,
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
 ) -> FlightReport:
     """Run all three product modules against an ephemeral archive repository."""
     return FlightRunner(
         InMemoryArchiveRepository(),
         flight_kind=FlightKind.TRANSVERSAL,
         configuration=configuration,
+        security_mode=security_mode,
     ).run()
 
 
 def run_transversal_flight(
     archive_root: Path,
     configuration: FlightConfiguration | None = None,
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
 ) -> FlightReport:
     """Run all three product modules against the persistent local archive."""
     return FlightRunner(
         SqliteArchiveRepository(archive_root),
         flight_kind=FlightKind.TRANSVERSAL,
         configuration=configuration,
+        security_mode=security_mode,
     ).run()
 
 

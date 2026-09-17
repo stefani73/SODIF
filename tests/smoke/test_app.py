@@ -7,7 +7,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from streamlit.testing.v1 import AppTest
 
 from sodif.app import main
-from sodif.archive import SqliteArchiveRepository, build_local_ingestion_service
+from sodif.archive import ArchiveQuery, SqliteArchiveRepository, build_local_ingestion_service
 from sodif.archive.sample import build_signed_sample_sequence
 from sodif.domain.enums import DocumentSecurityMode
 from sodif.settings import AppSettings
@@ -145,6 +145,13 @@ def test_document_ingestion_page_archives_the_signed_sample(
     history = repository.history("doc-ingestion-demo-002")
     assert len(history) == 2
     assert all(item.security_mode is DocumentSecurityMode.STANDARD for item in history)
+    control = app.switch_page("pages/control.py").run(timeout=15)
+    control_mode = next(
+        item
+        for item in control.checkbox
+        if item.label == "Activează protecția avansată SODIF pentru această rulare"
+    )
+    assert control_mode.value is False
 
 
 def test_document_registry_searches_and_opens_the_verified_pdf(
@@ -328,6 +335,43 @@ def test_control_center_fails_closed_when_the_run_ledger_is_modified(
     assert "Rularea a fost oprită" in app.error[0].value
     assert "Istoricul nu a fost modificat" in app.error[0].value
     assert "Fluxul transversal a confirmat" not in _copy(app)
+
+
+def test_control_center_runs_the_standard_direct_path_when_security_is_unchecked(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    export_root = tmp_path / "exports"
+    archive_root = tmp_path / "archive"
+    monkeypatch.setenv("SODIF_EXPORT_ROOT", str(export_root))
+    monkeypatch.setenv("SODIF_ARCHIVE_ROOT", str(archive_root))
+    app = _application().run(timeout=15).switch_page("pages/control.py").run(timeout=15)
+
+    mode = next(
+        item
+        for item in app.checkbox
+        if item.label == "Activează protecția avansată SODIF pentru această rulare"
+    )
+    assert mode.value is True
+    mode.uncheck().run(timeout=15)
+    security_button = next(
+        button for button in app.button if button.label == "Rulează Security Flight"
+    )
+    assert security_button.disabled is True
+
+    next(
+        button for button in app.button if button.label == "Rulează Transversal Flight"
+    ).click().run(timeout=15)
+
+    assert not app.exception
+    copy = _copy(app)
+    assert "Fluxul standard a confirmat transferul direct" in copy
+    assert "Transfer direct către sistemul-țintă" in copy
+    assert "Transfer standard direct" in copy
+    assert "Decizie Gateway" not in copy
+    records = SqliteArchiveRepository(archive_root).search(ArchiveQuery()).records
+    assert records
+    assert all(record.security_mode is DocumentSecurityMode.STANDARD for record in records)
 
 
 def _application() -> AppTest:

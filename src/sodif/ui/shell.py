@@ -9,6 +9,7 @@ from streamlit.navigation.page import StreamlitPage
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_security_flight, run_transversal_flight
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.settings import AppSettings
 from sodif.ui.state import initialize_operational_profile, register_flight_runners
 from sodif.ui.styles import PRODUCT_STYLES
@@ -27,7 +28,7 @@ def configure_page(settings: AppSettings) -> None:
 
 def render_product_shell(
     settings: AppSettings,
-    flight_runner: Callable[[], FlightReport] | None = None,
+    flight_runner: Callable[[DocumentSecurityMode], FlightReport] | None = None,
 ) -> None:
     """Render the product navigation and execute the selected page."""
     st.markdown(PRODUCT_STYLES, unsafe_allow_html=True)

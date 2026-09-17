@@ -6,6 +6,7 @@ from io import BytesIO
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from sodif.demo.models import FlightKind, FlightReport
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.reporting.docx import render_docx_report
 from sodif.reporting.models import ExportArtifact, FlightExports
 from sodif.reporting.serializers import serialize_audit_log, serialize_report
@@ -15,28 +16,33 @@ _ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
 def build_flight_exports(report: FlightReport) -> FlightExports:
     """Create human-readable and machine-readable evidence in memory."""
-    export_name = {
-        FlightKind.SECURITY: "Security",
-        FlightKind.TRANSVERSAL: "Transversal",
-    }[report.flight_kind]
+    if report.security_mode is DocumentSecurityMode.STANDARD:
+        export_name = "Transversal_Standard"
+        file_slug = "transversal-standard"
+    else:
+        export_name = {
+            FlightKind.SECURITY: "Security",
+            FlightKind.TRANSVERSAL: "Transversal",
+        }[report.flight_kind]
+        file_slug = report.flight_kind.value
     document = ExportArtifact(
         f"SODIF_{export_name}_Operational_Report.docx",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         render_docx_report(report),
     )
     structured = ExportArtifact(
-        f"sodif-{report.flight_kind.value}-flight-report.json",
+        f"sodif-{file_slug}-flight-report.json",
         "application/json",
         serialize_report(report),
     )
     audit = ExportArtifact(
-        f"sodif-{report.flight_kind.value}-audit-log.ndjson",
+        f"sodif-{file_slug}-audit-log.ndjson",
         "application/x-ndjson",
         serialize_audit_log(report),
     )
     core_artifacts = (document, structured, audit)
     manifest = ExportArtifact(
-        f"sodif-{report.flight_kind.value}-evidence-manifest.json",
+        f"sodif-{file_slug}-evidence-manifest.json",
         "application/json",
         _build_manifest(report, core_artifacts),
     )
@@ -65,6 +71,7 @@ def _build_manifest(report: FlightReport, artifacts: tuple[ExportArtifact, ...])
         "protocol": "sodif.evidence-manifest/v1",
         "report_id": report.report_id,
         "flight_kind": report.flight_kind.value,
+        "security_mode": report.security_mode.value,
         "session_id": report.configuration.session_id,
         "organization": report.configuration.organization_name,
         "workspace": report.configuration.workspace_name,

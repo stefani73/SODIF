@@ -17,7 +17,14 @@ _ALLOWED_TRANSITIONS = MappingProxyType(
             {ProcessingStage.REVISION_VALIDATED, ProcessingStage.BLOCKED}
         ),
         ProcessingStage.REVISION_VALIDATED: frozenset(
-            {ProcessingStage.RISK_TRIAGED, ProcessingStage.BLOCKED}
+            {
+                ProcessingStage.STANDARD_INPUT_READY,
+                ProcessingStage.RISK_TRIAGED,
+                ProcessingStage.BLOCKED,
+            }
+        ),
+        ProcessingStage.STANDARD_INPUT_READY: frozenset(
+            {ProcessingStage.EXECUTED, ProcessingStage.BLOCKED}
         ),
         ProcessingStage.RISK_TRIAGED: frozenset(
             {ProcessingStage.VIEWS_READY, ProcessingStage.ESCALATED, ProcessingStage.BLOCKED}

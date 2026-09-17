@@ -24,7 +24,8 @@ from sodif.ui.pages.shared import render_page_intro
 
 _RECEIPT_KEY = "sodif_ingestion_receipt"
 _ERROR_KEY = "sodif_ingestion_error"
-_ADVANCED_SECURITY_KEY = "sodif_ingestion_advanced_security"
+_ADVANCED_SECURITY_KEY = "sodif_advanced_security_enabled"
+_ADVANCED_SECURITY_WIDGET_KEY = "sodif_ingestion_advanced_security"
 
 _REJECTION_MESSAGES = {
     DocumentRejectionCode.INVALID_BINARY_INPUT: "Fișierul încărcat nu poate fi procesat.",
@@ -186,15 +187,17 @@ def _render_security_mode_selector() -> DocumentSecurityMode:
         '<div class="sodif-section-label compact">Regim de protecție</div>',
         unsafe_allow_html=True,
     )
+    selected = st.session_state.get(_ADVANCED_SECURITY_KEY, True)
     enabled = st.checkbox(
         "Activează protecția avansată SODIF pentru acest document",
-        value=True,
-        key=_ADVANCED_SECURITY_KEY,
+        value=bool(selected),
+        key=_ADVANCED_SECURITY_WIDGET_KEY,
         help=(
             "Aplică verificarea semantică independentă, dovada de invariabilitate și "
             "autorizarea criptografică a acțiunii API."
         ),
     )
+    st.session_state[_ADVANCED_SECURITY_KEY] = enabled
     if enabled:
         st.caption(
             "Documentul este clasificat pentru consens semantic, permis criptografic unic "

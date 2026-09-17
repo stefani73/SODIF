@@ -17,6 +17,7 @@ from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 
 from sodif.demo.models import FlightKind, FlightReport
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.ui.presentation import FlightView, ScenarioView, present_flight
 
 _NAVY = "0B2545"
@@ -43,7 +44,10 @@ def render_docx_report(report: FlightReport) -> bytes:
     _add_lab_configuration(document, report)
     _add_decision_register(document, view)
     if report.flight_kind is FlightKind.TRANSVERSAL:
-        _add_transversal_evidence(document, report)
+        if report.security_mode is DocumentSecurityMode.ADVANCED:
+            _add_transversal_evidence(document, report)
+        else:
+            _add_standard_transfer_evidence(document, report)
     compact_scenarios = report.flight_kind is FlightKind.TRANSVERSAL
     for scenario in view.scenarios:
         _add_scenario(document, scenario, compact=compact_scenarios)
@@ -214,13 +218,32 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
     subtitle = document.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(18)
     subtitle.paragraph_format.keep_with_next = True
+    subtitle_text = (
+        "Validarea lanțului de securitate de la revizia semnată la efectul API"
+        if report.security_mode is DocumentSecurityMode.ADVANCED
+        else "Validarea traseului standard de la revizia semnată la transferul API direct"
+    )
     _set_run_font(
-        subtitle.add_run("Validarea lanțului de securitate de la revizia semnată la efectul API"),
+        subtitle.add_run(subtitle_text),
         "Calibri",
         12,
         _MUTED,
     )
 
+    coverage = (
+        "SODIF Security / API controlat"
+        if report.flight_kind is FlightKind.SECURITY
+        else (
+            "SODIF Security / SODIF Archive / SODIF Gateway / API controlat"
+            if report.security_mode is DocumentSecurityMode.ADVANCED
+            else "Semnătură / SODIF Archive / adaptor API direct"
+        )
+    )
+    security_label = (
+        "Protecție avansată SODIF"
+        if report.security_mode is DocumentSecurityMode.ADVANCED
+        else "Transfer standard direct"
+    )
     metadata = (
         ("Organizație", report.configuration.organization_name),
         ("Spațiu operațional", report.configuration.workspace_name),
@@ -228,13 +251,9 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
         ("Mediu", report.configuration.environment),
         ("Raport", report.report_id),
         ("Rezultat", "CONFORM" if report.passed else "NECONFORM"),
+        ("Regim", security_label),
         ("Sigilat la", report.completed_at.isoformat().replace("+00:00", "Z")),
-        (
-            "Acoperire",
-            "SODIF Security / API controlat"
-            if report.flight_kind is FlightKind.SECURITY
-            else "SODIF Security / SODIF Archive / SODIF Gateway / API controlat",
-        ),
+        ("Acoperire", coverage),
         (
             "Serviciu protejat",
             f"{report.configuration.protected_service} · {report.configuration.route_id}",
@@ -265,30 +284,47 @@ def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None
             "Revizie semnată",
             "Semnătură Ed25519 detașată peste metadate canonice și digestul SHA-256 al "
             "conținutului.",
-        ),
-        (
-            "Reprezentări confruntate",
-            "Citire structurală cu pypdf și două trasee vizuale distincte, randate prin "
-            "MuPDF și Poppler și citite cu același motor Tesseract. Traseele sunt selectate "
-            "după validarea semnăturii.",
-        ),
-        (
-            "Verificare adaptivă",
-            "Niveluri V0-V3 selectate în funcție de risc, completitudinea valorilor și "
-            "divergențele cu efect operațional.",
-        ),
-        (
-            "Dovadă și permis",
-            "Angajamente SHA-256 pe câmp, rădăcină Merkle și permis Ed25519 cu utilizare "
-            "unică, legate de metoda, ruta, destinația și parametrii API.",
-        ),
-        (
-            "Control API",
-            "Motor Gateway executat local: politică pentru ruta POST protejată, "
-            "recanonicalizarea planului, compararea amprentelor și blocarea reutilizării "
-            "permisului. Serviciul destinație este un adaptor controlat fără efect extern.",
-        ),
+        )
     ]
+    if report.security_mode is DocumentSecurityMode.ADVANCED:
+        rows.extend(
+            (
+                (
+                    "Reprezentări confruntate",
+                    "Citire structurală cu pypdf și două trasee vizuale distincte, randate "
+                    "prin MuPDF și Poppler și citite cu același motor Tesseract.",
+                ),
+                (
+                    "Verificare adaptivă",
+                    "Niveluri V0-V3 selectate în funcție de risc, completitudinea valorilor "
+                    "și divergențele cu efect operațional.",
+                ),
+                (
+                    "Dovadă și permis",
+                    "Angajamente SHA-256 pe câmp, rădăcină Merkle și permis Ed25519 cu "
+                    "utilizare unică, legate de acțiunea API.",
+                ),
+                (
+                    "Control API",
+                    "Motor Gateway local pentru politică, compararea amprentelor și blocarea "
+                    "reutilizării permisului.",
+                ),
+            )
+        )
+    else:
+        rows.extend(
+            (
+                (
+                    "Date de integrare",
+                    "Valorile configurate sunt mapate determinist în corpul cererii API.",
+                ),
+                (
+                    "Transfer direct",
+                    "Cererea este transmisă adaptorului API local fără consens semantic, "
+                    "dovadă de invariabilitate, permis sau control Gateway.",
+                ),
+            )
+        )
     if report.flight_kind is FlightKind.TRANSVERSAL:
         rows.append(
             (
@@ -398,6 +434,69 @@ def _add_decision_register(document: WordDocument, view: FlightView) -> None:
         "și manifestul de integritate care permit verificarea acestor concluzii."
     )
     note.paragraph_format.space_before = Pt(8)
+
+
+def _add_standard_transfer_evidence(document: WordDocument, report: FlightReport) -> None:
+    """Document the intentionally direct execution path selected for the run."""
+    result = report.results[0]
+    if result.receipt is None:
+        raise AssertionError("standard transversal flight lacks an API receipt")
+    _add_chapter_heading(
+        document,
+        "REGIM STANDARD",
+        "Traseul direct către adaptorul API",
+        "Rularea separă explicit controalele de bază de protecția avansată SODIF. "
+        "Documentul a fost validat criptografic și arhivat, iar valorile configurate au "
+        "fost transferate direct către adaptorul API local.",
+    )
+    table = document.add_table(rows=1, cols=4)
+    table.style = "Table Grid"
+    widths = (1850, 3250, 2300, 1960)
+    _set_table_geometry(table, widths)
+    for cell, text in zip(
+        table.rows[0].cells,
+        ("Componentă", "Operațiune", "Dovadă", "Rezultat"),
+        strict=True,
+    ):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=9)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    rows = (
+        (
+            "Semnătură",
+            "Validarea reviziei și a digestului conținutului.",
+            result.workflow.correlation_id,
+            "VALIDAT",
+        ),
+        (
+            "SODIF Archive",
+            "Înregistrarea reviziilor în regim standard.",
+            f"{len(result.archive_ids)} revizii",
+            "ARHIVAT",
+        ),
+        (
+            "Adaptor API",
+            "Transferul direct al parametrilor configurați.",
+            f"{result.receipt.execution_id} · HTTP {result.receipt.response_code}",
+            "TRANSFERAT",
+        ),
+    )
+    for component, operation, evidence, outcome in rows:
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], component, bold=True, size=9.2)
+        _set_cell_text(cells[1], operation, size=9.2)
+        _set_cell_text(cells[2], evidence, size=8.9)
+        _set_cell_text(cells[3], outcome, bold=True, color=_SUCCESS, size=9.2)
+
+    document.add_heading("Delimitarea traseului", level=2)
+    for item in (
+        "Consensul semantic și verificarea adaptivă nu au fost executate.",
+        "Nu au fost generate dovada de invariabilitate sau permisul criptografic.",
+        "SODIF Gateway nu a intervenit în rutare; adaptorul API a primit cererea direct.",
+        "Jurnalul și raportul identifică regimul standard pentru întreaga rulare.",
+    ):
+        document.add_paragraph(item, style="List Bullet")
 
 
 def _add_transversal_evidence(document: WordDocument, report: FlightReport) -> None:

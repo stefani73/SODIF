@@ -21,6 +21,7 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "occurred_at": report.started_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
             "flight_kind": report.flight_kind,
+            "security_mode": report.security_mode,
             "release": report.release,
             "session_id": report.configuration.session_id,
             "organization": report.configuration.organization_name,
@@ -41,6 +42,7 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "occurred_at": report.completed_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
             "flight_kind": report.flight_kind,
+            "security_mode": report.security_mode,
             "outcome": "conform" if report.passed else "neconform",
         }
     )
@@ -105,6 +107,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
         "transaction_id": result.workflow.correlation_id,
         "outcome": result.observed_outcome,
         "workflow_state": result.workflow.stage,
+        "security_mode": report.security_mode,
     }
     if result.permit_id is not None:
         decision["permit_id"] = result.permit_id
@@ -124,6 +127,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
     if result.receipt is not None:
         decision["execution_id"] = result.receipt.execution_id
         decision["response_digest"] = result.receipt.response_digest
+        decision["transfer_mode"] = result.receipt.security_mode
     if result.rejection_code is not None:
         decision["reason"] = result.rejection_code
     events.append(decision)

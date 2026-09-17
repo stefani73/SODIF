@@ -9,6 +9,7 @@ import streamlit as st
 
 from sodif.demo.models import FlightConfiguration, FlightKind, FlightReport
 from sodif.demo.runner import run_security_flight, run_transversal_memory_flight
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.reporting import (
     FlightExports,
     PersistedFlightRun,
@@ -79,8 +80,8 @@ def _profile_from_settings(settings: AppSettings, *, session_id: str) -> FlightC
 
 
 def register_flight_runners(
-    security: Callable[[], FlightReport],
-    transversal: Callable[[], FlightReport],
+    security: Callable[[DocumentSecurityMode], FlightReport],
+    transversal: Callable[[DocumentSecurityMode], FlightReport],
     export_root: Path = Path("var/exports"),
 ) -> None:
     """Register both product flights for the current session."""
@@ -91,27 +92,32 @@ def register_flight_runners(
     st.session_state[_EXPORT_ROOT_KEY] = export_root
 
 
-def current_flight_runner(kind: FlightKind) -> Callable[[], FlightReport]:
+def current_flight_runner(
+    kind: FlightKind,
+) -> Callable[[DocumentSecurityMode], FlightReport]:
     """Return the registered runner or a deterministic in-memory fallback."""
     runners = st.session_state.get(_RUNNERS_KEY)
     runner = runners.get(kind.value) if isinstance(runners, dict) else None
     if callable(runner):
-        return cast(Callable[[], FlightReport], runner)
+        return cast(Callable[[DocumentSecurityMode], FlightReport], runner)
     profile = st.session_state.get(_PROFILE_KEY)
     configuration = profile if isinstance(profile, FlightConfiguration) else None
     if kind is FlightKind.SECURITY:
-        return lambda: run_security_flight(configuration)
-    return lambda: run_transversal_memory_flight(configuration)
+        return lambda mode: run_security_flight(configuration, mode)
+    return lambda mode: run_transversal_memory_flight(configuration, mode)
 
 
 def run_assurance_demo(
     kind: FlightKind,
-    runner: Callable[[], FlightReport],
+    runner: Callable[[DocumentSecurityMode], FlightReport],
+    security_mode: DocumentSecurityMode,
 ) -> None:
     """Run one product validation and persist its complete audit package."""
-    report = runner()
+    report = runner(security_mode)
     if report.flight_kind is not kind:
         raise ValueError("flight runner returned a report for a different product scope")
+    if report.security_mode is not security_mode:
+        raise ValueError("flight runner returned a report for a different security mode")
     generated = build_flight_exports(report)
     export_root = st.session_state.get(_EXPORT_ROOT_KEY, Path("var/exports"))
     if not isinstance(export_root, Path):

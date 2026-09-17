@@ -11,6 +11,7 @@ from sodif.domain.enums import (
     ApiExecutionStatus,
     ConsensusStatus,
     DocumentFormat,
+    DocumentSecurityMode,
     HttpMethod,
     SemanticDataType,
     SignatureStatus,
@@ -34,6 +35,7 @@ from sodif.execution import (
     DeterministicActionCompiler,
     ExecutionRejected,
     InMemoryApiExecutor,
+    InMemoryDirectApiAdapter,
 )
 
 NOW = datetime(2026, 8, 24, 14, 0, tzinfo=UTC)
@@ -221,6 +223,23 @@ def test_controlled_api_executor_requires_matching_authorization_once() -> None:
     assert executor.get(receipt.execution_id) == receipt
     with pytest.raises(ExecutionRejected, match="already executed"):
         executor.execute(authorization, execution_plan)
+
+
+def test_direct_api_adapter_transfers_standard_plan_without_a_permit() -> None:
+    execution_plan = DeterministicActionCompiler().compile(
+        ConsensusIntentAssembler().assemble(document(), accepted_consensus(), schema(), policy()),
+        target(),
+    )
+    adapter = InMemoryDirectApiAdapter(FixedClock())
+
+    receipt = adapter.execute("request-standard-001", execution_plan)
+
+    assert receipt.security_mode is DocumentSecurityMode.STANDARD
+    assert receipt.permit_id is None
+    assert receipt.response_code == 202
+    assert adapter.get(receipt.execution_id) == receipt
+    with pytest.raises(ExecutionRejected, match="already transferred"):
+        adapter.execute("request-standard-001", execution_plan)
 
 
 def test_controlled_api_executor_rejects_other_plan_or_audience() -> None:

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0 — 2026-09-17
+
+- ramifică efectiv Transversal Flight în regim standard și regim avansat SODIF;
+- transferă direct valorile configurate către adaptorul API când protecția avansată este
+  dezactivată;
+- declanșează consensul semantic, dovada criptografică, permisul unic și controlul Gateway
+  când protecția avansată este activată;
+- persistă regimul documentului în arhivă și îl include în raport, jurnal și manifest;
+- generează un raport operațional distinct pentru traseul standard direct;
+- adaugă teste automate pentru ambele poziții ale bifei și pentru separarea dovezilor.
+
 ## 0.23.0 — 2026-09-17
 
 - introduce selecția manuală, la preluare, a protecției avansate SODIF pentru fiecare document;

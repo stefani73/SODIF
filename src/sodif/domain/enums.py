@@ -82,6 +82,7 @@ class RiskSeverity(StrEnum):
 class ProcessingStage(StrEnum):
     RECEIVED = "received"
     REVISION_VALIDATED = "revision_validated"
+    STANDARD_INPUT_READY = "standard_input_ready"
     RISK_TRIAGED = "risk_triaged"
     VIEWS_READY = "views_ready"
     CONSENSUS_ACCEPTED = "consensus_accepted"

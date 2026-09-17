@@ -19,12 +19,19 @@ from sodif.demo.models import (
 from sodif.demo.runner import (
     FLIGHT_DOCUMENT_ID,
     SEMANTIC_SPLIT_DOCUMENT_ID,
+    STANDARD_FLIGHT_DOCUMENT_ID,
     FlightRunner,
     run_archived_flight,
     run_default_flight,
+    run_transversal_flight,
     run_transversal_memory_flight,
 )
-from sodif.domain.enums import ProcessingStage, VerificationLevel, ViewKind
+from sodif.domain.enums import (
+    DocumentSecurityMode,
+    ProcessingStage,
+    VerificationLevel,
+    ViewKind,
+)
 from sodif.domain.models import DocumentEnvelope
 
 
@@ -145,6 +152,35 @@ def test_transversal_memory_flight_connects_all_three_modules_without_changing_o
     assert not scenarios[FlightScenario.SEMANTIC_CONFLICT].gateway_decisions
 
 
+def test_standard_transversal_flight_archives_and_transfers_directly(tmp_path: Path) -> None:
+    archive_root = tmp_path / "archive"
+
+    report = run_transversal_flight(
+        archive_root,
+        security_mode=DocumentSecurityMode.STANDARD,
+    )
+    result = report.results[0]
+    records = SqliteArchiveRepository(archive_root).history(STANDARD_FLIGHT_DOCUMENT_ID)
+
+    assert report.security_mode is DocumentSecurityMode.STANDARD
+    assert report.flight_kind is FlightKind.TRANSVERSAL
+    assert report.passed is True
+    assert len(report.results) == 1
+    assert result.scenario_id is FlightScenario.HAPPY_PATH
+    assert result.verification is None
+    assert result.permit_id is None
+    assert result.gateway_decisions == ()
+    assert result.receipt is not None
+    assert result.receipt.security_mode is DocumentSecurityMode.STANDARD
+    assert result.receipt.permit_id is None
+    assert {item.stage for item in result.observations} >= {
+        "standard-input-ready",
+        "direct-api-transfer",
+    }
+    assert len(records) == 2
+    assert all(record.security_mode is DocumentSecurityMode.STANDARD for record in records)
+
+
 def test_operational_configuration_drives_report_and_gateway_boundary() -> None:
     configuration = FlightConfiguration(
         session_id="session-customer-a",
@@ -178,7 +214,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.23.0"
+    assert report.release == "0.24.0"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

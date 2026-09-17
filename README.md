@@ -67,6 +67,12 @@ Aplicația oferă două rulări distincte:
   arhivează reviziile acceptate, aplică permisul în SODIF Gateway și exportă deciziile corelate.
   Documentele respinse nu sunt arhivate, iar cererile neconforme nu ajung la API.
 
+În Centrul de control, bifa „Activează protecția avansată SODIF pentru această rulare”
+stabilește traseul Transversal Flight. Cu bifa activă sunt executate consensul semantic,
+dovada de invariabilitate, permisul unic și verificarea Gateway. Cu bifa dezactivată,
+documentul trece prin verificarea semnăturii și arhivare, iar valorile configurate sunt
+transmise direct adaptorului API local. Fiecare traseu produce raport și jurnal propriu.
+
 ## Configurarea modulelor
 
 Toate modulele sunt active implicit. Expunerea lor în navigație poate fi controlată fără

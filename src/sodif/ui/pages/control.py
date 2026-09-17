@@ -6,14 +6,18 @@ from html import escape
 import streamlit as st
 
 from sodif.demo.models import FlightKind, FlightReport
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.ui.pages.shared import render_flight_summary, render_page_intro
 from sodif.ui.presentation import FlightView, ScenarioView, present_flight
 from sodif.ui.state import current_report, current_run_error, run_assurance_demo
 
+_ADVANCED_SECURITY_KEY = "sodif_advanced_security_enabled"
+_ADVANCED_SECURITY_WIDGET_KEY = "sodif_control_advanced_security"
+
 
 def render_control_center(
-    security_runner: Callable[[], FlightReport],
-    transversal_runner: Callable[[], FlightReport],
+    security_runner: Callable[[DocumentSecurityMode], FlightReport],
+    transversal_runner: Callable[[DocumentSecurityMode], FlightReport],
     reports_page: str,
     registry_page: str,
     gateway_page: str,
@@ -22,9 +26,10 @@ def render_control_center(
     render_page_intro(
         "Operațiuni",
         "Centru de control",
-        "Execută separat validarea nucleului de securitate sau întregul lanț de încredere "
-        "prin SODIF Security, SODIF Archive și SODIF Gateway.",
+        "Execută traseul standard direct sau validarea protecției avansate prin SODIF "
+        "Security, SODIF Archive și SODIF Gateway.",
     )
+    security_mode = _render_security_mode_selector()
     security, transversal = st.columns(2, gap="large")
     with security, st.container(border=True, key="security_flight_card"):
         st.markdown(
@@ -42,18 +47,25 @@ def render_control_center(
             "Rulează Security Flight",
             type="primary",
             icon=":material/play_arrow:",
+            disabled=security_mode is DocumentSecurityMode.STANDARD,
             use_container_width=True,
             on_click=run_assurance_demo,
-            args=(FlightKind.SECURITY, security_runner),
+            args=(FlightKind.SECURITY, security_runner, DocumentSecurityMode.ADVANCED),
         )
     with transversal, st.container(border=True, key="transversal_flight_card"):
+        transversal_detail = (
+            "SODIF Security, SODIF Archive și SODIF Gateway funcționează împreună până "
+            "la decizia și efectul API."
+            if security_mode is DocumentSecurityMode.ADVANCED
+            else "Semnătura și arhivarea sunt urmate de transferul direct al datelor "
+            "configurate către adaptorul API."
+        )
         st.markdown(
-            """
+            f"""
             <section class="sodif-flight-choice">
                 <div class="sodif-assurance-label"><span></span>Lanț end-to-end</div>
                 <h2>Transversal Flight</h2>
-                <p>SODIF Security, SODIF Archive și SODIF Gateway funcționează împreună
-                până la decizia și efectul API.</p>
+                <p>{escape(transversal_detail)}</p>
             </section>
             """,
             unsafe_allow_html=True,
@@ -63,7 +75,7 @@ def render_control_center(
             icon=":material/account_tree:",
             use_container_width=True,
             on_click=run_assurance_demo,
-            args=(FlightKind.TRANSVERSAL, transversal_runner),
+            args=(FlightKind.TRANSVERSAL, transversal_runner, security_mode),
         )
 
     run_error = current_run_error()
@@ -72,11 +84,11 @@ def render_control_center(
 
     report = current_report()
     if report is None:
-        _render_ready_state()
+        _render_ready_state(security_mode)
         return
 
     view = present_flight(report)
-    _render_active_flight(report.flight_kind)
+    _render_active_flight(report)
     render_flight_summary(view)
     reports_shortcut, registry_shortcut, gateway_shortcut, spacer = st.columns(
         (0.22, 0.22, 0.22, 0.34)
@@ -98,7 +110,10 @@ def render_control_center(
                     use_container_width=True,
                 )
     with gateway_shortcut:
-        if report.flight_kind is FlightKind.TRANSVERSAL:
+        if (
+            report.flight_kind is FlightKind.TRANSVERSAL
+            and report.security_mode is DocumentSecurityMode.ADVANCED
+        ):
             with st.container(key="gateway_shortcut"):
                 st.page_link(
                     gateway_page,
@@ -115,23 +130,69 @@ def render_control_center(
     _render_scenario_explorer(view)
 
 
-def _render_ready_state() -> None:
+def _render_security_mode_selector() -> DocumentSecurityMode:
     st.markdown(
-        """
+        '<div class="sodif-section-label compact">Regim de execuție</div>',
+        unsafe_allow_html=True,
+    )
+    selected = st.session_state.get(_ADVANCED_SECURITY_KEY, True)
+    enabled = st.checkbox(
+        "Activează protecția avansată SODIF pentru această rulare",
+        value=bool(selected),
+        key=_ADVANCED_SECURITY_WIDGET_KEY,
+        help=(
+            "Activează consensul semantic, dovada criptografică, permisul unic și controlul "
+            "Gateway înaintea transferului către API."
+        ),
+    )
+    st.session_state[_ADVANCED_SECURITY_KEY] = enabled
+    if enabled:
+        st.caption("Transversal Flight aplică întregul lanț SODIF înaintea transferului către API.")
+        return DocumentSecurityMode.ADVANCED
+    st.caption(
+        "Transversal Flight folosește traseul standard: semnătură și arhivare, urmate de "
+        "transferul direct al datelor configurate către adaptorul API."
+    )
+    return DocumentSecurityMode.STANDARD
+
+
+def _render_ready_state(security_mode: DocumentSecurityMode) -> None:
+    if security_mode is DocumentSecurityMode.ADVANCED:
+        detail = (
+            "Alege nucleul de securitate sau lanțul transversal care conectează toate "
+            "cele trei module ale platformei."
+        )
+    else:
+        detail = (
+            "Rulează traseul transversal standard pentru a demonstra transferul direct "
+            "către adaptorul API."
+        )
+    st.markdown(
+        f"""
         <section class="sodif-ready-panel">
             <div class="sodif-ready-mark" aria-hidden="true"><span></span></div>
             <div><h2>Sistem pregătit</h2>
-            <p>Alege nucleul de securitate sau lanțul transversal care conectează toate
-            cele trei module ale platformei.</p></div>
+            <p>{escape(detail)}</p></div>
         </section>
         """,
         unsafe_allow_html=True,
     )
     columns = st.columns(3)
     capabilities = (
-        ("SODIF Security", "Semnătură, consens, intenție și permis unic"),
-        ("SODIF Archive", "Revizii și istoric verificabil"),
-        ("SODIF Gateway", "Legare exactă, rutare și blocare controlată"),
+        (
+            (
+                "SODIF Security",
+                "Semnătură, consens, intenție și permis unic",
+            ),
+            ("SODIF Archive", "Revizii și istoric verificabil"),
+            ("SODIF Gateway", "Legare exactă, rutare și blocare controlată"),
+        )
+        if security_mode is DocumentSecurityMode.ADVANCED
+        else (
+            ("Semnătură", "Autenticitatea și integritatea reviziei"),
+            ("SODIF Archive", "Revizii păstrate în regim standard"),
+            ("Adaptor API", "Transfer direct al datelor configurate"),
+        )
     )
     for column, (title, body) in zip(columns, capabilities, strict=True):
         with column:
@@ -142,7 +203,7 @@ def _render_ready_state() -> None:
             )
 
 
-def _render_active_flight(kind: FlightKind) -> None:
+def _render_active_flight(report: FlightReport) -> None:
     label, detail = {
         FlightKind.SECURITY: (
             "Security Flight",
@@ -152,7 +213,9 @@ def _render_active_flight(kind: FlightKind) -> None:
             "Transversal Flight",
             "SODIF Security, SODIF Archive și SODIF Gateway",
         ),
-    }[kind]
+    }[report.flight_kind]
+    if report.security_mode is DocumentSecurityMode.STANDARD:
+        detail = "Semnătură, arhivare și transfer direct către adaptorul API"
     st.markdown(
         f'<div class="sodif-flight-active"><strong>{escape(label)}</strong>'
         f"<span>{escape(detail)}</span></div>",

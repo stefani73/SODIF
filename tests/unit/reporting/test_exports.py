@@ -11,6 +11,7 @@ from docx.document import Document as WordDocument
 
 from sodif.demo.models import FlightReport
 from sodif.demo.runner import run_default_flight, run_transversal_memory_flight
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.reporting import (
     LEDGER_FILENAME,
     RECEIPT_FILENAME,
@@ -136,6 +137,25 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     )
     assert "Conflict: autorizarea este suspendată" in _table_text(document)
     assert len(document.tables) == 11
+
+
+def test_standard_transversal_report_declares_direct_transfer_mode() -> None:
+    report = run_transversal_memory_flight(
+        security_mode=DocumentSecurityMode.STANDARD,
+    )
+    exports = build_flight_exports(report)
+    document = Document(BytesIO(exports.document.data))
+    text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+    events = [json.loads(line) for line in exports.audit_log.data.decode().splitlines()]
+
+    assert "Transfer standard direct" in text
+    assert "Traseul direct către adaptorul API" in text
+    assert "SODIF Gateway nu a intervenit" in text
+    assert "Consensul semantic și verificarea adaptivă nu au fost executate" in text
+    assert exports.document.filename == "SODIF_Transversal_Standard_Operational_Report.docx"
+    assert events[0]["security_mode"] == "standard"
+    decisions = [event for event in events if event["event_type"] == "scenario.decision"]
+    assert decisions[0]["transfer_mode"] == "standard"
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:

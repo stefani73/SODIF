@@ -10,7 +10,7 @@ from sodif.demo.models import (
     ScenarioOutcome,
     ScenarioResult,
 )
-from sodif.domain.enums import ConsensusStatus, ViewKind
+from sodif.domain.enums import ConsensusStatus, DocumentSecurityMode, ViewKind
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,6 +136,18 @@ _SCENARIO_COPY = {
     ),
 }
 
+_STANDARD_DIRECT_COPY = _ScenarioCopy(
+    "Flux standard",
+    "Transfer direct către sistemul-țintă",
+    "Documentul a trecut verificarea semnăturii, iar valorile configurate au fost transmise "
+    "direct către adaptorul API.",
+    "Transferată",
+    "Cererea a fost construită direct din valorile configurate și transmisă adaptorului API.",
+    "Cerere acceptată",
+    "Adaptorul API local a primit direct parametrii configurați pentru integrare.",
+    "Rularea delimitează explicit traseul standard de protecția avansată SODIF.",
+)
+
 _TIMELINE_COPY = {
     "revision-validated": "Autenticitatea documentului și revizia semnată au fost confirmate.",
     "document-archived": "Revizia validată a fost înregistrată în arhiva documentară.",
@@ -154,6 +166,8 @@ _TIMELINE_COPY = {
     "action-compiled": "Intenția aprobată a fost legată de acțiunea API exactă.",
     "permit-issued": "A fost emisă o autorizare criptografică de unică folosință.",
     "api-executed": "Sistemul operațional a acceptat acțiunea autorizată.",
+    "standard-input-ready": "Valorile configurate au fost mapate în cererea API standard.",
+    "direct-api-transfer": "Cererea standard a fost transmisă direct adaptorului API local.",
     "gateway-routed": (
         "Gateway-ul a verificat politica, permisul și acțiunea, apoi a rutat tranzacția."
     ),
@@ -170,6 +184,18 @@ _TIMELINE_COPY = {
 
 def present_flight(report: FlightReport) -> FlightView:
     """Translate technical evidence into concise, user-facing decisions."""
+    if report.security_mode is DocumentSecurityMode.STANDARD:
+        return FlightView(
+            title="Fluxul standard a confirmat transferul direct",
+            detail=(
+                "Semnătura și arhivarea au fost aplicate, iar valorile configurate au ajuns "
+                "direct la adaptorul API, fără controalele avansate SODIF."
+            ),
+            tone="success" if report.passed else "danger",
+            scenarios=tuple(
+                present_scenario(result, report.security_mode) for result in report.results
+            ),
+        )
     title, detail = {
         FlightKind.SECURITY: (
             "Nucleul de securitate a confirmat comportamentul așteptat",
@@ -186,13 +212,22 @@ def present_flight(report: FlightReport) -> FlightView:
         title=title,
         detail=detail,
         tone="success" if report.passed else "danger",
-        scenarios=tuple(present_scenario(result) for result in report.results),
+        scenarios=tuple(
+            present_scenario(result, report.security_mode) for result in report.results
+        ),
     )
 
 
-def present_scenario(result: ScenarioResult) -> ScenarioView:
+def present_scenario(
+    result: ScenarioResult,
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+) -> ScenarioView:
     """Build the product view for one scenario without leaking engine vocabulary."""
-    copy = _SCENARIO_COPY[result.scenario_id]
+    copy = (
+        _STANDARD_DIRECT_COPY
+        if security_mode is DocumentSecurityMode.STANDARD
+        else _SCENARIO_COPY[result.scenario_id]
+    )
     tone = {
         ScenarioOutcome.EXECUTED: "success",
         ScenarioOutcome.BLOCKED: "danger",
@@ -209,14 +244,38 @@ def present_scenario(result: ScenarioResult) -> ScenarioView:
         api_detail=copy.api_detail,
         optimization_note=copy.optimization_note,
         tone=tone,
-        controls=_controls_for(result),
+        controls=_controls_for(result, security_mode),
         comparisons=_comparisons_for(result),
         timeline=tuple(_TIMELINE_COPY[item.stage] for item in result.observations),
         evidence=_evidence_for(result),
     )
 
 
-def _controls_for(result: ScenarioResult) -> tuple[ControlView, ControlView, ControlView]:
+def _controls_for(
+    result: ScenarioResult,
+    security_mode: DocumentSecurityMode,
+) -> tuple[ControlView, ControlView, ControlView]:
+    if security_mode is DocumentSecurityMode.STANDARD:
+        return (
+            ControlView(
+                "Document",
+                "Semnătură validă",
+                "Revizia corespunde conținutului semnat.",
+                "success",
+            ),
+            ControlView(
+                "Protecție avansată",
+                "Dezactivată",
+                "Consensul, dovada și permisul nu au fost generate.",
+                "neutral",
+            ),
+            ControlView(
+                "Transfer API",
+                "Direct",
+                "Datele configurate au fost acceptate de adaptorul local.",
+                "success",
+            ),
+        )
     verified = ControlView(
         "Document",
         "Autentic",
@@ -284,6 +343,13 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
         item.subject_digest for item in result.observations if item.subject_digest is not None
     )
     evidence: list[EvidenceView] = [EvidenceView("Tranzacție", result.workflow.correlation_id)]
+    if result.receipt is not None:
+        mode = (
+            "Protecție avansată SODIF"
+            if result.receipt.security_mode is DocumentSecurityMode.ADVANCED
+            else "Transfer standard direct"
+        )
+        evidence.append(EvidenceView("Regim", mode))
     if result.verification is not None:
         level = {
             "v0_block": "Blocare imediată",

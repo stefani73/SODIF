@@ -6,7 +6,7 @@ from typing import Self
 from pydantic import AwareDatetime, Field, model_validator
 
 from sodif.domain.base import DomainModel
-from sodif.domain.enums import ProcessingStage
+from sodif.domain.enums import DocumentSecurityMode, ProcessingStage
 from sodif.domain.execution import ExecutionReceipt
 from sodif.domain.gateway import GatewayDecision, GatewayDecisionStatus
 from sodif.domain.state import WorkflowState
@@ -141,6 +141,7 @@ class ScenarioResult(DomainModel):
 class FlightReport(DomainModel):
     report_id: Identifier
     flight_kind: FlightKind
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED
     configuration: FlightConfiguration
     release: Identifier
     started_at: AwareDatetime
@@ -163,11 +164,34 @@ class FlightReport(DomainModel):
             raise ValueError("flight passed flag differs from scenario results")
         archived = [result for result in self.results if result.archive_ids]
         gateway_evidence = [result for result in self.results if result.gateway_decisions]
+        if any(
+            result.receipt is not None and result.receipt.security_mode is not self.security_mode
+            for result in self.results
+        ):
+            raise ValueError("execution receipt security mode differs from flight mode")
+        if self.flight_kind is FlightKind.SECURITY and (
+            self.security_mode is not DocumentSecurityMode.ADVANCED
+        ):
+            raise ValueError("security flight requires the advanced security mode")
         if self.flight_kind is FlightKind.SECURITY and (archived or gateway_evidence):
             raise ValueError("security flight cannot contain archive or gateway evidence")
         if self.flight_kind is FlightKind.TRANSVERSAL:
             if not archived:
                 raise ValueError("transversal flight requires document archive evidence")
-            if not gateway_evidence:
+            if self.security_mode is DocumentSecurityMode.ADVANCED and not gateway_evidence:
                 raise ValueError("transversal flight requires gateway decision evidence")
+        if self.security_mode is DocumentSecurityMode.STANDARD:
+            if gateway_evidence:
+                raise ValueError("standard direct flight cannot contain gateway decisions")
+            if any(
+                result.verification is not None
+                or result.permit_id is not None
+                or result.challenge_digest is not None
+                or result.field_root is not None
+                or result.execution_proof_digest is not None
+                for result in self.results
+            ):
+                raise ValueError("standard direct flight cannot contain advanced security evidence")
+            if not any(result.receipt is not None for result in self.results):
+                raise ValueError("standard direct flight requires an API transfer receipt")
         return self

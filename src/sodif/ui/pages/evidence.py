@@ -5,6 +5,7 @@ from html import escape
 import streamlit as st
 
 from sodif.demo.models import FlightKind, FlightReport
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.reporting import FlightExports, PersistedFlightRun
 from sodif.ui.pages.shared import render_flight_summary, render_page_intro
 from sodif.ui.presentation import present_flight
@@ -61,11 +62,17 @@ def _render_report_identity(report: FlightReport) -> None:
         FlightKind.SECURITY: "Security Flight",
         FlightKind.TRANSVERSAL: "Transversal Flight",
     }[report.flight_kind]
+    security_label = (
+        "Protecție avansată"
+        if report.security_mode is DocumentSecurityMode.ADVANCED
+        else "Transfer standard direct"
+    )
     st.markdown(
         f"""
         <section class="sodif-report-identity">
             <div><small>Rulare</small><code>{escape(report.report_id)}</code></div>
             <div><small>Flux</small><strong>{escape(flight_label)}</strong></div>
+            <div><small>Regim</small><strong>{escape(security_label)}</strong></div>
             <div><small>Organizație</small><strong>{escape(report.configuration.organization_name)}</strong></div>
             <div><small>Integritate</small><strong>SHA-256 verificabil</strong></div>
         </section>
