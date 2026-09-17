@@ -62,15 +62,9 @@ def _split_representation_pdf() -> bytes:
     return result
 
 
-BASE_PDF = _pdf_bytes(
-    {"supplier_id": "SUP-01", "total_amount": "1250.00", "currency": "EUR"}
-)
-TAMPERED_PDF = _pdf_bytes(
-    {"supplier_id": "SUP-01", "total_amount": "9250.00", "currency": "EUR"}
-)
-REVISED_PDF = _pdf_bytes(
-    {"supplier_id": "SUP-01", "total_amount": "1350.00", "currency": "EUR"}
-)
+BASE_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "1250.00", "currency": "EUR"})
+TAMPERED_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "9250.00", "currency": "EUR"})
+REVISED_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "1350.00", "currency": "EUR"})
 SEMANTIC_SPLIT_PDF = _split_representation_pdf()
 
 

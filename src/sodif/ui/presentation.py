@@ -1,6 +1,7 @@
 """Stable product copy derived from flight-domain evidence."""
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 from sodif.demo.models import (
     FlightKind,
@@ -9,6 +10,7 @@ from sodif.demo.models import (
     ScenarioOutcome,
     ScenarioResult,
 )
+from sodif.domain.enums import ConsensusStatus, ViewKind
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +28,14 @@ class EvidenceView:
 
 
 @dataclass(frozen=True, slots=True)
+class FieldComparisonView:
+    label: str
+    observations: tuple[str, ...]
+    conclusion: str
+    tone: str
+
+
+@dataclass(frozen=True, slots=True)
 class ScenarioView:
     scenario_id: FlightScenario
     kicker: str
@@ -38,6 +48,7 @@ class ScenarioView:
     optimization_note: str
     tone: str
     controls: tuple[ControlView, ControlView, ControlView]
+    comparisons: tuple[FieldComparisonView, ...]
     timeline: tuple[str, ...]
     evidence: tuple[EvidenceView, ...]
 
@@ -68,7 +79,7 @@ _SCENARIO_COPY = {
         "Comandă autentică și neambiguă",
         "Documentul semnat, valorile critice și acțiunea solicitată sunt consistente.",
         "Autorizată",
-        "Controalele independente confirmă aceeași intenție operațională.",
+        "Structura PDF și forma vizuală confirmă aceeași intenție operațională.",
         "Cerere acceptată",
         "Permisul unic autorizează exact crearea comenzii aprobate.",
         "Verificarea s-a oprit imediat ce informațiile disponibile au devenit suficiente.",
@@ -133,9 +144,9 @@ _TIMELINE_COPY = {
     ),
     "risk-triaged": "Nivelul de verificare a fost adaptat profilului tranzacției.",
     "semantic-challenge": (
-        "După validarea semnăturii au fost selectate profilurile independente de extragere."
+        "După validarea semnăturii au fost selectate traseele distincte de extragere."
     ),
-    "semantic-views": "Reprezentările independente ale documentului au fost confruntate.",
+    "semantic-views": "Structura PDF și reprezentările vizuale au fost confruntate pe câmp.",
     "consensus-accepted": "Valorile critice au fost confirmate prin consens verificabil.",
     "invariance-proved": (
         "Valorile stabile au fost angajate criptografic și legate de parametrii execuției."
@@ -199,6 +210,7 @@ def present_scenario(result: ScenarioResult) -> ScenarioView:
         optimization_note=copy.optimization_note,
         tone=tone,
         controls=_controls_for(result),
+        comparisons=_comparisons_for(result),
         timeline=tuple(_TIMELINE_COPY[item.stage] for item in result.observations),
         evidence=_evidence_for(result),
     )
@@ -271,7 +283,15 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
     digests = tuple(
         item.subject_digest for item in result.observations if item.subject_digest is not None
     )
-    evidence: list[EvidenceView] = []
+    evidence: list[EvidenceView] = [EvidenceView("Tranzacție", result.workflow.correlation_id)]
+    if result.verification is not None:
+        level = {
+            "v0_block": "Blocare imediată",
+            "v1_targeted": "Verificare țintită",
+            "v2_extended": "Verificare extinsă",
+            "v3_review": "Revizuire obligatorie",
+        }[result.verification.final_level.value]
+        evidence.append(EvidenceView("Nivel de control", level))
     if result.verification is not None:
         evidence.append(
             EvidenceView("Document", _compact_digest(result.verification.revision_digest))
@@ -325,6 +345,59 @@ def _evidence_for(result: ScenarioResult) -> tuple[EvidenceView, ...]:
     elif digests:
         evidence.append(EvidenceView("Amprenta deciziei", _compact_digest(digests[-1])))
     return tuple(evidence)
+
+
+def _comparisons_for(result: ScenarioResult) -> tuple[FieldComparisonView, ...]:
+    verification = result.verification
+    if verification is None or verification.final_consensus is None:
+        return ()
+    source_labels = {
+        view.view_id: {
+            ViewKind.STRUCTURAL: "Structură PDF",
+            ViewKind.VISUAL: "Randare vizuală A",
+            ViewKind.VISUAL_SECONDARY: "Randare vizuală B",
+            ViewKind.TARGET: "Sistem-țintă",
+        }[view.kind]
+        for view in verification.views
+    }
+    field_labels = {
+        "supplier_id": "Furnizor",
+        "total_amount": "Valoare totală",
+        "currency": "Monedă",
+    }
+    comparisons: list[FieldComparisonView] = []
+    for field in verification.final_consensus.fields:
+        observations = tuple(
+            f"{source_labels.get(candidate.view_id, candidate.view_id)}: "
+            f"{_format_value(candidate.value)}"
+            for candidate in field.candidates
+        )
+        if field.status is ConsensusStatus.ACCEPTED:
+            conclusion = f"Valoare autorizabilă: {_format_value(field.accepted_value)}"
+            tone = "success"
+        elif field.status is ConsensusStatus.CONFLICT:
+            conclusion = "Conflict: autorizarea este suspendată"
+            tone = "warning"
+        else:
+            conclusion = "Dovadă insuficientă: autorizarea este suspendată"
+            tone = "warning"
+        comparisons.append(
+            FieldComparisonView(
+                label=field_labels.get(field.name, field.name),
+                observations=observations,
+                conclusion=conclusion,
+                tone=tone,
+            )
+        )
+    return tuple(comparisons)
+
+
+def _format_value(value: object) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, Decimal):
+        return format(value, ".2f")
+    return str(value)
 
 
 def _compact_digest(value: str) -> str:

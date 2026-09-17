@@ -59,8 +59,8 @@ sistem extern și fără scrieri în DMS.
 Aplicația oferă două rulări distincte:
 
 - **Security Flight** — nucleul de semnătură și securitate: integritate, extragere PDF reală
-  prin pypdf și două profiluri Tesseract, invariabilitate pe câmp, permis unic, legarea
-  acțiunii API și protecția anti-replay;
+  prin pypdf și două trasee vizuale randate diferit, citite cu același motor Tesseract,
+  invariabilitate pe câmp, permis unic, legarea acțiunii API și protecția anti-replay;
 - **Transversal Flight** — traversează cele trei module: verifică și autorizează intenția,
   arhivează reviziile acceptate, aplică permisul în SODIF Gateway și exportă deciziile corelate.
   Documentele respinse nu sunt arhivate, iar cererile neconforme nu ajung la API.
@@ -94,6 +94,11 @@ Configurațiile ambigue sunt respinse la pornire.
 Extragerea vizuală necesită Tesseract cu limbile `ron` și `eng`; al doilea profil de randare
 folosește `pdftoppm` din Poppler. Căile sunt detectate automat când executabilele sunt în
 `PATH` și pot fi fixate explicit prin variabilele de mai sus.
+
+Configurația TRL 4 validează în laborator motorul de securitate, controlul Gateway și
+arhivarea locală. Cele două trasee vizuale diferă prin renderer, rezoluție și segmentare, dar
+folosesc același motor OCR. Gateway-ul execută politicile și verificările criptografice reale,
+iar sistemul API destinație este reprezentat printr-un adaptor local fără efect extern.
 
 Valorile sunt preconfigurate din mediu și pot fi ajustate în pagina „Configurare
 operațională”. Modificările sunt validate, păstrate în sesiunea activă și utilizate efectiv

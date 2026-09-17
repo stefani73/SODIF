@@ -269,9 +269,7 @@ def test_issuer_binds_all_approved_artifacts_into_signed_claims() -> None:
     permit_issuer = issuer(clock)
 
     execution_proof = proof(execution_plan, source_manifest)
-    permit = permit_issuer.issue(
-        verification, source_manifest, execution_plan, execution_proof
-    )
+    permit = permit_issuer.issue(verification, source_manifest, execution_plan, execution_proof)
 
     assert isinstance(permit_issuer, PermitIssuer)
     assert permit.claims.protocol == "sodif.execution-permit/v2"
@@ -353,9 +351,7 @@ def test_authorization_consumes_valid_permit_exactly_once() -> None:
     store = InMemoryPermitConsumptionStore()
     permit_authorizer = authorizer(clock, store)
 
-    authorization = permit_authorizer.authorize(
-        permit, execution_plan, "erp-api", execution_proof
-    )
+    authorization = permit_authorizer.authorize(permit, execution_plan, "erp-api", execution_proof)
     with pytest.raises(PermitRejected) as replay:
         permit_authorizer.authorize(permit, execution_plan, "erp-api", execution_proof)
 
@@ -379,9 +375,7 @@ def test_authorizer_rejects_other_action_or_audience_without_consuming() -> None
             execution_proof,
         )
     with pytest.raises(PermitRejected) as audience:
-        permit_authorizer.authorize(
-            permit, execution_plan, "other-api", execution_proof
-        )
+        permit_authorizer.authorize(permit, execution_plan, "other-api", execution_proof)
 
     assert changed_action.value.code is PermitRejectionCode.ACTION_MISMATCH
     assert audience.value.code is PermitRejectionCode.AUDIENCE_MISMATCH
@@ -397,9 +391,7 @@ def test_tampered_or_untrusted_permit_is_rejected() -> None:
     )
 
     with pytest.raises(PermitRejected) as changed:
-        authorizer(clock).authorize(
-            tampered, execution_plan, "other-api", execution_proof
-        )
+        authorizer(clock).authorize(tampered, execution_plan, "other-api", execution_proof)
     with pytest.raises(PermitRejected) as unknown:
         ExecutionPermitAuthorizer(
             InMemoryPermitTrustStore(()),
@@ -439,9 +431,7 @@ def test_issuer_key_lifecycle_is_enforced(
 
 def test_permit_time_window_and_verifier_ttl_are_enforced() -> None:
     clock = MutableClock(NOW)
-    permit, execution_plan, execution_proof = issued_permit(
-        clock, timedelta(seconds=90)
-    )
+    permit, execution_plan, execution_proof = issued_permit(clock, timedelta(seconds=90))
 
     clock.current = NOW - timedelta(seconds=1)
     with pytest.raises(PermitRejected) as future:
@@ -469,9 +459,7 @@ def test_atomic_consumption_allows_exactly_one_concurrent_authorization() -> Non
 
     def attempt() -> str:
         try:
-            permit_authorizer.authorize(
-                permit, execution_plan, "erp-api", execution_proof
-            )
+            permit_authorizer.authorize(permit, execution_plan, "erp-api", execution_proof)
             return "authorized"
         except PermitRejected as exc:
             return exc.code.value

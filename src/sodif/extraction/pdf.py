@@ -187,12 +187,8 @@ def _ocr_lines(
         confidences = [Decimal(word.get("conf") or "0") for word in words]
         left = min(int(word.get("left") or 0) for word in words)
         top = min(int(word.get("top") or 0) for word in words)
-        right = max(
-            int(word.get("left") or 0) + int(word.get("width") or 0) for word in words
-        )
-        bottom = max(
-            int(word.get("top") or 0) + int(word.get("height") or 0) for word in words
-        )
+        right = max(int(word.get("left") or 0) + int(word.get("width") or 0) for word in words)
+        bottom = max(int(word.get("top") or 0) + int(word.get("height") or 0) for word in words)
         confidence = (sum(confidences) / Decimal(len(confidences)) / Decimal("100")).quantize(
             Decimal("0.001")
         )
@@ -201,8 +197,7 @@ def _ocr_lines(
                 page=page_number,
                 text=text,
                 locator=(
-                    f"page={page_number};bbox={left},{top},{right},{bottom};"
-                    f"ocr_line={line_number}"
+                    f"page={page_number};bbox={left},{top},{right},{bottom};ocr_line={line_number}"
                 ),
                 confidence=max(Decimal("0"), min(Decimal("1"), confidence)),
             )

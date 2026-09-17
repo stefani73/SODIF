@@ -60,6 +60,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
             "occurred_at": observation.occurred_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
             "scenario": result.scenario_id,
+            "transaction_id": result.workflow.correlation_id,
             "stage": observation.stage,
             "detail": observation.detail,
         }
@@ -75,6 +76,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
             "occurred_at": gateway_decision.evaluated_at.isoformat().replace("+00:00", "Z"),
             "report_id": report.report_id,
             "scenario": result.scenario_id,
+            "transaction_id": result.workflow.correlation_id,
             "decision_id": gateway_decision.decision_id,
             "request_id": gateway_decision.request_id,
             "request_digest": gateway_decision.request_digest,
@@ -100,6 +102,7 @@ def _scenario_events(report: FlightReport, result: ScenarioResult) -> list[dict[
         "occurred_at": result.observations[-1].occurred_at.isoformat().replace("+00:00", "Z"),
         "report_id": report.report_id,
         "scenario": result.scenario_id,
+        "transaction_id": result.workflow.correlation_id,
         "outcome": result.observed_outcome,
         "workflow_state": result.workflow.stage,
     }

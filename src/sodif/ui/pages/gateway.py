@@ -101,12 +101,12 @@ def render_gateway_module(settings: GatewaySettings) -> None:
     st.markdown(
         """
         <section class="sodif-gateway-flow">
-            <div><small>Cerere</small><strong>Apel API + dovadă + permis</strong>
-            <span>Parametri legați de valorile aprobate</span></div>
+            <div><small>Intrare</small><strong>Plan API + dovadă + permis</strong>
+            <span>Planul conține metoda, ruta, destinația și parametrii</span></div>
             <i aria-hidden="true"></i>
             <div class="active"><small>Control</small>
             <strong>SODIF Gateway</strong>
-            <span>Identitate, intenție, destinație și unicitate</span></div>
+            <span>Recalculează amprenta planului și o compară cu permisul semnat</span></div>
             <i aria-hidden="true"></i>
             <div><small>Rezultat</small><strong>Rutare / blocare</strong>
             <span>Decizie justificată și auditabilă</span></div>
@@ -120,8 +120,9 @@ def render_gateway_module(settings: GatewaySettings) -> None:
         <section class="sodif-boundary-panel">
             <div><div class="sodif-section-label light">Integrare pragmatică</div>
             <h2>Control integrabil în infrastructura API existentă.</h2></div>
-            <p>SODIF Gateway aplică politicile tehnice ale rutei și verifică dreptul
-            tranzacțional derivat din documentul semnat.</p>
+            <p>Gateway-ul verifică semnătura Ed25519 a permisului, recanonicalizează planul
+            primit, îi calculează amprenta SHA-256 și o compară cu amprenta semnată din permis.
+            Coincidența exactă și caracterul neconsumat permit rutarea.</p>
         </section>
         """,
         unsafe_allow_html=True,

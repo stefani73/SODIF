@@ -63,6 +63,7 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
     assert events[0]["route_id"] == "erp.purchase-orders"
     assert events[-1]["event_type"] == "flight.sealed"
     decisions = [event for event in events if event["event_type"] == "scenario.decision"]
+    assert all(event["transaction_id"].startswith("flight-") for event in decisions)
     assert {event["scenario"] for event in decisions} == {
         result.scenario_id.value for result in report.results
     }
@@ -106,7 +107,8 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
     assert "Permis prezentat din nou" in text
     assert document.tables[1].rows[0].cells[0].text == "Situație"
     assert len(document.tables[1].rows) == 7
-    assert len(document.tables) == 2
+    assert "Valoare autorizabilă: 1250.00" in _table_text(document)
+    assert len(document.tables) == 7
 
 
 def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
@@ -127,11 +129,13 @@ def test_transversal_word_report_exposes_archive_and_gateway_evidence() -> None:
     assert "Decizii de rutare și blocare" in text
     assert "Trasabilitatea end-to-end între module" in text
     assert "Exemplu de corelare completă" in text
+    assert "Tranzacție: flight-happy-path" in text
     assert "Document modificat după semnare" in text
     assert "Neînregistrat" in "\n".join(
         cell.text for table in document.tables for row in table.rows for cell in row.cells
     )
-    assert len(document.tables) == 6
+    assert "Conflict: autorizarea este suspendată" in _table_text(document)
+    assert len(document.tables) == 11
 
 
 def test_cli_writer_persists_every_artifact(tmp_path: Path) -> None:

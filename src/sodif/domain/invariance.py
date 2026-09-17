@@ -55,9 +55,7 @@ class StableFieldCommitment(DomainModel):
 
 
 class SemanticInvarianceProof(DomainModel):
-    protocol: Literal["sodif.semantic-invariance-proof/v1"] = (
-        "sodif.semantic-invariance-proof/v1"
-    )
+    protocol: Literal["sodif.semantic-invariance-proof/v1"] = "sodif.semantic-invariance-proof/v1"
     proof_id: Identifier
     document_id: Identifier
     revision_digest: Digest

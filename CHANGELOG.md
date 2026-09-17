@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.22.0 — 2026-09-17
+
+- explică în interfață, pentru fiecare câmp, valorile observate în structura PDF și în
+  randările vizuale, precum și valoarea autorizabilă sau conflictul rezultat;
+- afișează identificatorul de corelare al tranzacției și nivelul de control în toate scenariile;
+- include identificatorul tranzacției în jurnalul NDJSON și în trasabilitatea raportului;
+- descrie explicit calculul și compararea amprentei cererii în SODIF Gateway;
+- delimitează configurația TRL 4: două randări distincte cu același Tesseract și adaptor API
+  local fără efect extern;
+- extinde rapoartele Word cu matricea valorilor confruntate.
+
 ## 0.20.0 — Cybersecurity product alignment
 
 - poziționare unitară ca platformă de securitate cibernetică pentru execuții autorizate prin documente semnate;

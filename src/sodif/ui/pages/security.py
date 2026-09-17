@@ -25,8 +25,8 @@ def render_security_module(control_page: str) -> None:
         (
             "neurology",
             "Invariabilitate semantică",
-            "Compară extragerea structurală cu randări OCR independente și fixează "
-            "proveniența fiecărui câmp critic.",
+            "Compară structura PDF cu două trasee vizuale distincte, randate prin MuPDF "
+            "și Poppler și citite cu Tesseract, apoi fixează proveniența fiecărui câmp critic.",
         ),
         (
             "key_vertical",
@@ -51,9 +51,11 @@ def render_security_module(control_page: str) -> None:
         <section class="sodif-value-panel sodif-module-value">
             <div><div class="sodif-section-label light">Decizie explicabilă</div>
             <h2>Aceleași valori trebuie să rămână stabile până la execuția API.</h2>
-            <p>Profilurile de extragere sunt selectate după validarea semnăturii. Valorile
-            critice confirmate sunt angajate criptografic, iar gateway-ul verifică legătura
-            fiecărui parametru cu documentul înainte de rutare.</p></div>
+            <p>Profilurile de extragere sunt selectate după validarea semnăturii. Traseele
+            vizuale folosesc același motor OCR în configurații diferite; independența completă
+            între motoare rămâne o etapă de dezvoltare. Valorile critice confirmate sunt
+            angajate criptografic, iar gateway-ul verifică legătura fiecărui parametru cu
+            documentul înainte de rutare.</p></div>
             <div class="sodif-protection-list">
                 <div><span></span><p><b>Pragmatism</b>
                 <small>Traseu scurt pentru cazurile coerente,

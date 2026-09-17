@@ -267,9 +267,10 @@ def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None
             "conținutului.",
         ),
         (
-            "Extragere independentă",
-            "Citire structurală cu pypdf și două profiluri de randare OCR cu Tesseract, "
-            "selectate printr-o provocare emisă după validarea semnăturii.",
+            "Reprezentări confruntate",
+            "Citire structurală cu pypdf și două trasee vizuale distincte, randate prin "
+            "MuPDF și Poppler și citite cu același motor Tesseract. Traseele sunt selectate "
+            "după validarea semnăturii.",
         ),
         (
             "Verificare adaptivă",
@@ -283,8 +284,9 @@ def _add_lab_configuration(document: WordDocument, report: FlightReport) -> None
         ),
         (
             "Control API",
-            "Politică locală pentru ruta POST protejată, recanonicalizarea cererii și "
-            "blocarea reutilizării permisului.",
+            "Motor Gateway executat local: politică pentru ruta POST protejată, "
+            "recanonicalizarea planului, compararea amprentelor și blocarea reutilizării "
+            "permisului. Serviciul destinație este un adaptor controlat fără efect extern.",
         ),
     ]
     if report.flight_kind is FlightKind.TRANSVERSAL:
@@ -609,16 +611,13 @@ def _add_end_to_end_traceability(document: WordDocument, report: FlightReport) -
         raise AssertionError("complete transversal reference lacks verification or receipt")
     document.add_heading("Exemplu de corelare completă", level=2)
     correlation_items = (
-        f"Flux: {reference.workflow.correlation_id}",
+        f"Tranzacție: {reference.workflow.correlation_id}",
         f"Document: {_compact_report_digest(reference.verification.revision_digest)}",
         f"Arhivă: {', '.join(reference.archive_ids)}",
         f"Permis: {reference.permit_id}",
         f"Provocare semantică: {_compact_report_digest(reference.challenge_digest or '')}",
         f"Rădăcină valori: {_compact_report_digest(reference.field_root or '')}",
-        (
-            "Dovadă execuție: "
-            f"{_compact_report_digest(reference.execution_proof_digest or '')}"
-        ),
+        (f"Dovadă execuție: {_compact_report_digest(reference.execution_proof_digest or '')}"),
         f"Decizie Gateway: {reference.gateway_decisions[-1].decision_id}",
         (
             f"Execuție API: {reference.receipt.execution_id} · "
@@ -721,6 +720,9 @@ def _add_scenario(
     )
     _set_run_font(paragraph.add_run(scenario.api_detail), "Calibri", body_size, _NAVY)
 
+    if scenario.comparisons:
+        _add_field_comparison_table(document, scenario, compact=compact)
+
     heading = document.add_heading("Traseul deciziei", level=2)
     if compact:
         heading.paragraph_format.space_before = Pt(8)
@@ -754,6 +756,46 @@ def _add_scenario(
             "Consolas",
             evidence_size,
             _DARK_BLUE,
+        )
+
+
+def _add_field_comparison_table(
+    document: WordDocument,
+    scenario: ScenarioView,
+    *,
+    compact: bool,
+) -> None:
+    heading = document.add_heading("Valorile confruntate", level=2)
+    if compact:
+        heading.paragraph_format.space_before = Pt(8)
+        heading.paragraph_format.space_after = Pt(3)
+    table = document.add_table(rows=1, cols=3)
+    table.style = "Table Grid"
+    widths = (2100, 4160, 3100)
+    _set_table_geometry(table, widths)
+    for cell, text in zip(
+        table.rows[0].cells,
+        ("Câmp", "Valori observate", "Concluzie"),
+        strict=True,
+    ):
+        _set_cell_text(cell, text, bold=True, color=_NAVY, size=8.8 if compact else 9.2)
+        _set_cell_fill(cell, _LIGHT_FILL)
+    _repeat_table_header(table)
+    for comparison in scenario.comparisons:
+        cells = table.add_row().cells
+        _apply_row_geometry(cells, widths)
+        _set_cell_text(cells[0], comparison.label, bold=True, size=8.7 if compact else 9.2)
+        _set_cell_text(
+            cells[1],
+            "\n".join(comparison.observations),
+            size=8.5 if compact else 9,
+        )
+        _set_cell_text(
+            cells[2],
+            comparison.conclusion,
+            bold=True,
+            color=_tone_color(comparison.tone),
+            size=8.5 if compact else 9,
         )
 
 

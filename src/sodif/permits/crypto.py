@@ -289,8 +289,7 @@ class ExecutionPermitAuthorizer:
         if (
             claims.execution_proof_digest != sha256_digest(execution_proof)
             or claims.field_root != execution_proof.invariance.field_root
-            or claims.challenge_digest
-            != execution_proof.invariance.challenge.challenge_digest
+            or claims.challenge_digest != execution_proof.invariance.challenge.challenge_digest
             or claims.document_id != execution_proof.invariance.document_id
             or claims.revision_digest != execution_proof.invariance.revision_digest
         ):

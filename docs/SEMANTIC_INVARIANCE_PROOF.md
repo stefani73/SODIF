@@ -49,3 +49,7 @@ execuție nu este creată, permisul nu este emis, iar API-ul rămâne neapelat.
 Implementarea validează mecanismul în mediu de laborator, pentru schema controlată a unei
 comenzi de achiziție și un API local. Profilele, schemele și adaptoarele sunt contracte
 modulare care permit introducerea altor tipuri de documente și motoare de extragere.
+
+Cele două trasee vizuale sunt distincte prin renderer, DPI și segmentare, dar folosesc același
+motor OCR Tesseract. Diversificarea cu motoare OCR/HTR independente și integrarea cu un API
+extern aparțin etapelor ulterioare de dezvoltare și validare.

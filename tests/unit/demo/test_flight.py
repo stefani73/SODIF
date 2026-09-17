@@ -178,7 +178,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.21.0"
+    assert report.release == "0.22.0"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

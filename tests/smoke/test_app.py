@@ -238,6 +238,9 @@ def test_control_center_runs_scenarios_and_reports_page_exposes_exports(
     control_copy = _copy(app)
     assert "Nucleul de securitate a confirmat comportamentul așteptat" in control_copy
     assert "Comandă autentică și neambiguă" in control_copy
+    assert "Valorile confruntate și rezultatul" in control_copy
+    assert "Valoare autorizabilă: 1250.00" in control_copy
+    assert "flight-happy-path" in control_copy
     assert "Sens aprobat" not in control_copy
     assert "Rezultatul demonstrației" not in control_copy
     assert "Dovezi verificabile" not in control_copy

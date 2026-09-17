@@ -29,11 +29,19 @@ def test_executed_scenario_presents_exact_api_evidence() -> None:
     evidence = {item.label: item.value for item in scenario.evidence}
     assert scenario.verdict == "Autorizată"
     assert scenario.tone == "success"
+    assert evidence["Tranzacție"] == "flight-happy-path"
+    assert evidence["Nivel de control"] == "Verificare țintită"
     assert evidence["Acțiune"] == "POST /purchase-orders"
     assert "Arhivă" not in evidence
     assert evidence["Destinație"] == "erp-purchase-api"
     assert evidence["Confirmare API"] == "202"
     assert "Revizia validată a fost înregistrată în arhiva documentară." not in scenario.timeline
+    comparisons = {item.label: item for item in scenario.comparisons}
+    assert comparisons["Valoare totală"].conclusion == "Valoare autorizabilă: 1250.00"
+    assert comparisons["Valoare totală"].observations == (
+        "Structură PDF: 1250.00",
+        "Randare vizuală A: 1250.00",
+    )
 
 
 def test_transversal_flight_presents_archive_and_gateway_evidence() -> None:
@@ -64,3 +72,10 @@ def test_each_protection_case_has_a_distinct_fail_closed_decision() -> None:
     for scenario in scenarios.values():
         assert scenario.timeline
         assert scenario.evidence
+
+    conflict = {
+        item.label: item for item in scenarios[FlightScenario.SEMANTIC_CONFLICT].comparisons
+    }["Valoare totală"]
+    assert conflict.conclusion == "Conflict: autorizarea este suspendată"
+    assert "Structură PDF: 9250.00" in conflict.observations
+    assert "Randare vizuală A: 1250.00" in conflict.observations

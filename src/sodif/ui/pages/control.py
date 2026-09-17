@@ -224,6 +224,9 @@ def _render_scenario(scenario: ScenarioView) -> None:
             unsafe_allow_html=True,
         )
 
+    if scenario.comparisons:
+        _render_field_comparisons(scenario)
+
     timeline, evidence = st.columns((0.58, 0.42))
     with timeline:
         st.markdown(
@@ -245,3 +248,39 @@ def _render_scenario(scenario: ScenarioView) -> None:
             for item in scenario.evidence
         )
         st.markdown(f'<div class="sodif-evidence">{evidence_html}</div>', unsafe_allow_html=True)
+
+
+def _render_field_comparisons(scenario: ScenarioView) -> None:
+    st.markdown(
+        '<div class="sodif-subsection-title">Valorile confruntate și rezultatul</div>',
+        unsafe_allow_html=True,
+    )
+    cards = []
+    for comparison in scenario.comparisons:
+        observations = "".join(
+            f"<li>{escape(observation)}</li>" for observation in comparison.observations
+        )
+        cards.append(
+            f'<article class="sodif-comparison-card {comparison.tone}">'
+            "<small>Câmp operațional</small>"
+            f"<h3>{escape(comparison.label)}</h3>"
+            f"<ul>{observations}</ul>"
+            f"<strong>{escape(comparison.conclusion)}</strong>"
+            "</article>"
+        )
+    st.markdown(
+        '<div class="sodif-comparison-grid">' + "".join(cards) + "</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="sodif-data-path">
+            <span>Document validat</span><i></i><span>Valori confruntate</span><i></i>
+            <span>Parametri API</span><i></i><span>Amprentă și permis</span>
+        </div>
+        <p class="sodif-inline-note">Valorile acceptate devin parametrii cererii API. Metoda,
+        ruta și destinația provin din politica operațională activă; planul rezultat este
+        amprentat, iar amprenta este inclusă în permisul semnat.</p>
+        """,
+        unsafe_allow_html=True,
+    )

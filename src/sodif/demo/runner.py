@@ -88,9 +88,7 @@ from sodif.verification import AdaptiveRiskPolicy, AdaptiveVerificationService
 from sodif.verification.consensus import DeterministicConsensusEngine
 
 FLIGHT_START = datetime(2026, 8, 24, 14, 0, tzinfo=UTC)
-FLIGHT_DOCUMENT_ID = (
-    f"doc-flight-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
-)
+FLIGHT_DOCUMENT_ID = f"doc-flight-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
 SEMANTIC_SPLIT_DOCUMENT_ID = (
     f"doc-flight-split-{sha256_bytes(SEMANTIC_SPLIT_PDF).removeprefix('sha256:')[:12]}"
 )
@@ -182,7 +180,7 @@ class FlightRunner:
             report_id=f"flight-{report_digest[7:23]}",
             flight_kind=self._flight_kind,
             configuration=self._configuration,
-            release="0.21.0",
+            release="0.22.0",
             started_at=FLIGHT_START,
             completed_at=FLIGHT_START + timedelta(minutes=5),
             results=results,
@@ -270,9 +268,7 @@ class FlightRunner:
         )
 
     def _action_tampering(self) -> ScenarioResult:
-        context, document, verification, challenge = self._verify(
-            FlightScenario.ACTION_TAMPERING
-        )
+        context, document, verification, challenge = self._verify(FlightScenario.ACTION_TAMPERING)
         plan, proof, permit = self._compile_and_issue(
             context,
             document,
@@ -330,9 +326,7 @@ class FlightRunner:
         raise AssertionError("changed action was unexpectedly authorized")
 
     def _replay_attack(self) -> ScenarioResult:
-        context, document, verification, challenge = self._verify(
-            FlightScenario.REPLAY_ATTACK
-        )
+        context, document, verification, challenge = self._verify(FlightScenario.REPLAY_ATTACK)
         plan, proof, permit = self._compile_and_issue(
             context,
             document,
@@ -437,7 +431,7 @@ class FlightRunner:
         )
         context.observe(
             "semantic-challenge",
-            "Profilurile independente au fost selectate după validarea semnăturii.",
+            "Traseele structurale și vizuale au fost selectate după validarea semnăturii.",
             challenge.challenge_digest,
         )
         structural, primary, secondary = challenged_pdf_adapters(challenge)
@@ -481,7 +475,8 @@ class FlightRunner:
             context.move(ProcessingStage.CONSENSUS_ACCEPTED, "semantic consensus accepted")
             context.observe(
                 "consensus-accepted",
-                "Câmpurile critice au consens independent și proveniență completă.",
+                "Câmpurile critice concordă între structura PDF și forma vizuală, cu "
+                "proveniență completă.",
                 sha256_digest(verification.final_consensus),
             )
         else:
