@@ -27,7 +27,9 @@ aplicate, amprenta requestului și efectul asupra serviciului destinație.
 Pagina „Preluare documente” validează perechea PDF + dovadă de semnătură JSON înainte de
 arhivare. Exemplul inclus construiește două revizii succesive: a doua este acceptată numai
 dacă indică exact amprenta reviziei precedente. Setul semnat poate fi descărcat pentru
-reîncărcare manuală.
+reîncărcare manuală. O bifă aplicată fiecărui document selectează regimul standard sau
+protecția avansată SODIF. Alegerea este păstrată în arhivă și rămâne stabilă pe întregul lanț
+de revizii.
 
 Pagina „Registru documente” oferă căutare, filtrare, previzualizare PDF, istoricul verificabil
 al reviziilor și un pachet portabil cu document, istoric, manifest criptografic și instrucțiuni

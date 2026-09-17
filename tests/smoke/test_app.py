@@ -9,6 +9,7 @@ from streamlit.testing.v1 import AppTest
 from sodif.app import main
 from sodif.archive import SqliteArchiveRepository, build_local_ingestion_service
 from sodif.archive.sample import build_signed_sample_sequence
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.settings import AppSettings
 
 
@@ -115,6 +116,9 @@ def test_document_ingestion_page_archives_the_signed_sample(
     copy = _copy(app)
     assert "Preluare documente" in copy
     assert "Construiește un istoric semnat" in copy
+    assert app.checkbox[0].label == "Activează protecția avansată SODIF pentru acest document"
+    assert app.checkbox[0].value is True
+    app.checkbox[0].uncheck().run(timeout=15)
     initial_button = next(
         button for button in app.button if button.label == "Arhivează revizia inițială"
     )
@@ -128,6 +132,7 @@ def test_document_ingestion_page_archives_the_signed_sample(
     result_copy = _copy(app)
     assert "Document verificat și arhivat" in result_copy
     assert "Identificator arhivă" in result_copy
+    assert "Protecție standard" in result_copy
     revised_button = next(
         button for button in app.button if button.label == "Arhivează revizia următoare"
     )
@@ -137,7 +142,9 @@ def test_document_ingestion_page_archives_the_signed_sample(
     assert not app.exception
     assert "Revizie</small><strong>2</strong>" in _copy(app)
     repository = SqliteArchiveRepository(tmp_path / "archive")
-    assert len(repository.history("doc-ingestion-demo-002")) == 2
+    history = repository.history("doc-ingestion-demo-002")
+    assert len(history) == 2
+    assert all(item.security_mode is DocumentSecurityMode.STANDARD for item in history)
 
 
 def test_document_registry_searches_and_opens_the_verified_pdf(
@@ -165,6 +172,7 @@ def test_document_registry_searches_and_opens_the_verified_pdf(
     assert "Registru documente" in copy
     assert "Integritate reconfirmată" in copy
     assert "Previzualizare securizată" in copy
+    assert "Protecție avansată" in copy
     assert "doc-ingestion-demo-002" in copy
     assert "1 document" in copy
     assert "2 revizii găsite" in copy

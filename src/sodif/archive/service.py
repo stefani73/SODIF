@@ -5,7 +5,7 @@ from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage
 from sodif.archive.repository import ArchivedDocument, ArchiveRepository
 from sodif.domain.canonical import sha256_bytes, sha256_digest
 from sodif.domain.contracts import Clock
-from sodif.domain.enums import DocumentFormat
+from sodif.domain.enums import DocumentFormat, DocumentSecurityMode
 from sodif.domain.revisions import RevisionAcceptance
 from sodif.domain.types import Identifier
 
@@ -22,6 +22,7 @@ class DocumentArchiveService:
         content: bytes,
         acceptance: RevisionAcceptance,
         original_name: str,
+        security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
     ) -> ArchiveRecord:
         record = acceptance.record
         if sha256_bytes(content) != record.revision_digest:
@@ -40,6 +41,7 @@ class DocumentArchiveService:
             document_id=record.document_id,
             revision_number=record.revision_number,
             format=record.format,
+            security_mode=security_mode,
             content_digest=record.revision_digest,
             signature_digest=record.signature_digest,
             previous_revision_digest=record.previous_revision_digest,

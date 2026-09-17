@@ -13,12 +13,12 @@ from typing import Protocol, runtime_checkable
 from sodif.archive.errors import ArchiveConflict, ArchiveIntegrityError, ArchiveNotFound
 from sodif.archive.models import ArchiveQuery, ArchiveRecord, ArchiveSearchPage, ArchiveSummary
 from sodif.domain.canonical import sha256_bytes
-from sodif.domain.enums import DocumentFormat
+from sodif.domain.enums import DocumentFormat, DocumentSecurityMode
 from sodif.domain.types import Identifier
 
 _RECORD_COLUMNS = """
 archive_id, document_id, revision_number, format, content_digest, signature_digest,
-previous_revision_digest, signer_id, key_id, signed_at, accepted_at, archived_at,
+previous_revision_digest, security_mode, signer_id, key_id, signed_at, accepted_at, archived_at,
 original_name, media_type, size_bytes
 """
 _SEARCH_TOKEN = re.compile(r"[\w.:-]+", flags=re.UNICODE)
@@ -166,9 +166,9 @@ class SqliteArchiveRepository:
                 """
                 INSERT INTO archive_records (
                     archive_id, document_id, revision_number, format, content_digest,
-                    signature_digest, previous_revision_digest, signer_id, key_id, signed_at,
-                    accepted_at, archived_at, original_name, media_type, size_bytes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    signature_digest, previous_revision_digest, security_mode, signer_id, key_id,
+                    signed_at, accepted_at, archived_at, original_name, media_type, size_bytes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 _record_values(record),
             )
@@ -276,6 +276,8 @@ class SqliteArchiveRepository:
                     content_digest TEXT NOT NULL,
                     signature_digest TEXT NOT NULL,
                     previous_revision_digest TEXT,
+                    security_mode TEXT NOT NULL DEFAULT 'advanced'
+                        CHECK (security_mode IN ('standard', 'advanced')),
                     signer_id TEXT NOT NULL,
                     key_id TEXT NOT NULL,
                     signed_at TEXT NOT NULL,
@@ -304,6 +306,11 @@ class SqliteArchiveRepository:
             if "previous_revision_digest" not in columns:
                 connection.execute(
                     "ALTER TABLE archive_records ADD COLUMN previous_revision_digest TEXT"
+                )
+            if "security_mode" not in columns:
+                connection.execute(
+                    "ALTER TABLE archive_records ADD COLUMN security_mode TEXT NOT NULL "
+                    "DEFAULT 'advanced' CHECK (security_mode IN ('standard', 'advanced'))"
                 )
 
     def _connect(self) -> sqlite3.Connection:
@@ -372,6 +379,7 @@ def _record_values(record: ArchiveRecord) -> tuple[object, ...]:
         record.content_digest,
         record.signature_digest,
         record.previous_revision_digest,
+        record.security_mode.value,
         record.signer_id,
         record.key_id,
         record.signed_at.isoformat(),
@@ -392,6 +400,7 @@ def _row_to_record(row: sqlite3.Row) -> ArchiveRecord:
         content_digest=row["content_digest"],
         signature_digest=row["signature_digest"],
         previous_revision_digest=row["previous_revision_digest"],
+        security_mode=DocumentSecurityMode(row["security_mode"]),
         signer_id=row["signer_id"],
         key_id=row["key_id"],
         signed_at=datetime.fromisoformat(row["signed_at"]),
@@ -420,6 +429,7 @@ def _require_compatible(existing: ArchiveRecord, candidate: ArchiveRecord) -> No
         existing.content_digest,
         existing.signature_digest,
         existing.previous_revision_digest,
+        existing.security_mode,
         existing.signer_id,
         existing.key_id,
         existing.signed_at,
@@ -433,6 +443,7 @@ def _require_compatible(existing: ArchiveRecord, candidate: ArchiveRecord) -> No
         candidate.content_digest,
         candidate.signature_digest,
         candidate.previous_revision_digest,
+        candidate.security_mode,
         candidate.signer_id,
         candidate.key_id,
         candidate.signed_at,

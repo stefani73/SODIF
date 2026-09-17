@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.0 — 2026-09-17
+
+- introduce selecția manuală, la preluare, a protecției avansate SODIF pentru fiecare document;
+- păstrează regimul ales în metadatele arhivei și în pachetul documentar verificabil;
+- afișează regimul de securitate în confirmarea preluării și în registrul documentelor;
+- menține același regim pentru toate reviziile documentului și blochează schimbările de nivel
+  în interiorul unui istoric existent;
+- migrează arhivele existente în regimul avansat, păstrând comportamentul anterior.
+
 ## 0.22.0 — 2026-09-17
 
 - explică în interfață, pentru fiecare câmp, valorile observate în structura PDF și în

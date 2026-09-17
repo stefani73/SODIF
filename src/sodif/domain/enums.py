@@ -7,6 +7,11 @@ class DocumentFormat(StrEnum):
     PDF = "pdf"
 
 
+class DocumentSecurityMode(StrEnum):
+    STANDARD = "standard"
+    ADVANCED = "advanced"
+
+
 class SignatureStatus(StrEnum):
     VALID = "valid"
     INVALID = "invalid"

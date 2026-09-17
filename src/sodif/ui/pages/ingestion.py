@@ -18,11 +18,13 @@ from sodif.archive.sample import (
     build_signed_sample_sequence,
 )
 from sodif.documents import DocumentRejected, DocumentRejectionCode
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.domain.revisions import SignedRevision
 from sodif.ui.pages.shared import render_page_intro
 
 _RECEIPT_KEY = "sodif_ingestion_receipt"
 _ERROR_KEY = "sodif_ingestion_error"
+_ADVANCED_SECURITY_KEY = "sodif_ingestion_advanced_security"
 
 _REJECTION_MESSAGES = {
     DocumentRejectionCode.INVALID_BINARY_INPUT: "Fișierul încărcat nu poate fi procesat.",
@@ -55,9 +57,10 @@ def render_document_ingestion(service: SignedDocumentIngestionService) -> None:
         "integritatea și continuitatea reviziei înainte de arhivare.",
     )
 
+    security_mode = _render_security_mode_selector()
     sample = build_signed_sample_sequence()
-    _render_sample_panel(service, sample)
-    _render_upload_panel(service)
+    _render_sample_panel(service, sample, security_mode)
+    _render_upload_panel(service, security_mode)
 
     receipt = st.session_state.get(_RECEIPT_KEY)
     error = st.session_state.get(_ERROR_KEY)
@@ -70,6 +73,7 @@ def render_document_ingestion(service: SignedDocumentIngestionService) -> None:
 def _render_sample_panel(
     service: SignedDocumentIngestionService,
     sample: SignedSampleSequence,
+    security_mode: DocumentSecurityMode,
 ) -> None:
     history = service.history(SAMPLE_DOCUMENT_ID)
     has_initial = any(item.revision_number == 1 for item in history)
@@ -97,6 +101,7 @@ def _render_sample_panel(
             sample.initial.content,
             sample.initial.revision,
             sample.initial.original_name,
+            security_mode,
         ):
             st.rerun()
     with revision_action:
@@ -110,6 +115,7 @@ def _render_sample_panel(
             sample.revised.content,
             sample.revised.revision,
             sample.revised.original_name,
+            security_mode,
         ):
             st.rerun()
     with download_action:
@@ -130,7 +136,10 @@ def _render_sample_panel(
     st.markdown(f'<p class="sodif-inline-note">{status}</p>', unsafe_allow_html=True)
 
 
-def _render_upload_panel(service: SignedDocumentIngestionService) -> None:
+def _render_upload_panel(
+    service: SignedDocumentIngestionService,
+    security_mode: DocumentSecurityMode,
+) -> None:
     st.markdown(
         '<div class="sodif-section-label compact">Încarcă o revizie semnată</div>',
         unsafe_allow_html=True,
@@ -169,7 +178,34 @@ def _render_upload_panel(service: SignedDocumentIngestionService) -> None:
         except (ValidationError, ValueError):
             _set_error("Dovada semnăturii nu are structura acceptată.")
         else:
-            _ingest(service, document.getvalue(), revision, document.name)
+            _ingest(service, document.getvalue(), revision, document.name, security_mode)
+
+
+def _render_security_mode_selector() -> DocumentSecurityMode:
+    st.markdown(
+        '<div class="sodif-section-label compact">Regim de protecție</div>',
+        unsafe_allow_html=True,
+    )
+    enabled = st.checkbox(
+        "Activează protecția avansată SODIF pentru acest document",
+        value=True,
+        key=_ADVANCED_SECURITY_KEY,
+        help=(
+            "Aplică verificarea semantică independentă, dovada de invariabilitate și "
+            "autorizarea criptografică a acțiunii API."
+        ),
+    )
+    if enabled:
+        st.caption(
+            "Documentul este clasificat pentru consens semantic, permis criptografic unic "
+            "și control la execuția API."
+        )
+        return DocumentSecurityMode.ADVANCED
+    st.caption(
+        "Documentul urmează fluxul standard de verificare a semnăturii, integrității, "
+        "reviziilor și arhivării."
+    )
+    return DocumentSecurityMode.STANDARD
 
 
 def _ingest(
@@ -177,14 +213,18 @@ def _ingest(
     content: bytes,
     revision: SignedRevision,
     original_name: str,
+    security_mode: DocumentSecurityMode,
 ) -> bool:
     try:
-        receipt = service.ingest(content, revision, original_name)
+        receipt = service.ingest(content, revision, original_name, security_mode)
     except DocumentRejected as exc:
         _set_error(_REJECTION_MESSAGES[exc.code])
         return False
     except ArchiveConflict:
-        _set_error("Revizia intră în conflict cu un document existent în arhivă.")
+        _set_error(
+            "Revizia intră în conflict cu istoricul existent. Regimul de protecție trebuie "
+            "să rămână același pentru toate reviziile documentului."
+        )
         return False
     except ArchiveError:
         _set_error("Arhiva nu a putut confirma integritatea documentului.")
@@ -209,6 +249,14 @@ def _render_receipt(receipt: IngestionReceipt) -> None:
         else "Semnătura, conținutul și istoricul reviziei au fost confirmate."
     )
     digest = f"{record.content_digest[:25]}…{record.content_digest[-10:]}"
+    security_label = _security_mode_label(record.security_mode)
+    if record.security_mode is DocumentSecurityMode.ADVANCED:
+        security_detail = (
+            "Documentul este inclus în regimul avansat de verificare semantică și autorizare "
+            "controlată a acțiunii API."
+        )
+    else:
+        security_detail = "Documentul este administrat în regimul standard de integritate."
     st.markdown(
         f"""
         <section class="sodif-ingestion-receipt">
@@ -220,9 +268,17 @@ def _render_receipt(receipt: IngestionReceipt) -> None:
             <div><small>Document</small><strong>{escape(record.document_id)}</strong></div>
             <div><small>Revizie</small><strong>{record.revision_number}</strong></div>
             <div><small>Semnatar</small><strong>{escape(record.signer_id)}</strong></div>
+            <div><small>Regim de securitate</small><strong>{escape(security_label)}</strong></div>
             <div><small>Identificator arhivă</small><code>{escape(record.archive_id)}</code></div>
             <div><small>Amprentă document</small><code>{escape(digest)}</code></div>
         </section>
+        <p class="sodif-inline-note">{escape(security_detail)}</p>
         """,
         unsafe_allow_html=True,
     )
+
+
+def _security_mode_label(mode: DocumentSecurityMode) -> str:
+    if mode is DocumentSecurityMode.ADVANCED:
+        return "Protecție avansată SODIF"
+    return "Protecție standard"

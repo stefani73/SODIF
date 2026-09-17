@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from sodif.archive import (
+    ArchiveConflict,
     InMemoryArchiveRepository,
     SignedDocumentIngestionService,
     ingestion_policy,
@@ -17,6 +18,7 @@ from sodif.documents import (
     InMemoryTrustStore,
     demo_trusted_signer,
 )
+from sodif.domain.enums import DocumentSecurityMode
 
 
 @dataclass(slots=True)
@@ -50,6 +52,7 @@ def test_signed_sample_is_archived_and_exact_retry_is_not_duplicated() -> None:
     assert duplicate.duplicate is True
     assert duplicate.archive == first.archive
     assert repository.history(first.archive.document_id) == (first.archive,)
+    assert first.archive.security_mode is DocumentSecurityMode.ADVANCED
 
 
 def test_next_signed_revision_extends_archived_history() -> None:
@@ -72,6 +75,36 @@ def test_next_signed_revision_extends_archived_history() -> None:
     assert second.archive.revision_number == 2
     assert second.archive.previous_revision_digest == first.archive.content_digest
     assert history == (first.archive, second.archive)
+
+
+def test_security_mode_is_persisted_and_cannot_change_inside_revision_history() -> None:
+    repository = InMemoryArchiveRepository()
+    ingestion = service(repository)
+    sequence = build_signed_sample_sequence()
+    first = ingestion.ingest(
+        sequence.initial.content,
+        sequence.initial.revision,
+        sequence.initial.original_name,
+        DocumentSecurityMode.STANDARD,
+    )
+
+    with pytest.raises(ArchiveConflict, match="security mode cannot change"):
+        ingestion.ingest(
+            sequence.revised.content,
+            sequence.revised.revision,
+            sequence.revised.original_name,
+            DocumentSecurityMode.ADVANCED,
+        )
+
+    second = ingestion.ingest(
+        sequence.revised.content,
+        sequence.revised.revision,
+        sequence.revised.original_name,
+        DocumentSecurityMode.STANDARD,
+    )
+
+    assert first.archive.security_mode is DocumentSecurityMode.STANDARD
+    assert second.archive.security_mode is DocumentSecurityMode.STANDARD
 
 
 def test_signed_sample_sequence_is_reproducible_and_chain_bound() -> None:

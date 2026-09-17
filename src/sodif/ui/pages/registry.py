@@ -14,6 +14,7 @@ from sodif.archive import (
     RegistrySelection,
     build_document_evidence_package,
 )
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.ui.pages.shared import render_page_intro
 
 _SELECTED_ARCHIVE_KEY = "sodif_registry_selected_archive"
@@ -113,13 +114,14 @@ def _render_results(
     )
     for record in records:
         tone = " active" if record.archive_id == selected_archive_id else ""
+        security_label = _security_mode_label(record.security_mode)
         st.markdown(
             f"""
             <article class="sodif-registry-record{tone}">
                 <div><span>PDF</span><small>Revizia {record.revision_number}</small></div>
                 <h3>{escape(record.original_name)}</h3>
                 <p>{escape(record.document_id)}</p>
-                <footer><span>{escape(record.signer_id)}</span>
+                <footer><span>{escape(record.signer_id)} · {escape(security_label)}</span>
                 <time>{escape(_format_datetime(record.archived_at))}</time></footer>
             </article>
             """,
@@ -216,11 +218,13 @@ def _render_selection(
 
 def _render_metadata(record: ArchiveRecord) -> None:
     digest = f"{record.content_digest[:22]}…{record.content_digest[-10:]}"
+    security_label = _security_mode_label(record.security_mode)
     st.markdown(
         f"""
         <section class="sodif-registry-metadata">
             <div><small>Semnatar</small><strong>{escape(record.signer_id)}</strong></div>
             <div><small>Semnat</small><strong>{escape(_format_datetime(record.signed_at))}</strong></div>
+            <div><small>Regim de securitate</small><strong>{escape(security_label)}</strong></div>
             <div><small>Dimensiune</small><strong>{escape(_format_size(record.size_bytes))}</strong></div>
             <div><small>Amprentă</small><code>{escape(digest)}</code></div>
         </section>
@@ -337,3 +341,9 @@ def _format_size(value: int) -> str:
 
 def _count_label(value: int, singular: str, plural: str) -> str:
     return f"{value} {singular if value == 1 else plural}"
+
+
+def _security_mode_label(mode: DocumentSecurityMode) -> str:
+    if mode is DocumentSecurityMode.ADVANCED:
+        return "Protecție avansată"
+    return "Protecție standard"

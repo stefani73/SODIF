@@ -18,7 +18,7 @@ from sodif.archive import (
     SqliteArchiveRepository,
 )
 from sodif.domain.canonical import sha256_bytes
-from sodif.domain.enums import DocumentFormat, SignatureStatus
+from sodif.domain.enums import DocumentFormat, DocumentSecurityMode, SignatureStatus
 from sodif.domain.models import DocumentEnvelope, PolicyReference, SignatureEvidence
 from sodif.domain.revisions import RevisionAcceptance, RevisionRecord
 
@@ -83,6 +83,7 @@ def test_memory_archive_is_idempotent_searchable_and_integrity_checked() -> None
 
     assert first == second
     assert first.archive_id.startswith("arc-")
+    assert first.security_mode is DocumentSecurityMode.ADVANCED
     assert service.retrieve(first.archive_id).content == PDF_CONTENT
     assert service.history(first.document_id) == (first,)
     page = service.search(ArchiveQuery(text="achizitie", signer_id="trusted-signer"))
@@ -119,6 +120,24 @@ def test_sqlite_archive_persists_deduplicates_and_filters(tmp_path: Path) -> Non
             acceptance(OTHER_PDF_CONTENT),
             "comanda-achizitie-001.pdf",
         )
+
+
+def test_sqlite_archive_persists_the_selected_security_mode(tmp_path: Path) -> None:
+    root = tmp_path / "document-archive"
+    service = DocumentArchiveService(SqliteArchiveRepository(root), FixedClock(ARCHIVED_AT))
+
+    stored = service.archive(
+        PDF_CONTENT,
+        acceptance(),
+        "comanda-achizitie-001.pdf",
+        DocumentSecurityMode.STANDARD,
+    )
+    reopened = DocumentArchiveService(SqliteArchiveRepository(root), FixedClock(ARCHIVED_AT))
+
+    assert stored.security_mode is DocumentSecurityMode.STANDARD
+    assert (
+        reopened.retrieve(stored.archive_id).record.security_mode is DocumentSecurityMode.STANDARD
+    )
 
 
 def test_sqlite_archive_detects_object_tampering(tmp_path: Path) -> None:
@@ -163,5 +182,9 @@ def test_sqlite_archive_migrates_the_d1_index_without_data_loss(tmp_path: Path) 
     SqliteArchiveRepository(root)
 
     with sqlite3.connect(database) as connection:
-        columns = {row[1] for row in connection.execute("PRAGMA table_info(archive_records)")}
+        column_rows = tuple(connection.execute("PRAGMA table_info(archive_records)"))
+        columns = {row[1] for row in column_rows}
     assert "previous_revision_digest" in columns
+    assert "security_mode" in columns
+    security_mode = next(row for row in column_rows if row[1] == "security_mode")
+    assert security_mode[4] == "'advanced'"

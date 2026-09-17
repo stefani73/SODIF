@@ -514,7 +514,7 @@ div[data-testid="stDownloadButton"] button[kind="primary"] {
 .sodif-ingestion-receipt h2 { color:#126b58; font-size:1.25rem; margin:.25rem 0 .3rem; }
 .sodif-ingestion-receipt p { color:#4c6f67; margin:0; }
 .sodif-ingestion-metadata {
-    display:grid; grid-template-columns:1.1fr .55fr 1fr 1.35fr 1.4fr; gap:1px;
+    display:grid; grid-template-columns:1.1fr .5fr 1fr 1.2fr 1.35fr 1.4fr; gap:1px;
     overflow:hidden; background:var(--line); border:1px solid var(--line); border-radius:13px;
 }
 .sodif-ingestion-metadata > div { display:grid; gap:.4rem; padding:1rem; background:#fff; }
@@ -571,7 +571,8 @@ div[class*="st-key-registry-open-"] button { margin-top:-.2rem; border-radius:0 
 }
 .sodif-assurance-label span { width:7px; height:7px; border-radius:50%; background:#23b58d; }
 .sodif-registry-metadata {
-    display:grid; grid-template-columns:1fr 1.15fr .65fr 1.35fr; gap:1px; margin:.8rem 0 1rem;
+    display:grid; grid-template-columns:1fr 1.15fr 1.2fr .65fr 1.35fr; gap:1px;
+    margin:.8rem 0 1rem;
     overflow:hidden; background:var(--line); border:1px solid var(--line); border-radius:12px;
 }
 .sodif-registry-metadata > div { display:grid; gap:.32rem; padding:.85rem; background:#fff; }

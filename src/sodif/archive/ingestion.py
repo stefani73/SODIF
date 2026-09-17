@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
 
+from sodif.archive.errors import ArchiveConflict
 from sodif.archive.models import ArchiveRecord
 from sodif.archive.policy import ingestion_policy
 from sodif.archive.repository import ArchiveRepository, SqliteArchiveRepository
@@ -12,6 +13,7 @@ from sodif.documents import InMemoryRevisionRepository, InMemoryTrustStore, Sign
 from sodif.documents.demo import demo_trusted_signer
 from sodif.domain.base import DomainModel
 from sodif.domain.contracts import Clock
+from sodif.domain.enums import DocumentSecurityMode
 from sodif.domain.models import PolicyReference
 from sodif.domain.revisions import RevisionAcceptance, RevisionRecord, SignedRevision
 from sodif.domain.types import Identifier
@@ -56,11 +58,17 @@ class SignedDocumentIngestionService:
         content: bytes,
         revision: SignedRevision,
         original_name: str,
+        security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
     ) -> IngestionReceipt:
         """Validate and archive one revision, recognizing exact retries idempotently."""
         with self._lock:
             revision_repository = InMemoryRevisionRepository()
-            for archived in self._archive_repository.history(revision.metadata.document_id):
+            history = self._archive_repository.history(revision.metadata.document_id)
+            if history and any(item.security_mode != security_mode for item in history):
+                raise ArchiveConflict(
+                    "security mode cannot change inside an existing document revision chain"
+                )
+            for archived in history:
                 revision_repository.append(_revision_record(archived))
             acceptance = SignedRevisionService(
                 self._trust_store,
@@ -70,7 +78,7 @@ class SignedDocumentIngestionService:
             archived = DocumentArchiveService(
                 self._archive_repository,
                 self._clock,
-            ).archive(content, acceptance, original_name)
+            ).archive(content, acceptance, original_name, security_mode)
             return IngestionReceipt(acceptance=acceptance, archive=archived)
 
     def history(self, document_id: Identifier) -> tuple[ArchiveRecord, ...]:

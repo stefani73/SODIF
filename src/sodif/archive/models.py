@@ -5,7 +5,7 @@ from typing import Literal, Self
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from sodif.domain.base import DomainModel
-from sodif.domain.enums import DocumentFormat
+from sodif.domain.enums import DocumentFormat, DocumentSecurityMode
 from sodif.domain.types import Digest, Identifier
 
 
@@ -17,6 +17,7 @@ class ArchiveRecord(DomainModel):
     document_id: Identifier
     revision_number: int = Field(ge=1)
     format: DocumentFormat
+    security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED
     content_digest: Digest
     signature_digest: Digest
     previous_revision_digest: Digest | None = None
