@@ -49,9 +49,11 @@ try {
 
     $CoveragePath = Join-Path $ReleaseRoot "coverage.json"
     $JunitPath = Join-Path $ReleaseRoot "pytest-results.xml"
-    $env:SODIF_ARCHIVE_ROOT = Join-Path $ReleaseRoot "quality-archive"
-    $env:SODIF_EXPORT_ROOT = Join-Path $ReleaseRoot "quality-exports"
-    $PytestRoot = Join-Path $ReleaseRoot "pytest-temp"
+    $QualityRunRoot = Join-Path $ProjectRoot ("var\quality\release-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $QualityRunRoot -Force | Out-Null
+    $env:SODIF_ARCHIVE_ROOT = Join-Path $QualityRunRoot "archive"
+    $env:SODIF_EXPORT_ROOT = Join-Path $QualityRunRoot "exports"
+    $PytestRoot = Join-Path $QualityRunRoot "pytest"
     $PytestOutput = @(& $Python -m pytest --basetemp $PytestRoot --junitxml=$JunitPath --cov-report=json:$CoveragePath 2>&1)
     $PytestCode = $LASTEXITCODE
     Set-Content -LiteralPath (Join-Path $ReleaseRoot "pytest.log") -Value $PytestOutput -Encoding utf8
