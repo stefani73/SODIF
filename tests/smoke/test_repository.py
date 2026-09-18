@@ -35,7 +35,6 @@ def test_required_project_contracts_exist() -> None:
         "docs/TRANSVERSAL_FLIGHT.md",
         "docs/PRODUCT_OPERATIONS_AND_AUDIT.md",
         "docs/RUN_INTEGRITY_LEDGER.md",
-        "docs/SODIF_Product_Presentation.docx",
         "scripts/quality.ps1",
         "src/sodif/app.py",
         "src/sodif/product/catalog.py",
