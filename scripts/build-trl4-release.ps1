@@ -71,7 +71,7 @@ try {
     & git archive --format=zip "--output=$SourceZip" $ExpectedTag
     if ($LASTEXITCODE -ne 0) { throw "Arhivarea sursei Git a eșuat." }
 
-    $Coverage = Get-Content -LiteralPath $CoveragePath -Raw | ConvertFrom-Json
+    $Coverage = Get-Content -LiteralPath $CoveragePath -Raw | ConvertFrom-Json -AsHashtable
     [xml]$Junit = Get-Content -LiteralPath $JunitPath -Raw
     $Suite = $Junit.testsuites.testsuite
     $FileRecords = Get-ChildItem -LiteralPath $ReleaseRoot -Recurse -File | Sort-Object FullName | ForEach-Object {
@@ -92,7 +92,7 @@ try {
             failures = [int]$Suite.failures
             errors = [int]$Suite.errors
             skipped = [int]$Suite.skipped
-            branch_coverage_percent = [decimal]$Coverage.totals.percent_covered
+            branch_coverage_percent = [decimal]$Coverage["totals"]["percent_covered"]
             required_percent = 85
             ruff = "passed"
             mypy = "passed"
