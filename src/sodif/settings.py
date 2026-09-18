@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from os import getenv
 from pathlib import Path
 
+from sodif import __version__
+
 
 @dataclass(frozen=True, slots=True)
 class GatewaySettings:
@@ -88,7 +90,7 @@ def load_settings() -> AppSettings:
             "Control verificabil al execuției autorizate prin documente semnate.",
         ),
         environment=getenv("SODIF_ENVIRONMENT", "local"),
-        release=getenv("SODIF_RELEASE", "0.21.0"),
+        release=getenv("SODIF_RELEASE", __version__),
         archive_root=Path(getenv("SODIF_ARCHIVE_ROOT", "var/archive")),
         export_root=Path(getenv("SODIF_EXPORT_ROOT", "var/exports")),
         modules=ModuleSettings(

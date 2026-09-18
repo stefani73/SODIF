@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sodif"
-version = "0.24.0"
+version = "0.24.1"
 description = "SODIF cybersecurity platform for document-authorized execution control"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -20,6 +20,7 @@ dependencies = [
   "python-docx>=1.2,<2",
   "rfc8785>=0.1,<1",
   "streamlit[pdf]>=1.40,<2",
+  "streamlit-pdf==2.0.1",
 ]
 
 [project.optional-dependencies]

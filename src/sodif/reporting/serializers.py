@@ -23,6 +23,8 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "flight_kind": report.flight_kind,
             "security_mode": report.security_mode,
             "release": report.release,
+            "source_tag": report.source_tag,
+            "source_revision": report.source_revision,
             "session_id": report.configuration.session_id,
             "organization": report.configuration.organization_name,
             "workspace": report.configuration.workspace_name,
@@ -44,6 +46,10 @@ def serialize_audit_log(report: FlightReport) -> bytes:
             "flight_kind": report.flight_kind,
             "security_mode": report.security_mode,
             "outcome": "conform" if report.passed else "neconform",
+            "release": report.release,
+            "source_tag": report.source_tag,
+            "source_revision": report.source_revision,
+            "session_id": report.configuration.session_id,
         }
     )
     lines = (

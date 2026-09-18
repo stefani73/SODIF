@@ -53,7 +53,7 @@ def test_real_pdf_is_read_consistently_by_structural_and_visual_paths() -> None:
         ViewKind.VISUAL,
         ViewKind.VISUAL_SECONDARY,
     ]
-    assert all(values(view)["supplier_id"] == "SUP-01" for view in views)
+    assert all(values(view)["supplier_id"] == "ACME-42" for view in views)
     assert all(values(view)["total_amount"] == "1250.00" for view in views)
     assert all(values(view)["currency"] == "EUR" for view in views)
     assert all("page=1" in field.provenance.locator for view in views for field in view.fields)

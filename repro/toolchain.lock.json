@@ -1,0 +1,22 @@
+{
+  "schema": "sodif.toolchain-lock/v1",
+  "platform": "windows-x86_64",
+  "python": "3.12.14",
+  "packages": {
+    "PyMuPDF": "1.28.2",
+    "streamlit": "1.62.0",
+    "streamlit-pdf": "2.0.1"
+  },
+  "tesseract": {
+    "version": "5.5.0.20241111",
+    "languages": [
+      "eng",
+      "ron"
+    ],
+    "oem": 1,
+    "preserve_interword_spaces": true
+  },
+  "poppler": {
+    "pdftoppm_version": "26.07.0"
+  }
+}

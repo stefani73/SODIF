@@ -42,7 +42,7 @@ def _split_representation_pdf() -> bytes:
         title_font = ImageFont.load_default()
         body_font = ImageFont.load_default()
     draw.text((120, 90), "SODIF PURCHASE ORDER", fill="black", font=title_font)
-    draw.text((120, 250), "supplier id: SUP-01", fill="black", font=body_font)
+    draw.text((120, 250), "supplier id: ACME-42", fill="black", font=body_font)
     draw.text((120, 360), "total amount: 1250.00", fill="black", font=body_font)
     draw.text((120, 470), "currency: EUR", fill="black", font=body_font)
     image_bytes = BytesIO()
@@ -51,7 +51,7 @@ def _split_representation_pdf() -> bytes:
     document: Any = pymupdf.open()  # type: ignore[no-untyped-call]
     page = document.new_page(width=595, height=842)
     page.insert_image(page.rect, stream=image_bytes.getvalue())
-    page.insert_text((72, 700), "supplier_id: SUP-01", fontsize=12, render_mode=3)
+    page.insert_text((72, 700), "supplier_id: ACME-42", fontsize=12, render_mode=3)
     page.insert_text((72, 720), "total_amount: 9250.00", fontsize=12, render_mode=3)
     page.insert_text((72, 740), "currency: EUR", fontsize=12, render_mode=3)
     result = cast(
@@ -62,9 +62,9 @@ def _split_representation_pdf() -> bytes:
     return result
 
 
-BASE_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "1250.00", "currency": "EUR"})
-TAMPERED_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "9250.00", "currency": "EUR"})
-REVISED_PDF = _pdf_bytes({"supplier_id": "SUP-01", "total_amount": "1350.00", "currency": "EUR"})
+BASE_PDF = _pdf_bytes({"supplier_id": "ACME-42", "total_amount": "1250.00", "currency": "EUR"})
+TAMPERED_PDF = _pdf_bytes({"supplier_id": "ACME-42", "total_amount": "9250.00", "currency": "EUR"})
+REVISED_PDF = _pdf_bytes({"supplier_id": "ACME-42", "total_amount": "1350.00", "currency": "EUR"})
 SEMANTIC_SPLIT_PDF = _split_representation_pdf()
 
 
@@ -118,7 +118,7 @@ def purchase_order_action(
 
 def accepted_values(amount: Decimal = Decimal("1250.00")) -> dict[str, ScenarioValue]:
     return {
-        "supplier_id": (SemanticDataType.IDENTIFIER, "SUP-01"),
+        "supplier_id": (SemanticDataType.IDENTIFIER, "ACME-42"),
         "total_amount": (SemanticDataType.DECIMAL, amount),
         "currency": (SemanticDataType.CURRENCY, "EUR"),
     }

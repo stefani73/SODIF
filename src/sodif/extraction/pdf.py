@@ -161,8 +161,12 @@ def _ocr_lines(
             "stdout",
             "-l",
             profile.languages,
+            "--oem",
+            "1",
             "--psm",
             str(profile.page_segmentation_mode),
+            "-c",
+            "preserve_interword_spaces=1",
             "tsv",
         ]
     )

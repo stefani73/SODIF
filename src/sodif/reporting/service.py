@@ -78,6 +78,8 @@ def _build_manifest(report: FlightReport, artifacts: tuple[ExportArtifact, ...])
         "domain": report.configuration.domain_name,
         "environment": report.configuration.environment,
         "release": report.release,
+        "source_tag": report.source_tag,
+        "source_revision": report.source_revision,
         "sealed_at": report.completed_at.isoformat().replace("+00:00", "Z"),
         "evidence_root": f"sha256:{evidence_root}",
         "files": file_records,

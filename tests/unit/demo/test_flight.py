@@ -1,5 +1,6 @@
 """Acceptance tests for the complete deterministic scenario flight."""
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from _pytest.capture import CaptureFixture
@@ -89,8 +90,10 @@ def test_blocked_and_escalated_scenarios_never_produce_receipts() -> None:
 
 
 def test_flight_is_reproducible_and_serializable() -> None:
-    first = run_default_flight()
-    second = run_default_flight()
+    started_at = datetime(2026, 9, 18, 10, 0, tzinfo=UTC)
+    completed_at = started_at + timedelta(minutes=5)
+    first = FlightRunner(started_at=started_at, completed_at=completed_at).run()
+    second = FlightRunner(started_at=started_at, completed_at=completed_at).run()
     serialized = first.model_dump_json(exclude_computed_fields=True)
     restored = FlightReport.model_validate_json(serialized)
 
@@ -214,7 +217,7 @@ def test_cli_prints_a_passing_json_report(capsys: CaptureFixture[str]) -> None:
 
     assert report.passed is True
     assert report.flight_kind is FlightKind.SECURITY
-    assert report.release == "0.24.0"
+    assert report.release == "0.24.1"
 
 
 def test_scenario_adapter_rejects_invalid_configuration_or_empty_projection() -> None:

@@ -49,6 +49,9 @@ def test_export_package_is_deterministic_and_self_verifying() -> None:
     assert manifest["flight_kind"] == "security"
     assert manifest["organization"] == "TECHSUITE SRL"
     assert manifest["session_id"] == "session-local-default"
+    assert manifest["release"] == "0.24.1"
+    assert manifest["source_tag"] == "development"
+    assert manifest["source_revision"] == "working-tree"
     assert manifest["evidence_root"].startswith("sha256:")
 
 
@@ -62,7 +65,9 @@ def test_structured_report_and_audit_log_preserve_domain_evidence() -> None:
     assert events[0]["event_type"] == "flight.opened"
     assert events[0]["organization"] == "TECHSUITE SRL"
     assert events[0]["route_id"] == "erp.purchase-orders"
+    assert events[0]["source_tag"] == "development"
     assert events[-1]["event_type"] == "flight.sealed"
+    assert events[-1]["source_revision"] == "working-tree"
     decisions = [event for event in events if event["event_type"] == "scenario.decision"]
     assert all(event["transaction_id"].startswith("flight-") for event in decisions)
     assert {event["scenario"] for event in decisions} == {
@@ -99,6 +104,8 @@ def test_word_report_contains_the_decision_register_and_scenario_evidence() -> N
 
     assert "RAPORT SECURITY FLIGHT" in text
     assert "Configurația validată în laborator" in text
+    assert "Set de dovezi: session-local-default" in text
+    assert "Tag sursă: development" in text
     assert "Semnătură Ed25519 detașată" in _table_text(document)
     assert "Registrul deciziilor" in text
     assert "0.14.0-dms5" not in text
@@ -182,7 +189,7 @@ def test_cli_exports_both_product_flights(
     export_main(
         [
             "--kind",
-            "both",
+            "all",
             "--output-dir",
             str(output),
             "--archive-root",
@@ -192,12 +199,22 @@ def test_cli_exports_both_product_flights(
 
     summary = json.loads(capsys.readouterr().out)
     assert summary["status"] == "exported"
+    assert summary["evidence_set_id"].startswith("evidence-")
+    assert summary["release"] == "0.24.1"
+    assert summary["source_tag"] == "development"
+    assert summary["source_revision"] == "working-tree"
     assert [flight["flight_kind"] for flight in summary["flights"]] == [
         "security",
         "transversal",
+        "transversal",
     ]
-    assert len(summary["artifacts"]) == 10
-    assert len(tuple(output.glob("*.docx"))) == 2
+    assert [flight["security_mode"] for flight in summary["flights"]] == [
+        "advanced",
+        "advanced",
+        "standard",
+    ]
+    assert len(summary["artifacts"]) == 15
+    assert len(tuple(output.glob("*.docx"))) == 3
 
 
 def test_completed_run_is_persisted_by_session_kind_and_report(tmp_path: Path) -> None:

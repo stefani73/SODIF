@@ -144,6 +144,8 @@ class FlightReport(DomainModel):
     security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED
     configuration: FlightConfiguration
     release: Identifier
+    source_tag: Identifier
+    source_revision: Identifier
     started_at: AwareDatetime
     completed_at: AwareDatetime
     results: tuple[ScenarioResult, ...] = Field(min_length=1)

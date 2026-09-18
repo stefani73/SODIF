@@ -3,10 +3,12 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
+from os import getenv
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from sodif import __version__
 from sodif.archive import (
     ArchiveRepository,
     DocumentArchiveService,
@@ -91,7 +93,7 @@ from sodif.permits import (
 from sodif.verification import AdaptiveRiskPolicy, AdaptiveVerificationService
 from sodif.verification.consensus import DeterministicConsensusEngine
 
-FLIGHT_START = datetime(2026, 8, 24, 14, 0, tzinfo=UTC)
+FLIGHT_DOCUMENT_SIGNED_AT = datetime(2026, 8, 24, 13, 59, tzinfo=UTC)
 FLIGHT_DOCUMENT_ID = f"doc-flight-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
 STANDARD_FLIGHT_DOCUMENT_ID = (
     f"doc-flight-standard-{sha256_bytes(BASE_PDF).removeprefix('sha256:')[:12]}"
@@ -107,7 +109,7 @@ class ScenarioClock:
 
     def now(self) -> datetime:
         result = self.current
-        self.current += timedelta(seconds=1)
+        self.current += timedelta(milliseconds=1)
         return result
 
 
@@ -162,6 +164,8 @@ class FlightRunner:
         flight_kind: FlightKind = FlightKind.SECURITY,
         configuration: FlightConfiguration | None = None,
         security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+        started_at: datetime | None = None,
+        completed_at: datetime | None = None,
     ) -> None:
         if flight_kind is FlightKind.SECURITY and archive_repository is not None:
             raise ValueError("security flight cannot use a document archive")
@@ -174,6 +178,12 @@ class FlightRunner:
         self._archive_repository = archive_repository
         self._configuration = configuration or default_flight_configuration()
         self._security_mode = security_mode
+        self._started_at = started_at or datetime.now(UTC)
+        self._completed_at = completed_at
+        if self._started_at.tzinfo is None:
+            raise ValueError("flight started_at must include a timezone")
+        if completed_at is not None and completed_at <= self._started_at:
+            raise ValueError("flight completed_at must be after started_at")
 
     def run(self) -> FlightReport:
         results: tuple[ScenarioResult, ...]
@@ -188,11 +198,26 @@ class FlightRunner:
                 self._action_tampering(),
                 self._replay_attack(),
             )
+        source_tag = getenv("SODIF_SOURCE_TAG", "development")
+        source_revision = getenv("SODIF_SOURCE_REVISION", "working-tree")
+        latest_event = max(
+            observation.occurred_at
+            for result in results
+            for observation in result.observations
+        )
+        completed_at = self._completed_at or max(
+            datetime.now(UTC),
+            latest_event + timedelta(milliseconds=1),
+        )
         report_digest = sha256_digest(
             {
                 "flight_kind": self._flight_kind,
                 "security_mode": self._security_mode,
                 "configuration": self._configuration,
+                "release": __version__,
+                "source_tag": source_tag,
+                "source_revision": source_revision,
+                "started_at": self._started_at,
                 "results": results,
             }
         )
@@ -201,9 +226,11 @@ class FlightRunner:
             flight_kind=self._flight_kind,
             security_mode=self._security_mode,
             configuration=self._configuration,
-            release="0.24.0",
-            started_at=FLIGHT_START,
-            completed_at=FLIGHT_START + timedelta(minutes=5),
+            release=__version__,
+            source_tag=source_tag,
+            source_revision=source_revision,
+            started_at=self._started_at,
+            completed_at=completed_at,
             results=results,
             passed=all(result.passed for result in results),
             passed_scenarios=sum(result.passed for result in results),
@@ -676,7 +703,7 @@ class FlightRunner:
             signer_id=context.document_signer.signer_id,
             key_id=context.document_signer.key_id,
             algorithm=SignatureAlgorithm.ED25519,
-            signed_at=signed_at or FLIGHT_START - timedelta(minutes=1),
+            signed_at=signed_at or FLIGHT_DOCUMENT_SIGNED_AT,
         )
         return context.document_signer.sign(metadata)
 
@@ -720,7 +747,7 @@ class FlightRunner:
         )
 
     def _context(self, scenario_id: FlightScenario) -> _ScenarioContext:
-        clock = ScenarioClock(FLIGHT_START)
+        clock = ScenarioClock(self._started_at)
         policy = flight_policy()
         document_signer = demo_revision_signer()
         document_trust = demo_trusted_signer()
@@ -742,7 +769,7 @@ class FlightRunner:
             issuer_id=permit_issuer.issuer_id,
             algorithm=SignatureAlgorithm.ED25519,
             public_key=encode_permit_public_key(permit_issuer.public_key()),
-            active_from=FLIGHT_START - timedelta(days=1),
+            active_from=self._started_at - timedelta(days=1),
         )
         permit_authorizer = ExecutionPermitAuthorizer(
             InMemoryPermitTrustStore((permit_trust,)),
@@ -863,7 +890,7 @@ class FlightRunner:
             REVISED_PDF,
             revision_number=2,
             previous_revision_digest=sha256_bytes(BASE_PDF),
-            signed_at=FLIGHT_START + timedelta(seconds=1),
+            signed_at=FLIGHT_DOCUMENT_SIGNED_AT + timedelta(minutes=1),
         )
         acceptance = context.document_service.validate(
             REVISED_PDF,
@@ -912,18 +939,26 @@ def run_default_flight() -> FlightReport:
 def run_security_flight(
     configuration: FlightConfiguration | None = None,
     security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+    *,
+    started_at: datetime | None = None,
+    completed_at: datetime | None = None,
 ) -> FlightReport:
     """Run signed-intent security controls without document archiving."""
     return FlightRunner(
         flight_kind=FlightKind.SECURITY,
         configuration=configuration,
         security_mode=security_mode,
+        started_at=started_at,
+        completed_at=completed_at,
     ).run()
 
 
 def run_transversal_memory_flight(
     configuration: FlightConfiguration | None = None,
     security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+    *,
+    started_at: datetime | None = None,
+    completed_at: datetime | None = None,
 ) -> FlightReport:
     """Run all three product modules against an ephemeral archive repository."""
     return FlightRunner(
@@ -931,6 +966,8 @@ def run_transversal_memory_flight(
         flight_kind=FlightKind.TRANSVERSAL,
         configuration=configuration,
         security_mode=security_mode,
+        started_at=started_at,
+        completed_at=completed_at,
     ).run()
 
 
@@ -938,6 +975,9 @@ def run_transversal_flight(
     archive_root: Path,
     configuration: FlightConfiguration | None = None,
     security_mode: DocumentSecurityMode = DocumentSecurityMode.ADVANCED,
+    *,
+    started_at: datetime | None = None,
+    completed_at: datetime | None = None,
 ) -> FlightReport:
     """Run all three product modules against the persistent local archive."""
     return FlightRunner(
@@ -945,6 +985,8 @@ def run_transversal_flight(
         flight_kind=FlightKind.TRANSVERSAL,
         configuration=configuration,
         security_mode=security_mode,
+        started_at=started_at,
+        completed_at=completed_at,
     ).run()
 
 

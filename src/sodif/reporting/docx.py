@@ -249,6 +249,7 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
         ("Spațiu operațional", report.configuration.workspace_name),
         ("Domeniu", report.configuration.domain_name),
         ("Mediu", report.configuration.environment),
+        ("Set de dovezi", report.configuration.session_id),
         ("Raport", report.report_id),
         ("Rezultat", "CONFORM" if report.passed else "NECONFORM"),
         ("Regim", security_label),
@@ -259,6 +260,8 @@ def _add_masthead(document: WordDocument, report: FlightReport, view: FlightView
             f"{report.configuration.protected_service} · {report.configuration.route_id}",
         ),
         ("Versiune", report.release),
+        ("Tag sursă", report.source_tag),
+        ("Revizie sursă", report.source_revision),
     )
     for label, value in metadata:
         paragraph = document.add_paragraph()

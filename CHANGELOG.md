@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.24.1 — 2026-09-18
+
+- Stabilized the cross-system OCR flight fixture with an unambiguous supplier identifier and explicit Tesseract OEM/spacing parameters.
+- Locked and automatically verified Python, PyMuPDF, Tesseract, Poppler, Streamlit and streamlit-pdf versions.
+- Replaced the fixed report sealing time with the actual run time and bound every report to a shared evidence-set identifier, source tag and Git revision.
+- Added the TRL 4 release builder, SHA-256 manifest and frozen reproduction package workflow.
+
 ## 0.24.0 — 2026-09-17
 
 - ramifică efectiv Transversal Flight în regim standard și regim avansat SODIF;

@@ -12,6 +12,8 @@ htmlcov/
 var/logs/*
 var/exports/*
 var/archive/*
+var/quality/*
+var/releases/*
 !var/logs/.gitkeep
 !var/exports/.gitkeep
 !var/archive/.gitkeep

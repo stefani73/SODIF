@@ -55,6 +55,7 @@ ruff==0.16.4
 six==1.17.0
 starlette==1.6.0
 streamlit==1.62.0
+streamlit-pdf==2.0.1
 toml==0.10.2
 typing-inspection==0.4.4
 typing_extensions==4.16.0
